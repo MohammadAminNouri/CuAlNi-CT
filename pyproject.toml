@@ -15,6 +15,10 @@ dependencies = [
   "pandas>=2.0",
 ]
 
+
+[project.scripts]
+cualni-cryst = "cualni_cryst.__main__:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
 
