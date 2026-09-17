@@ -15,9 +15,15 @@ from .cualni_models import (
 )
 from .group_theory import correspondence_groupoid
 from .james_hane import cube_edge_6m_variants
+from .reference_6m import (
+    C_REF_A_FROM_M,
+    C_REF_M_FROM_A,
+    DO3_6M_BASIS_CONVENTION,
+    parent_axis_permutation_relating_reference_to_alt,
+)
 from .stretch import (
     generate_stretch_variants,
-    match_matrix_family,
+    optimal_match_matrix_family,
     principal_stretches,
     stretch_from_metrics,
 )
@@ -30,17 +36,19 @@ def _m(M):
 
 def branch_report(branch) -> str:
     g = correspondence_groupoid(
-        list(branch.parent_point_group), list(branch.product_point_group), branch.correspondence
+        list(branch.parent_point_group),
+        list(branch.product_point_group),
+        branch.correspondence,
     )
     lines = [
         f"# {branch.name}: exact discrete CT report",
         "",
-        "Correspondence convention: `u_M = C_m_from_a u_A`.",
+        "Direct-space convention: `u_M = C_M_from_A @ u_A`.",
+        "Plane-covector convention: `p_M = C_M_from_A^{-T} @ p_A`.",
         "",
-        "",
-        "## C_m_from_a",
+        "## Selected reference correspondence variant",
         "```text",
-        _m(branch.correspondence.C_m_from_a),
+        _m(branch.correspondence.C_M_from_A),
         "```",
         "",
         f"Parent group order: {len(branch.parent_point_group)}",
@@ -55,7 +63,13 @@ def branch_report(branch) -> str:
     ]
     for h in g.subgroup:
         info = classify_symmetry(h)
-        lines += ["```text", _m(h), "```", f"kind={info.kind}, det={info.determinant}, order={info.order}", ""]
+        lines += [
+            "```text",
+            _m(h),
+            "```",
+            f"kind={info.kind}, det={info.determinant}, order={info.order}",
+            "",
+        ]
     lines += ["## Operator summaries"]
     for s in g.summaries:
         lines.append(
@@ -73,15 +87,51 @@ def verification_report() -> str:
     branch = do3_to_6m_branch()
     U = stretch_from_metrics(A.metric(), M.metric(), branch.correspondence)
     lam, _ = principal_stretches(U)
-    derived = generate_stretch_variants(U, [np.array(q, float) for q in cubic_proper_rotations()])
+    derived = generate_stretch_variants(
+        U,
+        [np.array(q, float) for q in cubic_proper_rotations()],
+    )
     ref = cube_edge_6m_variants(A.a, M.a, M.b, M.c, M.beta_deg)
-    ok, R = match_matrix_family(derived, ref, tol=1e-10)
-    ct = analyze_austenite_martensite(A.metric(), M.metric(), branch.correspondence)
+    match = optimal_match_matrix_family(derived, ref, tol=1e-12)
+    ct = analyze_austenite_martensite(
+        A.metric(),
+        M.metric(),
+        branch.correspondence,
+    )
+    P = parent_axis_permutation_relating_reference_to_alt()
+    basis = DO3_6M_BASIS_CONVENTION
+
+    match_lines = [
+        f"- derived U{i} -> James-Hane U{j}: residual={r:.3e}"
+        for (i, j), r in zip(match.mapping, match.residuals, strict=True)
+    ]
+
     return "\n".join(
         [
             "# Independent verification report: DO3 -> 6M",
             "",
-            "This report uses the James-Hane literature example only as a reproducibility benchmark; it is not a default specimen.",
+            "The James-Hane Cu-Al-Ni numbers are used only as a reproducibility benchmark.",
+            "They are not default specimen data.",
+            "",
+            "## Basis and correspondence truth lock",
+            f"- parent basis order: {basis.parent_axis_order}",
+            f"- daughter basis order: {basis.daughter_axis_order}",
+            f"- non-right angle: {basis.non_right_angle_between}",
+            f"- source symbol: {basis.source_angle_symbol}",
+            f"- internal symbol: {basis.internal_angle_symbol}",
+            "",
+            "`C_A_from_M` (daughter basis vectors written in parent coordinates):",
+            "```text",
+            _m(C_REF_A_FROM_M),
+            "```",
+            "`C_M_from_A = C_A_from_M^{-1}`:",
+            "```text",
+            _m(C_REF_M_FROM_A),
+            "```",
+            "Earlier exploratory matrix is related by the proper cubic parent-axis permutation:",
+            "```text",
+            _m(P),
+            "```",
             "",
             "## Stretch from correspondence + metrics",
             "```text",
@@ -90,15 +140,22 @@ def verification_report() -> str:
             f"Principal stretches: {np.array2string(lam, precision=12)}",
             f"|lambda2-1| = {abs(lam[1] - 1):.12g}",
             f"Number of symmetry-generated stretch variants = {len(derived)}",
-            f"Exact family match to independently transcribed James-Hane Eq.(10) = {ok}",
-            f"Worst nearest Frobenius mismatch = {np.max(np.min(R, axis=1)):.3e}",
+            f"Optimal one-to-one James-Hane Eq.(10) family match = {match.success}",
+            f"Maximum Frobenius mismatch = {match.maximum_residual:.3e}",
+            f"RMS Frobenius mismatch = {match.rms_residual:.3e}",
+            "",
+            "### Optimal variant-family assignment",
+            *match_lines,
             "",
             "## CMC",
             f"normalized CMC eigenvalues = {np.array2string(ct.analysis.eigenvalues, precision=12)}",
             f"exact CT A/M compatibility at rounded literature parameters = {ct.analysis.exact_compatible}",
             f"nearest normalized CMC eigenvalue magnitude = {ct.analysis.nearest_zero_residual:.12g}",
             "",
-            "Interpretation: near-zero is expected for the published near-compatible Cu-Al-Ni example; exact equality must not be claimed from rounded table values.",
+            (
+                "Interpretation: the source reports a nearly compatible Cu-Al-Ni example. "
+                "Exact equality must not be claimed from rounded Table 4 lattice parameters."
+            ),
         ]
     )
 
