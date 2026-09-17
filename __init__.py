@@ -1,19 +1,11 @@
-"""Cu-Al-Ni crystallography research toolkit.
+"""Cu-Al-Ni martensitic crystallography research toolkit.
 
-The package intentionally separates:
-- crystallographic metrics,
-- correspondence/symmetry (Cayron CT),
-- stretch/rank-one mechanics (Ball-James),
-- PTMC-style laminate/habit-plane calculations,
-- cofactor-condition checks,
-- EBSD comparison utilities.
-
-No Cu-Al-Ni correspondence matrix is silently hard-coded. A correspondence must
-be supplied from a verified source or the user's experiment.
+Design principle: one crystallographic input set, several independent theory
+branches (Cayron CT, PTMC, Ball-James/cofactor), then comparison to experiment.
 """
-
 from .lattice import Lattice
 from .correspondence import Correspondence
+from .cualni_models import do3_to_6m_branch, do3_to_2h_branch
 
-__all__ = ["Lattice", "Correspondence"]
-__version__ = "0.1.0"
+__all__=["Lattice","Correspondence","do3_to_6m_branch","do3_to_2h_branch"]
+__version__="0.2.0"

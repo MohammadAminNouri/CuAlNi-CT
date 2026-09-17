@@ -1,0 +1,22 @@
+[
+  "tests/test_cofactor.py::test_cc1_residual",
+  "tests/test_cofactor.py::test_cofactor_matrix_identity_property",
+  "tests/test_ct_stretch.py::test_cmc_stretch_bridge_cubic_parent",
+  "tests/test_ct_twinning.py::test_ct_twin_predictions_are_metric_normalized",
+  "tests/test_group_theory.py::test_identity_toy_partition",
+  "tests/test_groupoid_reference.py::test_2h_groupoid_exact_counts_and_burnside",
+  "tests/test_groupoid_reference.py::test_6m_groupoid_exact_counts_and_burnside",
+  "tests/test_james_hane.py::test_exact_compatibility_angles_are_supplementary",
+  "tests/test_james_hane.py::test_m18r_to_6m_returns_physical_cell",
+  "tests/test_lattice.py::test_cubic_metric",
+  "tests/test_lattice.py::test_direct_and_plane_normalization",
+  "tests/test_lattice.py::test_monoclinic_metric",
+  "tests/test_quaternion.py::test_cartesian_limit_matches_hamilton_product",
+  "tests/test_reference_correspondences.py::test_2h_source_orientation_relationships",
+  "tests/test_reference_correspondences.py::test_6m_correspondence_reproduces_all_twelve_stretches",
+  "tests/test_reference_correspondences.py::test_6m_correspondence_reproduces_james_hane_cube_edge_reference",
+  "tests/test_symbolic.py::test_symbolic_2h_pulled_metric_structure",
+  "tests/test_symbolic.py::test_symbolic_6m_pulled_metric_structure",
+  "tests/test_symmetry.py::test_group_closure",
+  "tests/test_symmetry.py::test_group_orders"
+]
