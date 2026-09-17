@@ -1,8 +1,9 @@
 """Template showing the full CT pipeline once C has been verified from a primary source."""
 import sympy as sp
+
 from cualni_cryst.correspondence import Correspondence
-from cualni_cryst.symmetry import cubic_full_m3m, monoclinic_2_over_m_unique_b
 from cualni_cryst.group_theory import correspondence_groupoid
+from cualni_cryst.symmetry import cubic_full_m3m, monoclinic_2_over_m_unique_b
 
 # Replace ONLY after source verification. This identity is intentionally a toy example.
 C = Correspondence(sp.eye(3), label="TOY ONLY", source="HYPOTHETICAL_TEST")

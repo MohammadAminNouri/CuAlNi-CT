@@ -1,4 +1,5 @@
 import numpy as np
+
 from cualni_cryst.lattice import Lattice
 from cualni_cryst.quaternion import crystallographic_quaternion_product
 

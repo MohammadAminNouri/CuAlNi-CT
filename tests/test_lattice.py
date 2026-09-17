@@ -1,5 +1,11 @@
 import numpy as np
-from cualni_cryst.lattice import Lattice, normalize_direct, normalize_plane, plane_to_unit_normal
+
+from cualni_cryst.lattice import (
+    Lattice,
+    normalize_direct,
+    normalize_plane,
+    plane_to_unit_normal,
+)
 
 
 def test_cubic_metric():

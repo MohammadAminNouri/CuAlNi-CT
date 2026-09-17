@@ -9,10 +9,11 @@ interface.  It therefore provides a theory branch independent of Cayron CMC.
 """
 
 from dataclasses import dataclass
+
 import numpy as np
 
-from .ball_james import analytical_rank_one_connections, AnalyticalRankOneSolution
-from .rank_one import solve_rank_one_connection, RankOneSolution
+from .ball_james import AnalyticalRankOneSolution, analytical_rank_one_connections
+from .rank_one import RankOneSolution, solve_rank_one_connection
 
 
 @dataclass(frozen=True)
@@ -59,8 +60,8 @@ def ptmc_volume_fractions(U:np.ndarray,a:np.ndarray,n:np.ndarray,tol:float=1e-9)
         f=float(z.real)
         if -tol<=f<=1+tol:
             f=min(1.0,max(0.0,f))
-            if abs(middle_singular_value(U+f*np.outer(a,n))-1.0)<=1e-6:
-                if not any(abs(f-r)<1e-7 for r in out): out.append(f)
+            if abs(middle_singular_value(U+f*np.outer(a,n))-1.0)<=1e-6 and not any(abs(f-r)<1e-7 for r in out):
+                out.append(f)
     # Include degenerate exact endpoints if polynomial solver loses them.
     for f in (0.0,1.0):
         if abs(middle_singular_value(U+f*np.outer(a,n))-1.0)<=tol and not any(abs(f-r)<1e-7 for r in out): out.append(f)

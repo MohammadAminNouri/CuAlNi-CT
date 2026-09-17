@@ -3,11 +3,17 @@ from __future__ import annotations
 """Cayron CT transformation-twin calculations, independent of stretch tensors."""
 
 from dataclasses import dataclass
+
 import numpy as np
 import sympy as sp
 
 from .correspondence import Correspondence
-from .lattice import normalize_direct, normalize_plane, plane_to_unit_normal, metric_norm
+from .lattice import (
+    metric_norm,
+    normalize_direct,
+    normalize_plane,
+    plane_to_unit_normal,
+)
 from .symmetry import classify_symmetry
 
 

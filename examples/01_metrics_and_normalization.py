@@ -3,9 +3,8 @@
 This example deliberately does NOT insert a DO3->6M correspondence matrix.
 The point is to show the dimensional and normalized metric layers without inventing C.
 """
-from pathlib import Path
 import json
-import numpy as np
+from pathlib import Path
 
 from cualni_cryst.lattice import Lattice
 

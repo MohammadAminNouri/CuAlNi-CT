@@ -1,4 +1,5 @@
 import numpy as np
+
 from cualni_cryst.james_hane import m18r_to_6m, six_m_exact_compatibility_angles
 
 

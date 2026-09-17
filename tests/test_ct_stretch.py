@@ -1,9 +1,10 @@
 import numpy as np
 import sympy as sp
-from cualni_cryst.lattice import Lattice
+
 from cualni_cryst.correspondence import Correspondence
 from cualni_cryst.ct import cmc, normalized_cmc
-from cualni_cryst.stretch import stretch_from_metrics, principal_stretches
+from cualni_cryst.lattice import Lattice
+from cualni_cryst.stretch import principal_stretches, stretch_from_metrics
 
 
 def test_cmc_stretch_bridge_cubic_parent():

@@ -1,4 +1,8 @@
-from cualni_cryst.symmetry import cubic_full_m3m, cubic_proper_rotations, classify_cubic_operation
+from cualni_cryst.symmetry import (
+    classify_cubic_operation,
+    cubic_full_m3m,
+    cubic_proper_rotations,
+)
 
 G = cubic_full_m3m()
 Gp = cubic_proper_rotations()

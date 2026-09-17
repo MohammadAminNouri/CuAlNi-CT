@@ -1,4 +1,5 @@
 import numpy as np
+
 from cualni_cryst.cofactor import cofactor_matrix, evaluate_cofactor_conditions
 
 

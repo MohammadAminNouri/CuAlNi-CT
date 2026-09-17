@@ -8,11 +8,12 @@ preparation" in that paper.  Therefore this repository deliberately does NOT
 present a guessed implementation as the published algorithm.
 """
 
-from dataclasses import dataclass
 import itertools
+from dataclasses import dataclass
+
 import numpy as np
 
-from .lattice import metric_norm, metric_dot
+from .lattice import metric_dot, metric_norm
 
 
 @dataclass(frozen=True)

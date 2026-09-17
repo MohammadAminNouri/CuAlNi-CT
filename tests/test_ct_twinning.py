@@ -1,4 +1,5 @@
 import numpy as np
+
 from cualni_cryst.cualni_models import do3_to_6m_branch, james_hane_6m_example_lattices
 from cualni_cryst.group_theory import correspondence_groupoid
 from cualni_cryst.twinning_ct import twins_from_operator

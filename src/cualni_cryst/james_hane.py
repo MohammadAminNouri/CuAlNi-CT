@@ -8,8 +8,9 @@ calculations are unit-tested.  This is important: the code should not validate
 itself by comparing two functions that share the same derivation.
 """
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
+
 import numpy as np
 
 

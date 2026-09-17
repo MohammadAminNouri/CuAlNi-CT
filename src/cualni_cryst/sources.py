@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from .provenance import SourceRef
 
-
 SOURCES: dict[str, SourceRef] = {
     "cayron2006_groupoid": SourceRef(
         key="cayron2006_groupoid",

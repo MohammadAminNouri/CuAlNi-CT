@@ -3,11 +3,18 @@ from __future__ import annotations
 """Cayron Correspondence-Theory metric compatibility (CMC/SMC) tools."""
 
 from dataclasses import dataclass
+
 import numpy as np
 from scipy.linalg import eigh
 
 from .correspondence import Correspondence
-from .lattice import metric_inv_sqrt, metric_sqrt, normalize_plane, plane_to_unit_normal, metric_norm
+from .lattice import (
+    metric_inv_sqrt,
+    metric_norm,
+    metric_sqrt,
+    normalize_plane,
+    plane_to_unit_normal,
+)
 
 
 def cmc(M_a:np.ndarray,M_m:np.ndarray,correspondence:Correspondence)->np.ndarray:

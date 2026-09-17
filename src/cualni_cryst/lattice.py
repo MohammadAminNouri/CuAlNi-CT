@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
 from scipy.linalg import sqrtm
 
@@ -86,17 +87,17 @@ class Lattice:
         return B
 
     @classmethod
-    def cubic(cls, a: float, label: str = "cubic") -> "Lattice":
+    def cubic(cls, a: float, label: str = "cubic") -> Lattice:
         return cls(a=a, b=a, c=a, label=label)
 
     @classmethod
-    def orthorhombic(cls, a: float, b: float, c: float, label: str = "orthorhombic") -> "Lattice":
+    def orthorhombic(cls, a: float, b: float, c: float, label: str = "orthorhombic") -> Lattice:
         return cls(a=a, b=b, c=c, label=label)
 
     @classmethod
     def monoclinic_unique_b(
         cls, a: float, b: float, c: float, beta_deg: float, label: str = "monoclinic"
-    ) -> "Lattice":
+    ) -> Lattice:
         return cls(a=a, b=b, c=c, alpha_deg=90.0, beta_deg=beta_deg, gamma_deg=90.0, label=label)
 
 

@@ -7,13 +7,14 @@ performed with SymPy exact matrices.  No floating tolerance is used to decide
 subgroup membership, coset membership or double-coset membership.
 """
 
-from dataclasses import dataclass
 from collections import Counter
-from typing import Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
+
 import sympy as sp
 
-from .symmetry import matrix_key, classify_symmetry
 from .correspondence import Correspondence
+from .symmetry import classify_symmetry, matrix_key
 
 
 def _sort_key(M: sp.Matrix) -> tuple:
@@ -77,7 +78,7 @@ def left_cosets(group: list[sp.Matrix], subgroup: list[sp.Matrix]) -> list[list[
     remaining = {matrix_key(g): g for g in G}
     out: list[list[sp.Matrix]] = []
     while remaining:
-        g = sorted(remaining.values(), key=_sort_key)[0]
+        g = min(remaining.values(), key=_sort_key)
         coset = _unique_sorted(sp.simplify(g * h) for h in H)
         out.append(coset)
         for x in coset:
@@ -94,7 +95,7 @@ def double_cosets(group: list[sp.Matrix], subgroup: list[sp.Matrix]) -> list[lis
     remaining = {matrix_key(g): g for g in G}
     out: list[list[sp.Matrix]] = []
     while remaining:
-        g = sorted(remaining.values(), key=_sort_key)[0]
+        g = min(remaining.values(), key=_sort_key)
         d = _unique_sorted(sp.simplify(h1 * g * h2) for h1 in H for h2 in H)
         out.append(d)
         for x in d:
@@ -103,7 +104,7 @@ def double_cosets(group: list[sp.Matrix], subgroup: list[sp.Matrix]) -> list[lis
 
 
 def representatives(sets: list[list[sp.Matrix]]) -> list[sp.Matrix]:
-    return [sorted(s, key=_sort_key)[0] for s in sets]
+    return [min(s, key=_sort_key) for s in sets]
 
 
 def which_double_coset(x: sp.Matrix, dcosets: list[list[sp.Matrix]]) -> int:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from itertools import permutations, product
 from dataclasses import dataclass
+from itertools import permutations, product
+
 import numpy as np
 import sympy as sp
 
@@ -60,7 +61,7 @@ def orthorhombic_mmm() -> list[sp.Matrix]:
 def classify_cubic_operation(g: sp.Matrix, atol: float = 1e-9) -> dict[str, object]:
     """Human-readable geometric classification of an orthogonal cubic operation."""
     G = np.array(g, dtype=float)
-    det = int(round(float(np.linalg.det(G))))
+    det = round(float(np.linalg.det(G)))
     tr = float(np.trace(G))
     info: dict[str, object] = {"det": det, "trace": tr, "order": matrix_order(g)}
 

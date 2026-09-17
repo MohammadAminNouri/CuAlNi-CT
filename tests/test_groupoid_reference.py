@@ -1,4 +1,4 @@
-from cualni_cryst.cualni_models import do3_to_6m_branch, do3_to_2h_branch
+from cualni_cryst.cualni_models import do3_to_2h_branch, do3_to_6m_branch
 from cualni_cryst.group_theory import correspondence_groupoid
 
 

@@ -8,15 +8,16 @@ kept outside the predictors and are used only for validation residuals.
 """
 
 from dataclasses import dataclass
+
 import numpy as np
 
+from .cofactor import evaluate_cofactor_conditions
 from .correspondence import Correspondence
 from .ct import analyze_austenite_martensite
+from .group_theory import correspondence_groupoid
 from .stretch import analyze_stretch, generate_stretch_variants
 from .symmetry import cubic_proper_rotations
-from .group_theory import correspondence_groupoid
 from .twinning_ct import twins_from_operator
-from .cofactor import evaluate_cofactor_conditions
 
 
 @dataclass(frozen=True)
@@ -50,9 +51,9 @@ def evaluate_same_inputs(inputs: TheoryInputs, tol: float=1e-8) -> TheoryCompari
     twins=[]
     for op in groupoid.operators:
         try:
-            twins.append(tuple(twins_from_operator(op,inputs.M_a,inputs.M_m,inputs.correspondence)))
+            twins.append(tuple(twins_from_operator(op, inputs.M_a, inputs.M_m, inputs.correspondence)))
         except ValueError:
-            twins.append(tuple())
+            twins.append(())
     return TheoryComparison(inputs, groupoid, ct_am, stretch, variants, tuple(twins))
 
 

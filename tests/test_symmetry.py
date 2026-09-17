@@ -1,5 +1,10 @@
-from cualni_cryst.symmetry import cubic_full_m3m, cubic_proper_rotations, monoclinic_2_over_m_unique_b, orthorhombic_mmm
 from cualni_cryst.group_theory import validate_group
+from cualni_cryst.symmetry import (
+    cubic_full_m3m,
+    cubic_proper_rotations,
+    monoclinic_2_over_m_unique_b,
+    orthorhombic_mmm,
+)
 
 
 def test_group_orders():

@@ -3,6 +3,7 @@ from __future__ import annotations
 """Cofactor conditions of Chen, Srivastava, Dabade & James (2013)."""
 
 from dataclasses import dataclass
+
 import numpy as np
 
 from .stretch import principal_stretches

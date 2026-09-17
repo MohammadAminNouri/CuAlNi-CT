@@ -3,6 +3,7 @@ from __future__ import annotations
 """Cayron-style rotational crystallographic quaternions in non-Cartesian bases."""
 
 from dataclasses import dataclass
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 

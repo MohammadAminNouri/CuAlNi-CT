@@ -10,13 +10,13 @@ paper that uses this software.
 """
 
 from dataclasses import dataclass
+
 import sympy as sp
 
 from .correspondence import Correspondence
 from .lattice import Lattice
 from .provenance import DataStatus, SourcedValue
 from .symmetry import cubic_full_m3m, monoclinic_2_over_m_unique_b, orthorhombic_mmm
-
 
 # u_M = C u_A.  These rational matrices encode the lattice correspondence,
 # independently of the actual lattice parameters.

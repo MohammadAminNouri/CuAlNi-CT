@@ -7,6 +7,7 @@ call the CT twin formulas, which makes CT-vs-Ball-James comparison meaningful.
 """
 
 from dataclasses import dataclass
+
 import numpy as np
 
 
