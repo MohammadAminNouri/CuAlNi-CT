@@ -28,6 +28,7 @@ from .stretch import (
     stretch_from_metrics,
 )
 from .symmetry import classify_symmetry, cubic_proper_rotations
+from .twin_compare import build_twin_atlas
 
 
 def _m(M):
@@ -160,6 +161,88 @@ def verification_report() -> str:
     )
 
 
+def twin_atlas_report() -> str:
+    A, M = james_hane_6m_example_lattices()
+    branch = do3_to_6m_branch()
+    atlas = build_twin_atlas(branch, A.metric(), M.metric())
+
+    lines = [
+        "# DO3 -> 6M operator/twin atlas: CT vs Ball-James/Mallard",
+        "",
+        "Benchmark only: James-Hane Cu-14 wt% Al-4 wt% Ni rounded lattice parameters.",
+        "The numerical shears below are not universal Cu-Al-Ni constants.",
+        "",
+        "## Operator summary",
+        "",
+        "| Operator | Size | Classification | Proper rotation orders | Exact relations | Shear(s) |",
+        "|---:|---:|---|---|---:|---|",
+    ]
+
+    for op in atlas.operators:
+        shears = ", ".join(f"{r.shear:.12g}" for r in op.relations) or "-"
+        lines.append(
+            f"| O{op.operator_index} | {op.size} | {op.classification} | "
+            f"{op.proper_rotation_orders or '-'} | {len(op.relations)} | {shears} |"
+        )
+
+    lines += [
+        "",
+        f"Total nontrivial exact reference-to-target relations: {atlas.n_exact_relations}",
+        f"Maximum CT-vs-Mallard geometry angle: {atlas.max_geometry_angle_deg:.3e} deg",
+        f"Maximum relative shear mismatch: {atlas.max_relative_shear_residual:.3e}",
+        f"Maximum Mallard rank-one residual: {atlas.max_rank_one_residual:.3e}",
+        "",
+        "## Exact relation details",
+        "",
+    ]
+
+    for op in atlas.operators:
+        if not op.relations:
+            continue
+        lines += [f"### O{op.operator_index} — {op.classification}", ""]
+        for j, rel in enumerate(op.relations, start=1):
+            lines += [
+                f"Relation {j}: target stretch U{rel.target_stretch_index}",
+                "",
+                f"- parent twofold generator axes: {rel.generator_axes}",
+                f"- compound: {rel.compound}",
+                f"- shear: {rel.shear:.12g}",
+                f"- |s_CT-I - s_CT-II|: {rel.ct_type_i_vs_ii_shear_abs:.3e}",
+                f"- Type-I CT/Mallard relative shear residual: {rel.type_i_shear_rel_residual:.3e}",
+                f"- Type-I K1/reference-normal angle: {rel.type_i_plane_angle_deg:.3e} deg",
+                f"- Type-I deformed shear-direction angle: {rel.type_i_direction_angle_deg:.3e} deg",
+                f"- Type-II CT/Mallard relative shear residual: {rel.type_ii_shear_rel_residual:.3e}",
+                f"- Type-II K2/reference-normal angle: {rel.type_ii_plane_angle_deg:.3e} deg",
+                f"- Type-II deformed shear-direction angle: {rel.type_ii_direction_angle_deg:.3e} deg",
+                f"- Mallard Type-I rank-one residual: {rel.bj_type_i.residual:.3e}",
+                f"- Mallard Type-II rank-one residual: {rel.bj_type_ii.residual:.3e}",
+                "",
+            ]
+
+    lines += [
+        "## Scientific interpretation",
+        "",
+        (
+            "CT and Mallard are not being compared by feeding one theory's plane or "
+            "direction into the other. They are calculated independently."
+        ),
+        "",
+        (
+            "The apparent mismatch between raw CT shear-direction coordinates and "
+            "Ball-James `a` disappears only after respecting configuration: CT stores "
+            "the direct direction in the parent reference coordinates, while Ball-James "
+            "`a` is a deformed/current shear vector. The report therefore compares "
+            "`U_j d_CT` with `a_BJ`."
+        ),
+        "",
+        (
+            "Operators classified as weak candidates are deliberately not promoted "
+            "to exact twins in this report."
+        ),
+    ]
+    return "\n".join(lines)
+
+
 def write_all_reports(directory: str | Path) -> list[Path]:
     base = Path(directory)
     base.mkdir(parents=True, exist_ok=True)
@@ -168,6 +251,7 @@ def write_all_reports(directory: str | Path) -> list[Path]:
         ("DO3_6M_GROUPoid.md", branch_report(do3_to_6m_branch())),
         ("DO3_2H_GROUPoid.md", branch_report(do3_to_2h_branch())),
         ("DO3_6M_VERIFICATION.md", verification_report()),
+        ("DO3_6M_TWIN_ATLAS.md", twin_atlas_report()),
     ]:
         path = base / name
         path.write_text(text, encoding="utf-8")
