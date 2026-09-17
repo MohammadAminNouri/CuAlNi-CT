@@ -1,0 +1,6 @@
+cff-version: 1.2.0
+title: "Cu-Al-Ni crystallography: CT vs PTMC vs Ball-James"
+message: "If you use this research code, cite the repository and the primary theoretical sources listed in docs/SOURCES.md."
+type: software
+version: 0.1.0
+date-released: 2026-09-17

@@ -1,0 +1,21 @@
+{
+  "status": "SOURCE_MEASURED",
+  "system": "Cu-Al-Ni",
+  "composition_reported": "14 wt% Al, 4 wt% Ni; balance Cu",
+  "source": "R. D. James and K. F. Hane, Martensitic transformations and shape-memory materials, Acta Materialia 48 (2000) 197-222, Table 4",
+  "parent": {
+    "phase": "DO3",
+    "a_A_angstrom": 5.836
+  },
+  "martensite_6M": {
+    "representation": "6M monoclinic cell",
+    "a_angstrom": 4.430,
+    "b_angstrom": 5.330,
+    "c_angstrom": 12.79,
+    "beta_deg": 95.68
+  },
+  "source_derived": {
+    "beta_exact_compatibility_deg": 95.28
+  },
+  "warning": "These values are a literature example, not defaults for a different Cu-Al-Ni specimen. No correspondence matrix is inferred from them."
+}
