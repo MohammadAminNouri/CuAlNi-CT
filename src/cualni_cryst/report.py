@@ -243,6 +243,87 @@ def twin_atlas_report() -> str:
     return "\n".join(lines)
 
 
+
+def compatibility_report() -> str:
+    """A/M and A/M/M report for the source-rounded benchmark and exact-beta control."""
+
+    from .compatibility_atlas import james_hane_benchmark_projection
+
+    result = james_hane_benchmark_projection()
+    obs = result.observed
+    proj = result.projected
+
+    lines = [
+        "# DO3 -> 6M A/M and A/M/M compatibility atlas",
+        "",
+        "## Source-rounded literature benchmark",
+        "",
+        f"- beta = {obs.state.beta_deg:.8f} deg",
+        f"- lambdas = {obs.state.lambdas}",
+        f"- lambda2-1 = {obs.state.lambda2_residual:.6e}",
+        f"- normalized CMC eigenvalues = {obs.state.normalized_cmc_eigenvalues}",
+        f"- exact A/M compatible = {obs.state.exact_compatible}",
+        f"- nearest CMC residual = {obs.state.nearest_cmc_residual:.6e}",
+        f"- exact habit planes = {obs.state.n_exact_habit_planes}",
+        f"- approximate diagnostic planes = {obs.state.n_approximate_habit_planes}",
+        "",
+        "No A/M/M epsilon is promoted to an exact result for this non-exact state.",
+        "",
+        "## Exact-compatible beta projection (HYPOTHETICAL_TEST)",
+        "",
+        f"- projected beta = {result.projected_beta_deg:.10f} deg",
+        f"- beta shift from rounded benchmark = {result.beta_shift_deg:+.10f} deg",
+        f"- exact beta candidates = {result.exact_beta_candidates_deg}",
+        f"- lambdas = {proj.state.lambdas}",
+        f"- lambda2-1 = {proj.state.lambda2_residual:.6e}",
+        f"- normalized CMC eigenvalues = {proj.state.normalized_cmc_eigenvalues}",
+        f"- exact habit planes = {proj.state.n_exact_habit_planes}",
+        "",
+        "### CMC vs Ball-James single-variant habit cross-check",
+        "",
+        "| CMC habit | BJ branch | plane angle (deg) | rank-one residual |",
+        "|---:|---:|---:|---:|",
+    ]
+
+    for row in proj.am_habit_crosscheck:
+        lines.append(
+            f"| {row.cmc_habit_index} | {row.ball_james_branch:+d} | "
+            f"{row.plane_angle_deg:.3e} | {row.ball_james_rank_one_residual:.3e} |"
+        )
+
+    lines += [
+        "",
+        "### Exact M/M systems tested against A/M compatibility",
+        "",
+        (
+            "| O | relation | twin | compound | shear | best habit | epsilon_CT | "
+            "angle(d_A,a) deg | CC1 | CC2 | CC3 margin | cofactor | PTMC f |"
+        ),
+        "|---:|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|",
+    ]
+
+    for row in proj.twin_systems:
+        roots = ", ".join(f"{x:.8f}" for x in row.ptmc_volume_fractions) or "-"
+        lines.append(
+            f"| O{row.operator_index} | {row.relation_index} | {row.twin_kind} | "
+            f"{row.compound} | {row.twin_shear:.8f} | {row.best_habit_index} | "
+            f"{row.supercompatibility_residual:.6e} | "
+            f"{row.shear_direction_angle_deg:.6f} | "
+            f"{row.cc1_residual:.3e} | {row.cc2_residual:.3e} | "
+            f"{row.cc3_margin:.3e} | {row.cofactor_satisfied} | {roots} |"
+        )
+
+    lines += [
+        "",
+        "Interpretation:",
+        "",
+        "- The observed/source-rounded state and hypothetical exact-compatible control are never mixed.",
+        "- epsilon_CT is a dimensionless incompatibility amplitude, not an energy.",
+        "- CC1/CC2/CC3 and PTMC roots are calculated independently from Mallard/Ball-James data.",
+        "- A future interactive frontend can consume the same backend dataclasses as JSON.",
+    ]
+    return "\n".join(lines)
+
 def write_all_reports(directory: str | Path) -> list[Path]:
     base = Path(directory)
     base.mkdir(parents=True, exist_ok=True)
@@ -252,6 +333,7 @@ def write_all_reports(directory: str | Path) -> list[Path]:
         ("DO3_2H_GROUPoid.md", branch_report(do3_to_2h_branch())),
         ("DO3_6M_VERIFICATION.md", verification_report()),
         ("DO3_6M_TWIN_ATLAS.md", twin_atlas_report()),
+        ("DO3_6M_COMPATIBILITY_ATLAS.md", compatibility_report()),
     ]:
         path = base / name
         path.write_text(text, encoding="utf-8")
