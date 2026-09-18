@@ -57,6 +57,7 @@ def test_generic_or_does_not_assume_h_t_equals_h_c():
         "6m",
         np.array([1.0, 2.0, 3.0]),
         17.0,
+        transformation_id="do3_to_6m_reference",
     )
     audit = service.topology(state).audit
 

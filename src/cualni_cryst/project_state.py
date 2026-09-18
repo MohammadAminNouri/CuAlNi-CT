@@ -396,11 +396,13 @@ class OrientationState:
     theory_origin: OrientationTheoryOrigin = OrientationTheoryOrigin.USER_DEFINED
     provenance: StateProvenance = field(default_factory=StateProvenance)
     notes: str = ""
+    transformation_id: str = ""
 
     def __post_init__(self) -> None:
         orientation_id = self.orientation_id.strip()
         reference = self.reference_phase_id.strip()
         moving = self.moving_phase_id.strip()
+        transformation_id = self.transformation_id.strip()
         if not orientation_id:
             raise ValueError("orientation_id must be non-empty")
         if not reference or not moving:
@@ -425,6 +427,7 @@ class OrientationState:
         object.__setattr__(self, "orientation_id", orientation_id)
         object.__setattr__(self, "reference_phase_id", reference)
         object.__setattr__(self, "moving_phase_id", moving)
+        object.__setattr__(self, "transformation_id", transformation_id)
         object.__setattr__(self, "R_reference_from_moving", matrix)
         object.__setattr__(
             self,
@@ -462,6 +465,7 @@ class OrientationState:
             "moving_cartesian_convention": (self.moving_cartesian_convention.value),
             "definition_method": self.definition_method.value,
             "theory_origin": self.theory_origin.value,
+            "transformation_id": self.transformation_id,
             "status": self.provenance.status.value,
             "source_key": self.provenance.source_key,
             "uncertainty": self.provenance.uncertainty,
@@ -586,6 +590,32 @@ class ProjectState:
                     f"Orientation {orientation.orientation_id!r} references "
                     f"unknown moving phase {orientation.moving_phase_id!r}"
                 )
+
+            if orientation.transformation_id:
+                bound = next(
+                    (
+                        transformation
+                        for transformation in self.transformations
+                        if transformation.transformation_id
+                        == orientation.transformation_id
+                    ),
+                    None,
+                )
+                if bound is None:
+                    raise ValueError(
+                        f"Orientation {orientation.orientation_id!r} is bound to "
+                        f"unknown transformation "
+                        f"{orientation.transformation_id!r}"
+                    )
+                if (
+                    bound.parent_phase_id != orientation.reference_phase_id
+                    or bound.product_phase_id != orientation.moving_phase_id
+                ):
+                    raise ValueError(
+                        f"Orientation {orientation.orientation_id!r} binding "
+                        f"{orientation.transformation_id!r} has incompatible "
+                        "parent/product phase endpoints"
+                    )
 
         object.__setattr__(self, "project_id", project_id)
 

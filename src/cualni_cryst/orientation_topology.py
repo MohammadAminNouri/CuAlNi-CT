@@ -178,6 +178,8 @@ class OrientationOperatorClass:
     representative_axis_moving_cartesian: Vector3
     contains_parent_reflection: bool
     contains_parent_180_rotation: bool
+    inverse_operator_index: int
+    ambivalent: bool
     cayron_class: str
 
     def to_dict(self) -> dict[str, object]:
@@ -195,6 +197,8 @@ class OrientationOperatorClass:
             ),
             "contains_parent_reflection": self.contains_parent_reflection,
             "contains_parent_180_rotation": self.contains_parent_180_rotation,
+            "inverse_operator_index": self.inverse_operator_index,
+            "ambivalent": self.ambivalent,
             "cayron_class": self.cayron_class,
         }
 
@@ -439,6 +443,55 @@ def _double_cosets(
     return tuple(result)
 
 
+def _inverse_double_coset_indices(
+    double_cosets: tuple[tuple[int, ...], ...],
+    group_by_index: dict[int, SymmetryCartesianElement],
+) -> tuple[int, ...]:
+    # Formal groupoid inverse: match the exact inverse member set O^-1.
+    signatures = []
+    for members in double_cosets:
+        signatures.append(
+            {
+                matrix_key(
+                    _sympy_exact_matrix(
+                        np.asarray(
+                            group_by_index[index].crystallographic_matrix,
+                            dtype=float,
+                        )
+                    )
+                )
+                for index in members
+            }
+        )
+
+    inverse_indices: list[int] = []
+    for members in double_cosets:
+        inverse_signature = {
+            matrix_key(
+                sp.simplify(
+                    _sympy_exact_matrix(
+                        np.asarray(
+                            group_by_index[index].crystallographic_matrix,
+                            dtype=float,
+                        )
+                    ).inv()
+                )
+            )
+            for index in members
+        }
+        matches = [
+            index + 1
+            for index, signature in enumerate(signatures)
+            if signature == inverse_signature
+        ]
+        if len(matches) != 1:
+            raise AssertionError(
+                "Could not identify a unique inverse orientation double coset."
+            )
+        inverse_indices.append(matches[0])
+    return tuple(inverse_indices)
+
+
 def _identity_index(group: tuple[SymmetryCartesianElement, ...]) -> int:
     return min(
         group,
@@ -469,14 +522,20 @@ def _crystallographic_disorientation(
     return best_angle, best
 
 
-def _matching_transformation(project: ProjectState, state: OrientationState):
-    matches = [
-        transformation
-        for transformation in project.transformations
-        if transformation.parent_phase_id == state.reference_phase_id
-        and transformation.product_phase_id == state.moving_phase_id
-    ]
-    return matches[0] if len(matches) == 1 else None
+def _bound_transformation(project: ProjectState, state: OrientationState):
+    """Resolve only an explicit OR->transformation binding; never infer by phases."""
+
+    if not state.transformation_id:
+        return None
+    transformation = project.transformation(state.transformation_id)
+    if (
+        transformation.parent_phase_id != state.reference_phase_id
+        or transformation.product_phase_id != state.moving_phase_id
+    ):
+        raise ValueError(
+            "Orientation transformation binding has incompatible phase endpoints."
+        )
+    return transformation
 
 
 def _exact_correspondence_audit(
@@ -484,7 +543,7 @@ def _exact_correspondence_audit(
     state: OrientationState,
     full_orientation_intersection: tuple[OrientationIntersectionElement, ...],
 ) -> tuple[int | None, int | None, int | None, bool | None]:
-    transformation = _matching_transformation(project, state)
+    transformation = _bound_transformation(project, state)
     if transformation is None:
         return None, None, None, None
 
@@ -609,8 +668,12 @@ def build_orientation_topology(
             )
         )
 
-    # Cayron's ambivalent/polar classification is a full-point-group property.
+    # Operator identity and ambivalence are exact full-double-coset properties.
     full_by_index = _group_by_index(reference_full)
+    inverse_operator_indices = _inverse_double_coset_indices(
+        full_double_cosets,
+        full_by_index,
+    )
     operators: list[OrientationOperatorClass] = []
     for index, members in enumerate(full_double_cosets, start=1):
         contains_reflection = False
@@ -661,6 +724,8 @@ def build_orientation_topology(
 
         identity_index_full = _identity_index(reference_full)
         is_identity_operator = identity_index_full in members
+        inverse_operator_index = inverse_operator_indices[index - 1]
+        ambivalent = inverse_operator_index == index
         if is_identity_operator:
             # H_T itself is the identity relation between one variant and itself;
             # common two-fold elements inside H_T must not be advertised as
@@ -669,9 +734,9 @@ def build_orientation_topology(
             contains_reflection_reported = False
             contains_pi_rotation_reported = False
         else:
-            cayron_class = (
-                "ambivalent" if contains_reflection or contains_pi_rotation else "polar"
-            )
+            # General Cayron/Janovec definition: ambivalent iff O == O^-1.
+            # Standard Type-I/II generator content is reported independently.
+            cayron_class = "ambivalent" if ambivalent else "polar"
             contains_reflection_reported = contains_reflection
             contains_pi_rotation_reported = contains_pi_rotation
 
@@ -684,6 +749,8 @@ def build_orientation_topology(
                 representative_axis_moving_cartesian=axis,
                 contains_parent_reflection=contains_reflection_reported,
                 contains_parent_180_rotation=contains_pi_rotation_reported,
+                inverse_operator_index=inverse_operator_index,
+                ambivalent=ambivalent,
                 cayron_class=cayron_class,
             )
         )

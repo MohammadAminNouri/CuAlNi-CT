@@ -20,6 +20,7 @@ dependencies = [
 cualni-cryst = "cualni_cryst.__main__:main"
 cualni-calpad = "cualni_cryst.calpad:main"
 cualni-or = "cualni_cryst.orientation:main"
+cualni-crosslock = "cualni_cryst.operator_crosslock:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]

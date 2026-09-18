@@ -714,6 +714,7 @@ class OrientationService:
         definition_method: OrientationDefinition = OrientationDefinition.USER_MATRIX,
         theory_origin: OrientationTheoryOrigin = OrientationTheoryOrigin.USER_DEFINED,
         provenance: StateProvenance | None = None,
+        transformation_id: str = "",
         repair: bool = False,
         maximum_repair_residual: float = 1.0e-3,
         notes: str = "",
@@ -760,6 +761,7 @@ class OrientationService:
             definition_method=method,
             theory_origin=origin,
             provenance=provenance or StateProvenance(),
+            transformation_id=transformation_id,
             notes=(notes + repair_note).strip(),
         )
 
@@ -1426,6 +1428,7 @@ class OrientationService:
             moving_convention=transformation.product_cartesian_convention,
             definition_method=OrientationDefinition.POLAR_CORRESPONDENCE,
             theory_origin=OrientationTheoryOrigin.POLAR_CORRESPONDENCE,
+            transformation_id=transformation.transformation_id,
             provenance=StateProvenance(
                 DataStatus.COMPUTATION_DERIVED,
                 transformation.provenance.source_key,
@@ -1822,21 +1825,27 @@ class OrientationRenderer:
             lines.extend(
                 [
                     "",
-                    "ORIENTATION OPERATORS  (full Cayron double cosets H_T g H_T)",
+                    "ORIENTATION OPERATORS  (exact full double cosets H_T g H_T)",
                     (
-                        "  idx   size   class        Type-I? Type-II?   "
-                        "min disorientation (deg)"
+                        "  idx  inv  size   class        Type-I? Type-II?   "
+                        "repr. disorientation (deg)"
                     ),
                 ]
             )
             for operator in operators:
                 lines.append(
-                    f"  {operator.index:>3d}   {operator.size:>4d}   "
+                    f"  {operator.index:>3d}  "
+                    f"{operator.inverse_operator_index:>3d}  "
+                    f"{operator.size:>4d}   "
                     f"{operator.cayron_class:<11s} "
                     f"{operator.contains_parent_reflection!s:<7s} "
                     f"{operator.contains_parent_180_rotation!s:<8s} "
                     f"{operator.minimum_crystallographic_disorientation_deg:>17.9g}"
                 )
+            lines.append(
+                "  NOTE: operator identity is the exact double coset; "
+                "disorientation is only a representative summary."
+            )
 
         if report.warnings:
             lines.extend(["", "SCIENTIFIC NOTES"])
