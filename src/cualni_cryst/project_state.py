@@ -76,6 +76,34 @@ class CompositionBasis(str, Enum):
         return 1.0
 
 
+class OrientationDefinition(str, Enum):
+    """How an OrientationState was constructed."""
+
+    USER_MATRIX = "user_matrix"
+    AXIS_ANGLE = "axis_angle"
+    EULER_ZXZ_ACTIVE = "euler_zxz_active"
+    EULER_ZXZ_PASSIVE = "euler_zxz_passive"
+    CARTESIAN_HAMILTON_QUATERNION = "cartesian_hamilton_quaternion"
+    PARALLELISMS = "crystallographic_parallelisms"
+    POLAR_CORRESPONDENCE = "polar_correspondence"
+
+
+class OrientationTheoryOrigin(str, Enum):
+    """Scientific origin of an OR candidate.
+
+    Cayron/Ball-James/PTMC entries are schema contracts only; their theory
+    adapters are not silently implemented by this state class.
+    """
+
+    USER_DEFINED = "user_defined"
+    EXPERIMENTAL = "experimental"
+    LITERATURE = "literature"
+    POLAR_CORRESPONDENCE = "polar_correspondence"
+    CAYRON_CT = "cayron_ct"
+    BALL_JAMES = "ball_james"
+    PTMC = "ptmc"
+
+
 @dataclass(frozen=True)
 class StateProvenance:
     """Provenance for phase/material/transformation state."""
@@ -343,6 +371,105 @@ class TransformationState:
         }
 
 
+@dataclass(frozen=True)
+class OrientationState:
+    """One proper physical orientation relationship between two phases.
+
+    Convention:
+        x_reference = R_reference_from_moving @ x_moving
+
+    This is deliberately not a crystallographic correspondence matrix.
+    """
+
+    orientation_id: str
+    label: str
+    reference_phase_id: str
+    moving_phase_id: str
+    R_reference_from_moving: Matrix3
+    reference_cartesian_convention: CartesianConvention = (
+        CartesianConvention.PTCLAB_A_X_C_XZ
+    )
+    moving_cartesian_convention: CartesianConvention = (
+        CartesianConvention.PTCLAB_A_X_C_XZ
+    )
+    definition_method: OrientationDefinition = OrientationDefinition.USER_MATRIX
+    theory_origin: OrientationTheoryOrigin = OrientationTheoryOrigin.USER_DEFINED
+    provenance: StateProvenance = field(default_factory=StateProvenance)
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        orientation_id = self.orientation_id.strip()
+        reference = self.reference_phase_id.strip()
+        moving = self.moving_phase_id.strip()
+        if not orientation_id:
+            raise ValueError("orientation_id must be non-empty")
+        if not reference or not moving:
+            raise ValueError("reference_phase_id and moving_phase_id must be non-empty")
+        if reference == moving:
+            raise ValueError("An OrientationState must connect two distinct phases")
+
+        matrix = _freeze_matrix3(self.R_reference_from_moving)
+        array = _matrix3_array(matrix)
+        orthogonality = _relative_matrix_residual(
+            array.T @ array,
+            np.eye(3),
+        )
+        determinant = float(np.linalg.det(array))
+        residual = max(orthogonality, abs(determinant - 1.0))
+        if residual > 1.0e-8:
+            raise ValueError(
+                "R_reference_from_moving must be a proper rotation; "
+                f"residual={residual:.3e}, det={determinant:.12g}"
+            )
+
+        object.__setattr__(self, "orientation_id", orientation_id)
+        object.__setattr__(self, "reference_phase_id", reference)
+        object.__setattr__(self, "moving_phase_id", moving)
+        object.__setattr__(self, "R_reference_from_moving", matrix)
+        object.__setattr__(
+            self,
+            "reference_cartesian_convention",
+            CartesianConvention(self.reference_cartesian_convention),
+        )
+        object.__setattr__(
+            self,
+            "moving_cartesian_convention",
+            CartesianConvention(self.moving_cartesian_convention),
+        )
+        object.__setattr__(
+            self,
+            "definition_method",
+            OrientationDefinition(self.definition_method),
+        )
+        object.__setattr__(
+            self,
+            "theory_origin",
+            OrientationTheoryOrigin(self.theory_origin),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "orientation_id": self.orientation_id,
+            "label": self.label,
+            "reference_phase_id": self.reference_phase_id,
+            "moving_phase_id": self.moving_phase_id,
+            "R_reference_from_moving": [
+                list(row) for row in self.R_reference_from_moving
+            ],
+            "reference_cartesian_convention": (
+                self.reference_cartesian_convention.value
+            ),
+            "moving_cartesian_convention": (self.moving_cartesian_convention.value),
+            "definition_method": self.definition_method.value,
+            "theory_origin": self.theory_origin.value,
+            "status": self.provenance.status.value,
+            "source_key": self.provenance.source_key,
+            "uncertainty": self.provenance.uncertainty,
+            "provenance_notes": self.provenance.notes,
+            "notes": self.notes,
+        }
+
+
 class ValidationSeverity(str, Enum):
     ERROR = "ERROR"
     WARNING = "WARNING"
@@ -402,6 +529,7 @@ class ProjectState:
     )
     numerical_policy: NumericalPolicy = DEFAULT_NUMERICAL_POLICY
     notes: str = ""
+    orientations: tuple[OrientationState, ...] = ()
 
     def __post_init__(self) -> None:
         project_id = self.project_id.strip()
@@ -441,6 +569,24 @@ class ProjectState:
         if len(source_keys) != len(set(source_keys)):
             raise ValueError("Project contains duplicate SourceRef keys")
 
+        orientation_ids = [
+            orientation.orientation_id for orientation in self.orientations
+        ]
+        if len(orientation_ids) != len(set(orientation_ids)):
+            raise ValueError("Project contains duplicate orientation_id values")
+
+        for orientation in self.orientations:
+            if orientation.reference_phase_id not in known_phases:
+                raise ValueError(
+                    f"Orientation {orientation.orientation_id!r} references "
+                    f"unknown reference phase {orientation.reference_phase_id!r}"
+                )
+            if orientation.moving_phase_id not in known_phases:
+                raise ValueError(
+                    f"Orientation {orientation.orientation_id!r} references "
+                    f"unknown moving phase {orientation.moving_phase_id!r}"
+                )
+
         object.__setattr__(self, "project_id", project_id)
 
     def phase(self, phase_id: str) -> PhaseState:
@@ -454,6 +600,12 @@ class ProjectState:
             if transformation.transformation_id == transformation_id:
                 return transformation
         raise KeyError(f"Unknown transformation_id {transformation_id!r}")
+
+    def orientation(self, orientation_id: str) -> OrientationState:
+        for orientation in self.orientations:
+            if orientation.orientation_id == orientation_id:
+                return orientation
+        raise KeyError(f"Unknown orientation_id {orientation_id!r}")
 
     def phase_for_basis(self, basis: CrystalBasisRef) -> PhaseState:
         for phase in self.phases:
@@ -641,6 +793,30 @@ class ProjectState:
                     )
                 )
 
+        for orientation in self.orientations:
+            check_source(
+                f"orientation:{orientation.orientation_id}",
+                orientation.provenance,
+            )
+            matrix = np.asarray(
+                orientation.R_reference_from_moving,
+                dtype=float,
+            )
+            residual = max(
+                _relative_matrix_residual(matrix.T @ matrix, np.eye(3)),
+                abs(float(np.linalg.det(matrix)) - 1.0),
+            )
+            if residual > self.numerical_policy.representation:
+                issues.append(
+                    ValidationIssue(
+                        ValidationSeverity.ERROR,
+                        "ORIENTATION_NOT_SO3",
+                        f"{orientation.orientation_id} is not a proper "
+                        f"rotation within project tolerance; residual="
+                        f"{residual:.3e}",
+                    )
+                )
+
         return ProjectValidationReport(tuple(issues))
 
     def to_dict(self) -> dict[str, object]:
@@ -652,6 +828,9 @@ class ProjectState:
             "phases": [phase.to_dict() for phase in self.phases],
             "transformations": [
                 transformation.to_dict() for transformation in self.transformations
+            ],
+            "orientations": [
+                orientation.to_dict() for orientation in self.orientations
             ],
             "sources": [
                 {

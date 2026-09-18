@@ -220,6 +220,7 @@ class LowIndexRow:
     geometric_quantity: float
     geometric_quantity_unit: str
     incidence_residual_value: float | None
+    incidence_exact: bool | None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -232,6 +233,7 @@ class LowIndexRow:
             "geometric_quantity": self.geometric_quantity,
             "geometric_quantity_unit": self.geometric_quantity_unit,
             "incidence_residual": self.incidence_residual_value,
+            "incidence_exact": self.incidence_exact,
         }
 
 
@@ -569,7 +571,7 @@ class CalPadService:
             raw = np.linalg.solve(metric, source.array)
             target = Direction(_tuple3(raw), phase.basis)
             target_kind = CandidateKind.DIRECTION
-            relation = "physical plane normal -> direct crystal coefficients"
+            relation = "physical plane normal expressed in direct-basis coefficients"
             roundtrip = metric @ raw
             projective_residual = _projective_residual(
                 roundtrip,
@@ -804,6 +806,11 @@ class CalPadService:
                     geometric_quantity=geometry,
                     geometric_quantity_unit=geometry_unit,
                     incidence_residual_value=incidence,
+                    incidence_exact=(
+                        None
+                        if incidence is None
+                        else incidence <= self.project.numerical_policy.algebraic
+                    ),
                 )
             )
 
@@ -858,7 +865,9 @@ class CalPadRenderer:
 
     @staticmethod
     def _matrix(values: np.ndarray) -> list[str]:
-        array = np.asarray(values, dtype=float)
+        array = np.asarray(values, dtype=float).copy()
+        # Presentation only: suppress machine-zero noise without altering data.
+        array[np.abs(array) < 1.0e-14] = 0.0
         return [
             "    [" + "  ".join(f"{value: .9g}" for value in row) + "]" for row in array
         ]
@@ -891,7 +900,7 @@ class CalPadRenderer:
             ),
             f"  volume          : {report.volume:.12g} {volume_unit}",
             "",
-            "RECIPROCAL CELL  (no 2π convention)",
+            "RECIPROCAL CELL  (crystallographic convention, no 2π)",
             (
                 f"  a*, b*, c*      : {report.reciprocal_cell.a_star:.12g}, "
                 f"{report.reciprocal_cell.b_star:.12g}, "
@@ -1033,8 +1042,11 @@ class CalPadRenderer:
                 f"{row.geometric_quantity_name:<18s}  {geometry}"
             )
             if row.incidence_residual_value is not None:
+                incidence_label = "  EXACT INCIDENCE" if row.incidence_exact else ""
                 lines.append(
-                    f"       incidence residual = {row.incidence_residual_value:.3e}"
+                    f"       incidence residual = "
+                    f"{row.incidence_residual_value:.3e}"
+                    f"{incidence_label}"
                 )
 
         if show_derivation:
