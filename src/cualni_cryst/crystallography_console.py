@@ -37,6 +37,7 @@ from .crystal_objects import (
 )
 from .project_state import PhaseState, ProjectState, TransformationState
 from .representation import CartesianConvention
+from .units import length_unit_symbol, reciprocal_length_unit_symbol
 
 CrystalObject = Direction | Plane
 
@@ -512,11 +513,11 @@ class CrystallographyConsole:
                 "No symmetry operators are registered for this phase; "
                 "symmetry-equivalent sets are unavailable."
             )
-        warnings.append(
-            "Length labels are reported in the same dimensional units used by "
-            "the lattice parameters; ProjectState does not yet carry a separate "
-            "unit tag."
-        )
+        if not phase.lattice.length_unit:
+            warnings.append(
+                "Lattice length unit is not declared; dimensional outputs are "
+                "reported without a physical unit symbol."
+            )
         return tuple(warnings)
 
     @staticmethod
@@ -613,6 +614,8 @@ class CrystallographyConsole:
         parsed = parse_crystal_input(text, kind_hint=kind_hint)
         obj = self._object(parsed, phase)
         views = self._cartesian_views(obj, phase)
+        length_symbol = length_unit_symbol(phase.lattice.length_unit)
+        reciprocal_symbol = reciprocal_length_unit_symbol(phase.lattice.length_unit)
 
         if isinstance(obj, Direction):
             dimensional_name = "direct_length"
@@ -620,6 +623,7 @@ class CrystallographyConsole:
             secondary_name = ""
             secondary_value = None
             secondary_unit = ""
+            dimensional_unit = length_symbol
             normalized = _tuple3(obj.unit_coordinates(phase.lattice))
             derivation = (
                 DerivationStep(
@@ -640,7 +644,8 @@ class CrystallographyConsole:
             dimensional_value = reciprocal_length
             secondary_name = "interplanar_spacing"
             secondary_value = spacing
-            secondary_unit = "lattice-length units"
+            secondary_unit = length_symbol
+            dimensional_unit = reciprocal_symbol
             normalized = _tuple3(obj.unit_covector(phase.lattice))
             derivation = (
                 DerivationStep(
@@ -675,11 +680,7 @@ class CrystallographyConsole:
             object_payload=obj.to_dict(),
             dimensional_quantity_name=dimensional_name,
             dimensional_quantity=dimensional_value,
-            dimensional_unit_label=(
-                "lattice-length units"
-                if isinstance(obj, Direction)
-                else "1 / lattice-length units"
-            ),
+            dimensional_unit_label=dimensional_unit,
             secondary_quantity_name=secondary_name,
             secondary_quantity=secondary_value,
             secondary_unit_label=secondary_unit,
@@ -945,15 +946,29 @@ class ConsoleRenderer:
         lines.extend(
             [
                 (
-                    f"  normalized coordinates      "
-                    f"{self._vector(report.metric_normalized_coordinates)}"
+                    "  "
+                    + (
+                        "metric-unit direct coeffs      "
+                        if report.parsed.kind is ConsoleInputKind.DIRECTION
+                        else "metric-unit reciprocal coeffs  "
+                    )
+                    + self._vector(report.metric_normalized_coordinates)
                 ),
                 "",
                 "CARTESIAN VIEWS",
             ]
         )
+        cartesian_labels = {
+            "legacy_a_x_b_xy": "Cartesian legacy (x||a, b in xy)",
+            "ptclab_a_x_c_xz": "PTCLab Cartesian (x||a, c in xz)",
+            "symmetric_metric": "Metric-symmetric Cartesian (B=M^1/2)",
+        }
         for view in report.cartesian_views:
-            lines.append(f"  {view.convention:24s} {self._vector(view.coordinates)}")
+            label = cartesian_labels.get(view.convention, view.convention)
+            lines.append(
+                f"  {label:40s} {self._vector(view.coordinates)} "
+                f"{report.dimensional_unit_label}"
+            )
         lines.extend(
             [
                 "",

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.linalg import sqrtm
 
+from .units import normalize_length_unit
+
 
 def _cosd(x: float) -> float:
     return float(np.cos(np.deg2rad(x)))
@@ -32,11 +34,15 @@ class Lattice:
     beta_deg: float = 90.0
     gamma_deg: float = 90.0
     label: str = ""
+    length_unit: str = ""
 
     def __post_init__(self) -> None:
         if min(self.a, self.b, self.c) <= 0:
             raise ValueError("Lattice lengths must be positive.")
-        if not all(0.0 < x < 180.0 for x in (self.alpha_deg, self.beta_deg, self.gamma_deg)):
+        object.__setattr__(self, "length_unit", normalize_length_unit(self.length_unit))
+        if not all(
+            0.0 < x < 180.0 for x in (self.alpha_deg, self.beta_deg, self.gamma_deg)
+        ):
             raise ValueError("Cell angles must lie strictly between 0 and 180 degrees.")
         # Validate positive definiteness immediately.
         _ = self.metric()
@@ -72,7 +78,9 @@ class Lattice:
         ca, cb, cg = _cosd(self.alpha_deg), _cosd(self.beta_deg), _cosd(self.gamma_deg)
         sg = _sind(self.gamma_deg)
         if abs(sg) < 1e-14:
-            raise ValueError("gamma too close to 0 or 180 degrees for conventional structure matrix")
+            raise ValueError(
+                "gamma too close to 0 or 180 degrees for conventional structure matrix"
+            )
         ax = a
         bx, by = b * cg, b * sg
         cx = c * cb
@@ -87,18 +95,48 @@ class Lattice:
         return B
 
     @classmethod
-    def cubic(cls, a: float, label: str = "cubic") -> Lattice:
-        return cls(a=a, b=a, c=a, label=label)
+    def cubic(
+        cls,
+        a: float,
+        label: str = "cubic",
+        *,
+        length_unit: str = "",
+    ) -> Lattice:
+        return cls(a=a, b=a, c=a, label=label, length_unit=length_unit)
 
     @classmethod
-    def orthorhombic(cls, a: float, b: float, c: float, label: str = "orthorhombic") -> Lattice:
-        return cls(a=a, b=b, c=c, label=label)
+    def orthorhombic(
+        cls,
+        a: float,
+        b: float,
+        c: float,
+        label: str = "orthorhombic",
+        *,
+        length_unit: str = "",
+    ) -> Lattice:
+        return cls(a=a, b=b, c=c, label=label, length_unit=length_unit)
 
     @classmethod
     def monoclinic_unique_b(
-        cls, a: float, b: float, c: float, beta_deg: float, label: str = "monoclinic"
+        cls,
+        a: float,
+        b: float,
+        c: float,
+        beta_deg: float,
+        label: str = "monoclinic",
+        *,
+        length_unit: str = "",
     ) -> Lattice:
-        return cls(a=a, b=b, c=c, alpha_deg=90.0, beta_deg=beta_deg, gamma_deg=90.0, label=label)
+        return cls(
+            a=a,
+            b=b,
+            c=c,
+            alpha_deg=90.0,
+            beta_deg=beta_deg,
+            gamma_deg=90.0,
+            label=label,
+            length_unit=length_unit,
+        )
 
 
 def reciprocal_metric(M: np.ndarray) -> np.ndarray:
@@ -180,7 +218,9 @@ def direction_cartesian(u_crystal: np.ndarray, lattice: Lattice) -> np.ndarray:
     return v
 
 
-def transform_matrix_to_metric_orthonormal(g_crystal: np.ndarray, M: np.ndarray) -> np.ndarray:
+def transform_matrix_to_metric_orthonormal(
+    g_crystal: np.ndarray, M: np.ndarray
+) -> np.ndarray:
     """Represent a crystallographic map in the symmetric metric-whitened basis."""
     S = metric_sqrt(M)
     return S @ np.asarray(g_crystal, dtype=float) @ np.linalg.inv(S)

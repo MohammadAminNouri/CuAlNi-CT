@@ -183,6 +183,7 @@ def james_hane_6m_example_lattices() -> tuple[Lattice, Lattice]:
     A = Lattice.cubic(
         float(d["a0_A"].value),
         label="DO3 parent; James-Hane Table 4 example",
+        length_unit=str(d["a0_A"].units),
     )
     M = Lattice.monoclinic_unique_b(
         float(d["a_M"].value),
@@ -190,5 +191,6 @@ def james_hane_6m_example_lattices() -> tuple[Lattice, Lattice]:
         float(d["c_M"].value),
         float(d["beta_M_deg"].value),
         label="6M Cu-Al-Ni; James-Hane Table 4 example",
+        length_unit=str(d["a_M"].units),
     )
     return A, M

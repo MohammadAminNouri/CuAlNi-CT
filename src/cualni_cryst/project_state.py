@@ -278,6 +278,7 @@ class PhaseState:
                 "beta_deg": self.lattice.beta_deg,
                 "gamma_deg": self.lattice.gamma_deg,
                 "label": self.lattice.label,
+                "length_unit": self.lattice.length_unit,
             },
             "point_group_symbol": self.point_group_symbol,
             "symmetry_order": len(self.symmetry_operators),
