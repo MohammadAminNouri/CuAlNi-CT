@@ -1,5 +1,36 @@
 # Orientation relationships: the C != R boundary
 
+## Cayron variant topology correction
+
+The orientation layer now follows Cayron's intersection-group definition rather
+than counting all raw left/right symmetry products.  For
+
+```text
+x_A = R_A<-M x_M
+```
+
+we calculate
+
+```math
+H_T^A = G_A \cap R_{A\leftarrow M} G_M R_{A\leftarrow M}^{-1}
+```
+
+and define orientation variants as the left cosets `G_A / H_T`.  Orientation
+operators are the double cosets `H_T g H_T`.
+
+For the current truth-locked DO3 -> 6M polar candidate the full point groups
+give `48/4 = 12` orientation variants and 8 orientation operators; the proper
+SO(3) parts give `24/2 = 12` physical orientation representatives.  The old
+24-row output was therefore a list of raw symmetry-related matrices, not 24
+crystallographically distinct orientation variants.
+
+`H_T` is also compared independently with the exact correspondence subgroup
+`H_C`.  Their equality is reported only when it is actually obtained for the
+chosen OR candidate.  It is never assumed as a general law.
+
+See `docs/CAYRON_CT_PARALLEL_AUDIT.md` for the complete theory-to-code audit.
+
+
 This milestone establishes the orientation layer required for genuine
 PTCLab-style two-phase calculations and for fair Cu-Al-Ni comparisons among
 Cayron CT, Ball-James, PTMC, literature ORs and experiment.

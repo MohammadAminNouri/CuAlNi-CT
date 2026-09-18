@@ -26,6 +26,11 @@ from .crystallography_console import (
     CrystallographyConsole,
     parse_crystal_input,
 )
+from .orientation_topology import (
+    CayronTopologyAudit,
+    OrientationOperatorClass,
+    build_orientation_topology,
+)
 from .project_state import (
     OrientationDefinition,
     OrientationState,
@@ -141,11 +146,20 @@ class OrientationParityAudit:
 
 @dataclass(frozen=True)
 class OrientationVariant:
+    """One crystallographically distinct proper orientation-variant class.
+
+    The class is a left coset of the proper orientation intersection subgroup.
+    It is not one raw left/right symmetry-product matrix.
+    """
+
     index: int
     reference_symmetry_index: int
     moving_symmetry_index: int
     matrix_reference_from_moving: tuple[Vector3, Vector3, Vector3]
     misorientation_from_base_deg: float
+    reference_coset_symmetry_indices: tuple[int, ...] = ()
+    equivalent_proper_matrix_count: int = 1
+    raw_representative_angle_from_base_deg: float = 0.0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -156,6 +170,13 @@ class OrientationVariant:
                 list(row) for row in self.matrix_reference_from_moving
             ],
             "misorientation_from_base_deg": self.misorientation_from_base_deg,
+            "reference_coset_symmetry_indices": list(
+                self.reference_coset_symmetry_indices
+            ),
+            "equivalent_proper_matrix_count": self.equivalent_proper_matrix_count,
+            "raw_representative_angle_from_base_deg": (
+                self.raw_representative_angle_from_base_deg
+            ),
         }
 
 
@@ -171,7 +192,13 @@ class OrientationReport:
     parity: OrientationParityAudit
     proper_reference_symmetry_order: int
     proper_moving_symmetry_order: int
+    full_reference_symmetry_order: int
+    full_moving_symmetry_order: int
+    proper_orientation_intersection_order: int
+    full_orientation_intersection_order: int
     orientation_variant_count: int
+    orientation_operator_count: int
+    cayron_topology_audit: CayronTopologyAudit
     warnings: tuple[str, ...]
 
     def to_dict(self) -> dict[str, object]:
@@ -186,7 +213,17 @@ class OrientationReport:
             "parity": self.parity.to_dict(),
             "proper_reference_symmetry_order": self.proper_reference_symmetry_order,
             "proper_moving_symmetry_order": self.proper_moving_symmetry_order,
+            "full_reference_symmetry_order": self.full_reference_symmetry_order,
+            "full_moving_symmetry_order": self.full_moving_symmetry_order,
+            "proper_orientation_intersection_order": (
+                self.proper_orientation_intersection_order
+            ),
+            "full_orientation_intersection_order": (
+                self.full_orientation_intersection_order
+            ),
             "orientation_variant_count": self.orientation_variant_count,
+            "orientation_operator_count": self.orientation_operator_count,
+            "cayron_topology_audit": self.cayron_topology_audit.to_dict(),
             "warnings": list(self.warnings),
         }
 
@@ -1031,44 +1068,47 @@ class OrientationService:
             raise ValueError(f"Phase {phase.phase_id!r} has no proper symmetry.")
         return tuple(proper)
 
+    def topology(self, state: OrientationState):
+        """Return Cayron-style H_T, cosets, double cosets and audit data."""
+
+        return build_orientation_topology(self.project, state)
+
     def variants(self, state: OrientationState) -> tuple[OrientationVariant, ...]:
-        reference = self.project.phase(state.reference_phase_id)
-        moving = self.project.phase(state.moving_phase_id)
-        reference_ops = self.proper_symmetry_cartesian(
-            reference,
-            state.reference_cartesian_convention,
-        )
-        moving_ops = self.proper_symmetry_cartesian(
-            moving,
-            state.moving_cartesian_convention,
-        )
-        base = _state_matrix(state)
-        tolerance = self.project.numerical_policy.representation
+        """Return one SO(3) representative per proper orientation left coset.
 
-        unique: list[tuple[np.ndarray, int, int]] = []
-        for reference_index, S_reference in reference_ops:
-            for moving_index, S_moving in moving_ops:
-                candidate = S_reference @ base @ S_moving.T
-                if any(
-                    _relative_residual(candidate, existing[0]) <= tolerance
-                    for existing in unique
-                ):
-                    continue
-                unique.append((candidate, reference_index, moving_index))
+        The previous implementation emitted every distinct raw product
+        S_A R S_M^-1.  That over-counts crystallographically equivalent
+        matrices.  Cayron's definition is the left-coset quotient G_A/H_T.
+        """
 
+        topology = self.topology(state)
         return tuple(
             OrientationVariant(
-                index=index,
-                reference_symmetry_index=reference_index,
-                moving_symmetry_index=moving_index,
-                matrix_reference_from_moving=_matrix_tuple(matrix),
-                misorientation_from_base_deg=misorientation_angle_deg(matrix, base),
+                index=item.index,
+                reference_symmetry_index=(item.representative_reference_symmetry_index),
+                moving_symmetry_index=-1,
+                matrix_reference_from_moving=item.matrix_reference_from_moving,
+                misorientation_from_base_deg=(
+                    item.crystallographic_disorientation_from_base_deg
+                ),
+                reference_coset_symmetry_indices=(
+                    item.reference_coset_symmetry_indices
+                ),
+                equivalent_proper_matrix_count=(item.equivalent_proper_matrix_count),
+                raw_representative_angle_from_base_deg=(
+                    item.raw_representative_angle_from_base_deg
+                ),
             )
-            for index, (matrix, reference_index, moving_index) in enumerate(
-                unique,
-                start=1,
-            )
+            for item in topology.variants
         )
+
+    def operators(
+        self,
+        state: OrientationState,
+    ) -> tuple[OrientationOperatorClass, ...]:
+        """Return Cayron-style full-point-group orientation double cosets."""
+
+        return self.topology(state).operators
 
     def report(self, state: OrientationState) -> OrientationReport:
         representations: list[OrientationRepresentation] = []
@@ -1089,8 +1129,9 @@ class OrientationService:
                     )
                 )
 
-        reference = self.project.phase(state.reference_phase_id)
-        moving = self.project.phase(state.moving_phase_id)
+        self.project.phase(state.reference_phase_id)
+        self.project.phase(state.moving_phase_id)
+        topology = self.topology(state)
         active_euler = euler_zxz_from_matrix(
             _state_matrix(state),
             EulerConvention.ZXZ_ACTIVE,
@@ -1103,7 +1144,19 @@ class OrientationService:
             (
                 "Quaternion output is a standard Cartesian Hamilton quaternion "
                 "(w,x,y,z), not Cayron's crystallographic metric quaternion."
-            )
+            ),
+            (
+                "Axis-angle, Euler angles and the displayed Hamilton quaternion "
+                "parameterize this chosen parent/product Cartesian-frame pair. "
+                "They are not invariant under independent re-expression of the "
+                "two phase frames; physical mapping and symmetry-reduced OR "
+                "comparison are the invariant checks."
+            ),
+            (
+                "Orientation variants are Cayron-style left cosets G_A/H_T; "
+                "orientation operators are double cosets H_T g H_T. Raw "
+                "S_A R S_M^-1 matrices are not counted as distinct variants."
+            ),
         ]
         if state.theory_origin is OrientationTheoryOrigin.POLAR_CORRESPONDENCE:
             warnings.append(
@@ -1127,19 +1180,21 @@ class OrientationService:
             euler_zxz_passive=passive_euler,
             representations=tuple(representations),
             parity=self.representation_parity(state),
-            proper_reference_symmetry_order=len(
-                self.proper_symmetry_cartesian(
-                    reference,
-                    state.reference_cartesian_convention,
-                )
+            proper_reference_symmetry_order=(
+                topology.audit.proper_reference_group_order
             ),
-            proper_moving_symmetry_order=len(
-                self.proper_symmetry_cartesian(
-                    moving,
-                    state.moving_cartesian_convention,
-                )
+            proper_moving_symmetry_order=topology.audit.proper_moving_group_order,
+            full_reference_symmetry_order=topology.audit.full_reference_group_order,
+            full_moving_symmetry_order=topology.audit.full_moving_group_order,
+            proper_orientation_intersection_order=(
+                topology.audit.proper_orientation_intersection_order
             ),
-            orientation_variant_count=len(self.variants(state)),
+            full_orientation_intersection_order=(
+                topology.audit.full_orientation_intersection_order
+            ),
+            orientation_variant_count=(topology.audit.proper_orientation_variant_count),
+            orientation_operator_count=topology.audit.full_orientation_operator_count,
+            cayron_topology_audit=topology.audit,
             warnings=tuple(warnings),
         )
 
@@ -1570,11 +1625,17 @@ class OrientationRenderer:
         *,
         show_representations: bool = False,
         variants: tuple[OrientationVariant, ...] = (),
+        operators: tuple[OrientationOperatorClass, ...] = (),
     ) -> str:
         state = report.state
+        title = (
+            "POLAR ROTATION CANDIDATE"
+            if state.theory_origin is OrientationTheoryOrigin.POLAR_CORRESPONDENCE
+            else "ORIENTATION RELATIONSHIP"
+        )
         lines = [
             "=" * 88,
-            f"ORIENTATION RELATIONSHIP  |  {state.orientation_id}",
+            f"{title}  |  {state.orientation_id}",
             "=" * 88,
             "CONVENTION",
             (
@@ -1602,7 +1663,7 @@ class OrientationRenderer:
             ),
             f"  |det(R)-1|                : {report.audit.determinant_residual:.3e}",
             "",
-            "AXIS / ANGLE  (reference Cartesian frame)",
+            "COORDINATE AXIS / ANGLE  (current reference Cartesian frame)",
             f"  axis                       : {np.array(report.axis_angle.axis)}",
             f"  angle                      : {report.axis_angle.angle_deg:.12g} deg",
             "",
@@ -1625,13 +1686,84 @@ class OrientationRenderer:
             "",
             "SYMMETRY / REPRESENTATION",
             (
-                f"  proper symmetry orders     : "
+                f"  full point-group orders     : "
+                f"{report.full_reference_symmetry_order} x "
+                f"{report.full_moving_symmetry_order}"
+            ),
+            (
+                f"  proper SO(3) subgroup orders: "
                 f"{report.proper_reference_symmetry_order} x "
                 f"{report.proper_moving_symmetry_order}"
             ),
-            f"  distinct OR variants       : {report.orientation_variant_count}",
-            f"  max representation parity  : {report.parity.maximum_residual:.3e}",
+            (
+                f"  H_T orders (full / proper)  : "
+                f"{report.full_orientation_intersection_order} / "
+                f"{report.proper_orientation_intersection_order}"
+            ),
+            f"  distinct OR variants        : {report.orientation_variant_count}",
+            f"  orientation operators       : {report.orientation_operator_count}",
+            f"  max representation parity   : {report.parity.maximum_residual:.3e}",
         ]
+
+        topology_audit = report.cayron_topology_audit
+        lines.extend(
+            [
+                "",
+                "CAYRON TOPOLOGY AUDIT",
+                (
+                    f"  N_T full / proper          : "
+                    f"{topology_audit.full_orientation_variant_count} / "
+                    f"{topology_audit.proper_orientation_variant_count}"
+                ),
+                (
+                    f"  O_T full / proper          : "
+                    f"{topology_audit.full_orientation_operator_count} / "
+                    f"{topology_audit.proper_orientation_operator_count}"
+                ),
+                (
+                    "  H_C / N_C / O_C             : "
+                    + (
+                        "n/a"
+                        if topology_audit.correspondence_intersection_order is None
+                        else (
+                            f"{topology_audit.correspondence_intersection_order} / "
+                            f"{topology_audit.correspondence_variant_count} / "
+                            f"{topology_audit.correspondence_operator_count}"
+                        )
+                    )
+                ),
+                (
+                    "  H_T == H_C                  : "
+                    + (
+                        "n/a"
+                        if topology_audit.orientation_correspondence_intersections_equal
+                        is None
+                        else (
+                            "YES"
+                            if topology_audit.orientation_correspondence_intersections_equal
+                            else "NO"
+                        )
+                    )
+                ),
+                (
+                    "  one-to-one C/T topology     : "
+                    + (
+                        "n/a"
+                        if topology_audit.one_to_one_correspondence_orientation_topology
+                        is None
+                        else (
+                            "YES"
+                            if topology_audit.one_to_one_correspondence_orientation_topology
+                            else "NO"
+                        )
+                    )
+                ),
+                (
+                    f"  H_T numerical residual      : "
+                    f"{topology_audit.maximum_orientation_intersection_residual:.3e}"
+                ),
+            ]
+        )
 
         ptclab = next(
             (
@@ -1666,16 +1798,44 @@ class OrientationRenderer:
             lines.extend(
                 [
                     "",
-                    "ORIENTATION VARIANTS  (proper point groups only)",
-                    "  idx   g_ref   g_mov   misorientation from base (deg)",
+                    "ORIENTATION VARIANTS  (proper left cosets G_A^+ / H_T^+)",
+                    (
+                        "  idx   g_ref   parent-coset   raw rep angle   "
+                        "crystal disorientation"
+                    ),
                 ]
             )
             for variant in variants:
                 lines.append(
                     f"  {variant.index:>3d}   "
                     f"{variant.reference_symmetry_index:>5d}   "
-                    f"{variant.moving_symmetry_index:>5d}   "
-                    f"{variant.misorientation_from_base_deg:>16.9g}"
+                    f"{variant.reference_coset_symmetry_indices!s:>13s}   "
+                    f"{variant.raw_representative_angle_from_base_deg:>13.7g}   "
+                    f"{variant.misorientation_from_base_deg:>20.7g}"
+                )
+            lines.append(
+                "  NOTE: each row is one crystallographic orientation class; "
+                "daughter-symmetry-equivalent matrices are not double-counted."
+            )
+
+        if operators:
+            lines.extend(
+                [
+                    "",
+                    "ORIENTATION OPERATORS  (full Cayron double cosets H_T g H_T)",
+                    (
+                        "  idx   size   class        Type-I? Type-II?   "
+                        "min disorientation (deg)"
+                    ),
+                ]
+            )
+            for operator in operators:
+                lines.append(
+                    f"  {operator.index:>3d}   {operator.size:>4d}   "
+                    f"{operator.cayron_class:<11s} "
+                    f"{operator.contains_parent_reflection!s:<7s} "
+                    f"{operator.contains_parent_180_rotation!s:<8s} "
+                    f"{operator.minimum_crystallographic_disorientation_deg:>17.9g}"
                 )
 
         if report.warnings:
@@ -1770,12 +1930,14 @@ def _add_pair_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--representations", action="store_true")
     parser.add_argument("--variants", action="store_true")
+    parser.add_argument("--operators", action="store_true")
     parser.add_argument("--json", action="store_true")
 
 
 def _add_display_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--representations", action="store_true")
     parser.add_argument("--variants", action="store_true")
+    parser.add_argument("--operators", action="store_true")
     parser.add_argument("--json", action="store_true")
 
 
@@ -1841,19 +2003,24 @@ def _render_state(
     *,
     representations: bool,
     variants_requested: bool,
+    operators_requested: bool,
     json_output: bool,
 ) -> str:
     report = service.report(state)
     variants = service.variants(state) if variants_requested else ()
+    operators = service.operators(state) if operators_requested else ()
     if json_output:
         payload = report.to_dict()
         if variants_requested:
             payload["variants"] = [variant.to_dict() for variant in variants]
+        if operators_requested:
+            payload["operators"] = [operator.to_dict() for operator in operators]
         return json.dumps(payload, indent=2)
     return OrientationRenderer().orientation(
         report,
         show_representations=representations,
         variants=variants,
+        operators=operators,
     )
 
 
@@ -1870,6 +2037,7 @@ def main(argv: list[str] | None = None) -> int:
                 state,
                 representations=args.representations,
                 variants_requested=args.variants,
+                operators_requested=args.operators,
                 json_output=args.json,
             )
         )
@@ -1893,6 +2061,7 @@ def main(argv: list[str] | None = None) -> int:
                 state,
                 representations=args.representations,
                 variants_requested=args.variants,
+                operators_requested=args.operators,
                 json_output=args.json,
             )
         )
@@ -1927,6 +2096,7 @@ def main(argv: list[str] | None = None) -> int:
                 state,
                 representations=args.representations,
                 variants_requested=args.variants,
+                operators_requested=args.operators,
                 json_output=args.json,
             )
         )
@@ -1951,6 +2121,7 @@ def main(argv: list[str] | None = None) -> int:
                 state,
                 representations=args.representations,
                 variants_requested=args.variants,
+                operators_requested=args.operators,
                 json_output=args.json,
             )
         )
@@ -1972,6 +2143,7 @@ def main(argv: list[str] | None = None) -> int:
                 state,
                 representations=args.representations,
                 variants_requested=args.variants,
+                operators_requested=args.operators,
                 json_output=args.json,
             )
         )
@@ -2005,6 +2177,7 @@ def main(argv: list[str] | None = None) -> int:
                             candidate.state,
                             representations=args.representations,
                             variants_requested=args.variants,
+                            operators_requested=args.operators,
                             json_output=False,
                         )
                     )
