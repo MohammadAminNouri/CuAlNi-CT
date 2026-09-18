@@ -22,6 +22,7 @@ cualni-calpad = "cualni_cryst.calpad:main"
 cualni-or = "cualni_cryst.orientation:main"
 cualni-crosslock = "cualni_cryst.operator_crosslock:main"
 cualni-two = "cualni_cryst.two_phase:main"
+cualni-project = "cualni_cryst.project_io:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]

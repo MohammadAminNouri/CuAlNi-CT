@@ -44,6 +44,7 @@ from .crystallography_console import (
     ParsedCrystalInput,
     parse_crystal_input,
 )
+from .project_io import load_project
 from .project_state import PhaseState, ProjectState
 from .representation import CartesianConvention, CartesianFrame
 from .units import length_unit_symbol, reciprocal_length_unit_symbol
@@ -1269,26 +1270,46 @@ def _interactive_repl(service: CalPadService) -> int:
             print(f"INPUT ERROR: {exc}")
 
 
+def _add_subcommand_project_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--project",
+        default=argparse.SUPPRESS,
+        help="Project source: preset:NAME or path to generic project JSON.",
+    )
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "CuAlNi-CT CalPad: metric-correct single-phase crystallography calculator."
         )
     )
+    parser.add_argument(
+        "--project",
+        default="preset:james_hane_2000",
+        help=(
+            "Project source: preset:NAME or path to generic project JSON. "
+            "James-Hane remains only the backward-compatible benchmark default."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("phases")
+    phases_parser = subparsers.add_parser("phases")
+    _add_subcommand_project_arg(phases_parser)
 
     cell_parser = subparsers.add_parser("cell")
+    _add_subcommand_project_arg(cell_parser)
     cell_parser.add_argument("--phase", required=True)
 
     normal_parser = subparsers.add_parser("normal")
+    _add_subcommand_project_arg(normal_parser)
     normal_parser.add_argument("--phase", required=True)
     normal_parser.add_argument("--max-index", type=int, default=12)
     normal_parser.add_argument("--derive", action="store_true")
     normal_parser.add_argument("object_text")
 
     low_parser = subparsers.add_parser("lowindex")
+    _add_subcommand_project_arg(low_parser)
     low_parser.add_argument("--phase", required=True)
     low_parser.add_argument(
         "--candidate",
@@ -1306,11 +1327,13 @@ def _build_parser() -> argparse.ArgumentParser:
     low_parser.add_argument("target")
 
     inspect_parser = subparsers.add_parser("inspect")
+    _add_subcommand_project_arg(inspect_parser)
     inspect_parser.add_argument("--phase", required=True)
     inspect_parser.add_argument("--derive", action="store_true")
     inspect_parser.add_argument("object_text")
 
     compare_parser = subparsers.add_parser("compare")
+    _add_subcommand_project_arg(compare_parser)
     compare_parser.add_argument("--phase", required=True)
     compare_parser.add_argument("--derive", action="store_true")
     compare_parser.add_argument("left")
@@ -1322,7 +1345,10 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    service = reference_calpad()
+    try:
+        service = CalPadService(load_project(args.project).project)
+    except (AssertionError, KeyError, TypeError, ValueError, FileNotFoundError) as exc:
+        parser.error(f"project: {exc}")
     renderer = CalPadRenderer()
     base_renderer = ConsoleRenderer()
 

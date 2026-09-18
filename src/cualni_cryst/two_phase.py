@@ -44,7 +44,8 @@ from .orientation import (
     OrientationService,
     OrientationState,
 )
-from .project_state import ProjectState, james_hane_6m_reference_project
+from .project_io import load_project
+from .project_state import ProjectState
 from .representation import CartesianConvention, CartesianFrame
 from .units import length_unit_symbol
 
@@ -488,12 +489,49 @@ class TwoPhaseWorkbench:
         self.project.validate().assert_passed()
         self.orientations = OrientationService(project)
 
+    def _resolve_phase_pair(
+        self,
+        reference: str,
+        moving: str,
+    ) -> tuple[str, str]:
+        reference = reference.strip()
+        moving = moving.strip()
+        phases = self.project.phases
+
+        if reference and moving:
+            ref = self.orientations.resolve_phase(reference)
+            mov = self.orientations.resolve_phase(moving)
+            if ref.phase_id == mov.phase_id:
+                raise ValueError("Reference and moving phases must be distinct.")
+            return ref.phase_id, mov.phase_id
+
+        if len(phases) == 2:
+            if reference:
+                ref = self.orientations.resolve_phase(reference)
+                other = next(
+                    phase for phase in phases if phase.phase_id != ref.phase_id
+                )
+                return ref.phase_id, other.phase_id
+            if moving:
+                mov = self.orientations.resolve_phase(moving)
+                other = next(
+                    phase for phase in phases if phase.phase_id != mov.phase_id
+                )
+                return other.phase_id, mov.phase_id
+            return phases[0].phase_id, phases[1].phase_id
+
+        choices = ", ".join(phase.phase_id for phase in phases)
+        raise ValueError(
+            "This project does not have exactly two phases. Supply both "
+            f"--reference and --moving explicitly. Available phases: {choices}"
+        )
+
     def resolve_orientation(
         self,
         spec: str,
         *,
-        reference: str = "do3",
-        moving: str = "6m",
+        reference: str = "",
+        moving: str = "",
         bind_transformation: str = "",
         parallel_candidate: int = 1,
     ) -> OrientationState:
@@ -517,6 +555,14 @@ class TwoPhaseWorkbench:
         raw = spec.strip()
         if not raw:
             raise ValueError("Orientation specification must be non-empty.")
+
+        # Stored ORs and polar rotations already carry phase endpoints. Every
+        # user-defined OR form requires an explicit or unambiguous phase pair.
+        preview_kind = ""
+        if ":" in raw:
+            preview_kind = re.sub(r"[^a-z-]+", "", raw.split(":", 1)[0].lower())
+        if raw.lower() == "identity" or preview_kind not in {"polar", "stored"}:
+            reference, moving = self._resolve_phase_pair(reference, moving)
 
         if raw.lower() == "identity":
             state = self.orientations.state_from_matrix(
@@ -605,7 +651,33 @@ class TwoPhaseWorkbench:
             else:
                 raise ValueError(f"Unknown orientation specification {kind!r}.")
 
+        if reference:
+            expected_reference = self.orientations.resolve_phase(reference).phase_id
+            if expected_reference != state.reference_phase_id:
+                raise ValueError(
+                    f"Explicit reference phase {expected_reference!r} conflicts "
+                    f"with OR reference phase {state.reference_phase_id!r}."
+                )
+        if moving:
+            expected_moving = self.orientations.resolve_phase(moving).phase_id
+            if expected_moving != state.moving_phase_id:
+                raise ValueError(
+                    f"Explicit moving phase {expected_moving!r} conflicts "
+                    f"with OR moving phase {state.moving_phase_id!r}."
+                )
+
         if bind_transformation:
+            transformation = self.project.transformation(bind_transformation)
+            if (
+                transformation.parent_phase_id != state.reference_phase_id
+                or transformation.product_phase_id != state.moving_phase_id
+            ):
+                raise ValueError(
+                    f"Transformation {bind_transformation!r} connects "
+                    f"{transformation.parent_phase_id} -> "
+                    f"{transformation.product_phase_id}, but the OR connects "
+                    f"{state.reference_phase_id} <- {state.moving_phase_id}."
+                )
             state = replace(state, transformation_id=bind_transformation)
         return state
 
@@ -1256,6 +1328,11 @@ class TwoPhaseRenderer:
 
 def _add_or_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--project",
+        default=argparse.SUPPRESS,
+        help="Project source: preset:NAME or path to generic project JSON.",
+    )
+    parser.add_argument(
         "--or",
         dest="or_spec",
         required=True,
@@ -1264,8 +1341,8 @@ def _add_or_args(parser: argparse.ArgumentParser) -> None:
             "quat:... | axis:... | axis-crystal:... | parallel:... | identity"
         ),
     )
-    parser.add_argument("--reference", default="do3")
-    parser.add_argument("--moving", default="6m")
+    parser.add_argument("--reference", default="")
+    parser.add_argument("--moving", default="")
     parser.add_argument(
         "--bind",
         default="",
@@ -1285,6 +1362,14 @@ def _build_parser() -> argparse.ArgumentParser:
             "General PTCLab-style two-phase crystallography workbench. "
             "This layer is theory-neutral."
         )
+    )
+    parser.add_argument(
+        "--project",
+        default="preset:james_hane_2000",
+        help=(
+            "Project source: preset:NAME or path to generic project JSON. "
+            "James-Hane is only the backward-compatible benchmark default."
+        ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -1335,12 +1420,21 @@ def _build_parser() -> argparse.ArgumentParser:
 
     shell = sub.add_parser("shell")
     shell.add_argument(
+        "--project",
+        default=argparse.SUPPRESS,
+        help="Project source: preset:NAME or path to project JSON.",
+    )
+    shell.add_argument(
         "--or",
         dest="or_spec",
-        default="polar:do3_to_6m_reference",
+        default="",
+        help=(
+            "Explicit initial OR. If omitted, a single stored OR is used. "
+            "The James-Hane benchmark alone retains its historical polar default."
+        ),
     )
-    shell.add_argument("--reference", default="do3")
-    shell.add_argument("--moving", default="6m")
+    shell.add_argument("--reference", default="")
+    shell.add_argument("--moving", default="")
     return parser
 
 
@@ -1536,14 +1630,31 @@ def interactive_shell(
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
-    workbench = TwoPhaseWorkbench(james_hane_6m_reference_project())
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    try:
+        loaded = load_project(args.project)
+        workbench = TwoPhaseWorkbench(loaded.project)
+    except (AssertionError, KeyError, TypeError, ValueError, FileNotFoundError) as exc:
+        parser.error(f"project: {exc}")
     renderer = TwoPhaseRenderer()
 
     if args.command == "shell":
+        initial_spec = args.or_spec.strip()
+        if not initial_spec:
+            if len(workbench.project.orientations) == 1:
+                initial_spec = (
+                    f"stored:{workbench.project.orientations[0].orientation_id}"
+                )
+            elif workbench.project.project_id == "james_hane_cualni_6m_reference":
+                initial_spec = "polar:do3_to_6m_reference"
+            else:
+                parser.error(
+                    "shell requires --or for this project; no physical OR is assumed"
+                )
         return interactive_shell(
             workbench,
-            initial_spec=args.or_spec,
+            initial_spec=initial_spec,
             reference=args.reference,
             moving=args.moving,
         )
