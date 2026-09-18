@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "project_id": "perez_beta3_with_user_austenite_example",
+  "title": "Example arbitrary DO3 + Perez-Cerrato beta3 project",
+  "phases": [
+    {
+      "phase_id": "austenite_user",
+      "label": "User austenite",
+      "physical_phase": "Cu-Al-Ni austenite",
+      "cell_representation": "user conventional cubic",
+      "basis_id": "austenite_user_basis",
+      "cell": {
+        "a": 5.836,
+        "b": 5.836,
+        "c": 5.836,
+        "alpha_deg": 90,
+        "beta_deg": 90,
+        "gamma_deg": 90,
+        "length_unit": "angstrom"
+      },
+      "point_group": "m-3m",
+      "provenance": {
+        "status": "USER_MEASURED",
+        "notes": "Example value only; replace with specimen/literature input."
+      }
+    },
+    {
+      "phase_id": "beta3_perez2024",
+      "label": "Perez-Cerrato 2024 beta3 martensite",
+      "physical_phase": "Cu-Al-Ni beta3 martensite",
+      "cell_representation": "C2/m EBSD conventional cell, unique b",
+      "basis_id": "beta3_c2m_ebsd",
+      "cell": {
+        "a": 13.817,
+        "b": 5.2856,
+        "c": 4.3987,
+        "alpha_deg": 90,
+        "beta_deg": 113.6,
+        "gamma_deg": 90,
+        "length_unit": "angstrom"
+      },
+      "point_group": "2/m",
+      "provenance": {
+        "status": "SOURCE_MEASURED",
+        "source_key": "perez_cerrato2024",
+        "notes": "Published EBSD indexing cell; nm converted to angstrom by x10."
+      }
+    }
+  ],
+  "sources": [
+    {
+      "key": "perez_cerrato2024",
+      "citation": "M. Perez-Cerrato et al., Materials 17 (2024) 6165.",
+      "doi": "10.3390/ma17246165"
+    }
+  ],
+  "transformations": [],
+  "orientations": [],
+  "representation_links": [],
+  "notes": "The austenite value is explicitly an example/user placeholder; no OR or correspondence is assumed."
+}
