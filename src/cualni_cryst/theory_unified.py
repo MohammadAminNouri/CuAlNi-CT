@@ -518,7 +518,11 @@ class TheoryComparisonAdapter:
                         prediction_kind=PredictionKind.CT_MM_TWIN,
                         branch_label=(
                             f"CT operator {operator_index} twin {twin_index} "
-                            f"Type-{twin.kind}"
+                            + (
+                                f"COMPOUND (via Type-{twin.kind})"
+                                if twin.compound
+                                else f"Type-{twin.kind}"
+                            )
                         ),
                         exact=True,
                         twin_plane_parent_crystal=_vector3(twin.plane_a),
@@ -528,11 +532,16 @@ class TheoryComparisonAdapter:
                             "operator_index": operator_index,
                             "twin_index": twin_index,
                             "twin_kind": twin.kind,
+                            "twin_classification": twin.classification,
+                            "twin_representations": twin.representations,
                             "rational_element": twin.rational_element,
                             "plane_product_crystal": _vector3(twin.plane_m),
                             "direction_product_crystal": _vector3(twin.direction_m),
                         },
-                        provenance="Cayron exact Type-I/II transformation twin",
+                        provenance=(
+                            "Cayron exact transformation twin; construction route "
+                            "and physical classification are stored separately"
+                        ),
                     )
                 )
 
@@ -595,6 +604,8 @@ class TheoryComparisonAdapter:
                                     "operator_index": operator_index,
                                     "twin_index": twin_index,
                                     "twin_kind": twin.kind,
+                                    "twin_classification": twin.classification,
+                                    "twin_representations": twin.representations,
                                     "candidate_index": candidate.index,
                                     "selected_within_twin": (
                                         report.selected_candidate_index
@@ -646,6 +657,8 @@ class TheoryComparisonAdapter:
                                 "operator_index": operator_index,
                                 "twin_index": twin_index,
                                 "twin_kind": twin.kind,
+                                "twin_classification": twin.classification,
+                                "twin_representations": twin.representations,
                             },
                             provenance="Cayron A/M/M shear-shear compatibility",
                         )

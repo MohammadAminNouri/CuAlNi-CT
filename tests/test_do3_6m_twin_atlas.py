@@ -4,7 +4,9 @@ from cualni_cryst.cualni_models import (
     do3_to_6m_branch,
     james_hane_6m_example_lattices,
 )
+from cualni_cryst.group_theory import correspondence_groupoid
 from cualni_cryst.twin_compare import build_twin_atlas
+from cualni_cryst.twinning_ct import twins_from_operator
 
 
 def _atlas():
@@ -129,3 +131,26 @@ def test_non_twofold_operators_are_not_mislabeled_as_exact_twins():
         assert op.classification == "weak_candidate_non_twofold"
         assert not op.relations
         assert all(order != 2 for order in op.proper_rotation_orders)
+
+
+def test_raw_ct_compound_classification_crosslocks_independent_twin_atlas():
+    """CT-native degeneracy must agree with the independent generator-axis test."""
+    A, M = james_hane_6m_example_lattices()
+    branch = do3_to_6m_branch()
+    atlas = build_twin_atlas(branch, A.metric(), M.metric())
+    groupoid = correspondence_groupoid(
+        list(branch.parent_point_group),
+        list(branch.product_point_group),
+        branch.correspondence,
+    )
+
+    for summary, operator in zip(atlas.operators, groupoid.operators, strict=True):
+        raw = twins_from_operator(
+            operator, A.metric(), M.metric(), branch.correspondence
+        )
+        has_raw_compound = any(twin.compound for twin in raw)
+        has_independent_compound = any(
+            relation.compound for relation in summary.relations
+        )
+        assert has_raw_compound == has_independent_compound
+
