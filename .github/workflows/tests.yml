@@ -1,0 +1,49 @@
+name: Scientific Python checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade packaging tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+
+      - name: Install project
+        run: |
+          python -m pip install -e ".[dev]"
+
+      - name: Import package
+        run: |
+          python - <<'PY'
+          import cualni_cryst
+          print("cualni_cryst version:", cualni_cryst.__version__)
+          PY
+
+      - name: Run tests
+        run: |
+          pytest -vv
+
+      - name: Run symbolic reference
+        run: |
+          python -m cualni_cryst symbolic
