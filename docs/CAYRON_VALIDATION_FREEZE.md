@@ -250,3 +250,185 @@ distinct scientific objects.
 This freeze is intended as the validated Cayron backend checkpoint before
 the final supercompatibility / natural-OR-ranking work and before theory
 unification.
+
+
+## 7. Final supercompatibility and natural-OR validation
+
+### CT supercompatibility
+
+Random campaign seed:
+
+`1789465365311682050`
+
+Cases:
+
+`200`
+
+Lattice-family coverage:
+
+- cubic: 51
+- hexagonal: 35
+- monoclinic: 25
+- orthorhombic: 40
+- triclinic: 49
+
+The Cayron supercompatibility relation
+
+`2 (m_A^T n) d_A = a`
+
+was tested using independently constructed exact-compatible states and
+independently perturbed incompatible states.
+
+Results:
+
+- maximum exact residual: `7.099e-16`
+- maximum exact vector error: `7.152e-17`
+- maximum projective-scaling error: `9.387e-16`
+- incompatible residual range:
+  `1.35427e-05 -> 13.4303`
+- zero-shear rejection: PASS
+
+No incompatible residual was prescribed in advance.
+
+Result:
+
+`PASS`
+
+### Natural-OR numerical defect discovered and corrected
+
+The original natural-OR scalar distance used
+
+`theta = acos((trace(R)-1)/2)`.
+
+A randomized validation exposed loss of very small rotations:
+
+- requested perturbation: approximately `1e-7 deg`
+- production result before correction: `0 deg`
+- independent stable result: approximately `1e-7 deg`
+
+The production implementation was changed to a stable SO(3) principal-angle
+evaluation using both sine and cosine:
+
+`sin(theta) = ||R-R^T||_F / (2 sqrt(2))`
+
+`cos(theta) = (trace(R)-1)/2`
+
+`theta = atan2(sin(theta), cos(theta))`
+
+Permanent regression coverage includes angles from `1e-12 deg` through
+`180 deg`.
+
+### Deterministic natural-OR regression
+
+Seed:
+
+`8138108684858986079`
+
+All four CT operators passed independent proper-symmetry enumeration.
+
+At the original `1e-7 deg` failure scale:
+
+- operator 0:
+  production `1.000000024621e-07`
+  independent `9.999994569712e-08`
+  error `5.676e-14 deg`
+- operator 1:
+  error `7.094e-14 deg`
+- operator 2:
+  error `0`
+- operator 3:
+  error `8.178e-16 deg`
+
+Maximum production/independent ranking error:
+
+`1.998e-13 deg`
+
+Result:
+
+`PASS`
+
+### Fresh random natural-OR campaign
+
+Seed:
+
+`1559166451777332904`
+
+Coverage:
+
+- CT operators: `4`
+- independent ranking comparisons: `28`
+- exact candidate anchors
+- random closing-gap perturbations
+- sub-microdegree perturbations
+- fully random natural ORs
+- independent proper parent/product symmetry enumeration
+
+Results:
+
+- maximum production/independent error:
+  `2.326e-13 deg`
+- smallest nonzero production distance:
+  `9.984560813833e-11 deg`
+
+Critical `1e-7 deg` examples:
+
+- operator 0:
+  production `1.000000003845e-07`
+  independent `9.999999805047e-08`
+  error `2.334e-15 deg`
+- operator 1:
+  production `9.999994728626e-08`
+  independent `9.999989070150e-08`
+  error `5.658e-14 deg`
+- operator 2:
+  error `3.782e-15 deg`
+- operator 3:
+  error `4.337e-16 deg`
+
+No expected candidate, sign branch, natural OR, or numerical distance was
+hard-coded.
+
+Result:
+
+`PASS`
+
+## 8. Cayron CT final validated scope
+
+The frozen Cayron backend now includes validated coverage of:
+
+- rational correspondence;
+- direct/reciprocal duality;
+- primitive and centered cell representations;
+- full cubic 48-operation correspondence symmetry;
+- correspondence subgroup H_C;
+- variants and double cosets;
+- inverse/groupoid operator topology;
+- axial weak twins;
+- generalized twin index q_g;
+- proper and improper reticular orientations;
+- generalized shear;
+- generalized strain;
+- Type-I twins;
+- Type-II twins;
+- exact intercorrespondence;
+- closing-gap orientation construction;
+- natural-OR symmetry-reduced ranking;
+- sub-microdegree and near-identity SO(3) ranking;
+- CMC;
+- normalized CMC;
+- SMC;
+- first-order exact habit planes;
+- second-order exact habit planes;
+- third-order compatibility degeneracy;
+- near-compatible habit-plane projection;
+- CT supercompatibility;
+- deliberately incompatible supercompatibility residuals.
+
+The following distinction remains mandatory:
+
+`C != T != F != U`
+
+and the polar rotation, Cayron natural OR, experimental OR, Ball-James OR,
+and PTMC OR remain separate physical/theoretical objects.
+
+Undocumented GenOVa internal A/B/C/D candidate ordering is still not claimed.

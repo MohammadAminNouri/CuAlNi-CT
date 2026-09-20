@@ -11,7 +11,11 @@ from cualni_cryst.ct_orientation import CayronOrientationAdapter
 from cualni_cryst.cualni_models import do3_to_6m_branch
 from cualni_cryst.group_theory import correspondence_groupoid
 from cualni_cryst.lattice import Lattice
-from cualni_cryst.orientation import OrientationService, rotation_audit
+from cualni_cryst.orientation import (
+    OrientationService,
+    matrix_from_axis_angle,
+    rotation_audit,
+)
 from cualni_cryst.project_state import (
     OrientationTheoryOrigin,
     james_hane_6m_reference_project,
@@ -86,6 +90,56 @@ def test_closing_gap_candidates_are_proper_and_satisfy_exact_parallelisms(
     assert report.correspondence_plane_residual_deg < 1.0e-6
     assert report.correspondence_direction_residual_deg < 1.0e-6
     assert report.intercorrespondence_residual < 1.0e-10
+
+
+@pytest.mark.parametrize(
+    "angle_deg",
+    [
+        0.0,
+        1.0e-9,
+        1.0e-8,
+        1.0e-7,
+        1.0e-6,
+        1.0e-5,
+        1.0e-3,
+        90.0,
+        179.999999,
+        180.0,
+    ],
+)
+def test_natural_or_rotation_angle_retains_small_rotations(
+    angle_deg: float,
+):
+    rotation = matrix_from_axis_angle(
+        np.array([1.0, 2.0, -3.0]),
+        angle_deg,
+    )
+
+    measured = CayronOrientationAdapter._rotation_angle_deg(rotation)
+
+    assert measured == pytest.approx(
+        angle_deg,
+        abs=2.0e-10,
+    )
+
+
+def test_natural_or_rotation_angle_does_not_collapse_1e_minus_7_degree():
+    angle_deg = 1.0e-7
+
+    rotation = matrix_from_axis_angle(
+        np.array([0.371, -0.492, 0.787]),
+        angle_deg,
+    )
+
+    measured = CayronOrientationAdapter._rotation_angle_deg(rotation)
+
+    assert measured > 0.0
+
+    assert measured == pytest.approx(
+        angle_deg,
+        rel=2.0e-6,
+        abs=2.0e-12,
+    )
 
 
 def test_explicit_natural_or_selects_minimum_symmetry_reduced_branch(

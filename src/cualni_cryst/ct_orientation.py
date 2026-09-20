@@ -425,22 +425,65 @@ class CayronOrientationAdapter:
 
     @staticmethod
     def _rotation_angle_deg(matrix: np.ndarray) -> float:
-        """Return the principal angle of a proper rotation without axis extraction.
+        """Return a numerically stable principal SO(3) angle in degrees.
 
-        Natural-OR ranking only needs a scalar disorientation.  Deliberately avoiding
-        an axis-angle conversion here makes the identity case exact and prevents a
-        meaningless zero-axis normalization from entering the selection path.
+        The trace/arccos formula loses resolution near the identity because
+        ``cos(theta)`` rounds to 1 before ``acos`` is evaluated.  Natural-OR
+        ranking must distinguish sub-microdegree closing-gap differences, so
+        use both sine and cosine information:
+
+            sin(theta) = ||R - R.T||_F / (2 sqrt(2))
+            cos(theta) = (tr(R) - 1) / 2
+
+        and recover theta with atan2(sin, cos).
+
+        This remains stable near 0 degrees and 180 degrees and preserves the
+        exact identity case.
         """
 
         rotation = np.asarray(matrix, dtype=float).reshape(3, 3)
+
         audit = rotation_audit(rotation)
         if audit.maximum_residual > 1.0e-8:
             raise ValueError(
                 "Natural-OR comparison requires proper rotations; "
                 f"residual={audit.maximum_residual:.3e}."
             )
-        cosine = float(np.clip((float(np.trace(rotation)) - 1.0) / 2.0, -1.0, 1.0))
-        return float(np.degrees(np.arccos(cosine)))
+
+        sine = float(
+            np.linalg.norm(
+                rotation - rotation.T,
+                ord="fro",
+            )
+            / (2.0 * np.sqrt(2.0))
+        )
+
+        cosine = float((float(np.trace(rotation)) - 1.0) / 2.0)
+
+        sine = float(
+            np.clip(
+                sine,
+                0.0,
+                1.0,
+            )
+        )
+
+        cosine = float(
+            np.clip(
+                cosine,
+                -1.0,
+                1.0,
+            )
+        )
+
+        return float(
+            np.degrees(
+                np.arctan2(
+                    sine,
+                    cosine,
+                )
+            )
+        )
 
     def _orientation_distance_to_natural(
         self,
