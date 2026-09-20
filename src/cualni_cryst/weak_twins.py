@@ -90,6 +90,68 @@ def _sympy_rational_matrix(matrix: object, *, tolerance: float = 1.0e-12) -> sp.
     return sp.Matrix(3, 3, exact)
 
 
+def _sympy_rational_vector(
+    vector: object,
+    *,
+    name: str = "crystallographic vector",
+    tolerance: float = 1.0e-12,
+) -> sp.Matrix:
+    """Return a 3x1 exact rational crystallographic vector.
+
+    Exact SymPy integer/rational data are preserved. Floating values are accepted
+    only when the same small-rational recovery contract used for correspondence
+    matrices succeeds. This keeps direct/reciprocal incidence and projective
+    plane relations exact before any Cartesian/metric floating calculation.
+    """
+
+    source = sp.Matrix(vector)
+    if source.shape == (1, 3):
+        source = source.T
+    if source.shape != (3, 1):
+        raise ValueError(
+            f"{name} must contain exactly three entries; got {source.shape}"
+        )
+
+    exact: list[sp.Rational] = []
+    for value in source:
+        if value.is_Rational:
+            exact.append(sp.Rational(value))
+            continue
+
+        numeric = float(value)
+        if not np.isfinite(numeric):
+            raise ValueError(f"{name} contains non-finite entries")
+        candidate = sp.Rational(str(numeric)).limit_denominator(4096)
+        if abs(float(candidate) - numeric) > tolerance:
+            raise ValueError(
+                f"{name} entry is not safely recoverable as a small rational: "
+                f"{numeric:.16g}"
+            )
+        exact.append(candidate)
+
+    return sp.Matrix(exact)
+
+
+def _exact_zero_vector(vector: object) -> bool:
+    return all(sp.simplify(value) == 0 for value in sp.Matrix(vector))
+
+
+def _exact_projectively_parallel(first: object, second: object) -> bool:
+    """Exact 3-D projective parallelism for rational reciprocal/direct vectors."""
+
+    a = _sympy_rational_vector(first, name="first projective vector")
+    b = _sympy_rational_vector(second, name="second projective vector")
+    if _exact_zero_vector(a) or _exact_zero_vector(b):
+        raise ValueError("projective vectors must be nonzero")
+    return _exact_zero_vector(a.cross(b))
+
+
+def _exact_incident(plane: object, direction: object) -> bool:
+    p = _sympy_rational_vector(plane, name="plane covector")
+    u = _sympy_rational_vector(direction, name="direct direction")
+    return sp.simplify((p.T * u)[0]) == 0
+
+
 def _primitive_integer_vector(
     vector: sp.Matrix, *, projective: bool
 ) -> tuple[int, int, int]:
@@ -279,22 +341,34 @@ def generalized_twin_index(correspondence_primitive: object) -> int:
 
 
 def generalized_strain(metric: np.ndarray, correspondence: object) -> float:
+    """Cayron generalized strain, Eq. (6), in a metric-orthonormal frame."""
+
     M = _validated_metric(metric)
     C = np.asarray(_sympy_rational_matrix(correspondence), dtype=float)
-    value = float(np.trace(M @ C @ np.linalg.inv(M) @ C.T) - 3.0)
-    if value < -1.0e-10:
+    B = _metric_basis(M)
+
+    physical = np.linalg.solve(B.T, (B @ C).T).T
+    value = float(np.sum(physical * physical) - 3.0)
+    scale = max(float(np.sum(physical * physical)), 3.0, 1.0)
+    roundoff = 256.0 * np.finfo(float).eps * scale
+    if value < -roundoff:
         raise ValueError(f"generalized strain^2 is negative: {value:.16g}")
     return float(np.sqrt(max(0.0, value)))
 
 
 def generalized_shear(metric: np.ndarray, distortion: np.ndarray) -> float:
+    """Cayron generalized shear, Eq. (5), without explicit metric inversion."""
+
     M = _validated_metric(metric)
     F = np.asarray(distortion, dtype=float).reshape(3, 3)
+    B = _metric_basis(M)
     delta = F - np.eye(3)
-    value = float(np.trace(M @ delta @ np.linalg.inv(M) @ delta.T))
-    if value < -1.0e-10:
-        raise ValueError(f"generalized shear^2 is negative: {value:.16g}")
-    return float(np.sqrt(max(0.0, value)))
+
+    physical = np.linalg.solve(B.T, (B @ delta).T).T
+    value = float(np.sum(physical * physical))
+    if value < 0.0:
+        raise AssertionError("squared Frobenius norm became negative")
+    return float(np.sqrt(value))
 
 
 def _cayron_supT_basis(
@@ -351,6 +425,8 @@ def _orientation_branches(
     plane2: np.ndarray,
     correspondence: np.ndarray,
 ) -> tuple[ReticularOrientationBranch, ...]:
+    """Construct Cayron Eq. (3) branches after exact crystallographic audit."""
+
     M = _validated_metric(metric)
     C = np.asarray(correspondence, dtype=float).reshape(3, 3)
 
@@ -375,7 +451,8 @@ def _orientation_branches(
                         normal_sign=n2_sign,
                         transverse_sign=t2_sign,
                     )
-                    T = basis2 @ np.linalg.inv(basis1)
+
+                    T = np.linalg.solve(basis1.T, basis2.T).T
                     if any(
                         _relative_residual(T, previous) <= 1.0e-12
                         for previous in unique
@@ -384,17 +461,14 @@ def _orientation_branches(
                     unique.append(T)
 
                     F = np.linalg.solve(T, C)
-                    p2_pred = np.linalg.solve(T.T, np.asarray(plane1, dtype=float))
+                    p2_pred = np.linalg.solve(
+                        T.T,
+                        np.asarray(plane1, dtype=float),
+                    )
 
                     residuals = WeakTwinResiduals(
-                        axis_correspondence=_relative_residual(
-                            C @ np.asarray(axis, dtype=float),
-                            np.asarray(axis, dtype=float),
-                        ),
-                        plane_correspondence=_projective_vector_residual(
-                            np.linalg.solve(C.T, np.asarray(plane1, dtype=float)),
-                            np.asarray(plane2, dtype=float),
-                        ),
+                        axis_correspondence=0.0,
+                        plane_correspondence=0.0,
                         metric_isometry=_relative_residual(T.T @ M @ T, M),
                         axis_orientation=_relative_residual(
                             T @ np.asarray(axis, dtype=float),
@@ -445,37 +519,61 @@ def evaluate_axial_weak_twin(
     *,
     node_basis: BravaisNodeBasis,
 ) -> AxialWeakTwinResult:
-    """Evaluate one specified axial weak twin with exact crystallographic audit."""
+    """Evaluate one specified axial weak twin with exact-then-metric audit."""
 
     M_c = _validated_metric(metric_conventional, name="metric_conventional")
     C_c = _sympy_rational_matrix(correspondence_conventional)
     P = node_basis.P_conventional_from_primitive
 
     M_p = node_basis.metric_primitive(M_c)
-    C_p = P.inv() * C_c * P
-    u_p_exact = node_basis.direct_to_primitive(axis_conventional)
-    p1_p_exact = node_basis.plane_to_primitive(plane1_conventional)
-    p2_p_exact = node_basis.plane_to_primitive(plane2_conventional)
+    C_p = sp.simplify(P.inv() * C_c * P)
+
+    # Rationalize crystallographic indices before basis conversion so exact
+    # incidence/invariance/reciprocal statements never depend on float noise.
+    u_c_exact = _sympy_rational_vector(
+        axis_conventional,
+        name="conventional invariant axis",
+    )
+    p1_c_exact = _sympy_rational_vector(
+        plane1_conventional,
+        name="conventional weak plane p1",
+    )
+    p2_c_exact = _sympy_rational_vector(
+        plane2_conventional,
+        name="conventional weak plane p2",
+    )
+    u_p_exact = sp.simplify(P.inv() * u_c_exact)
+    p1_p_exact = sp.simplify(P.T * p1_c_exact)
+    p2_p_exact = sp.simplify(P.T * p2_c_exact)
+
+    determinant = sp.simplify(C_p.det())
+    if determinant == 0:
+        raise ValueError("correspondence must be invertible")
+    if sp.Abs(determinant) != 1:
+        raise ValueError(
+            "Cayron axial weak-twin supercells must have equal volume: "
+            f"|det(C)| must equal 1 exactly; got det(C)={determinant}"
+        )
+
+    if not _exact_zero_vector(C_p * u_p_exact - u_p_exact):
+        raise ValueError(
+            "supplied axis is not invariant under the correspondence (exact rational check; C u != u)"
+        )
+    if not _exact_incident(p1_p_exact, u_p_exact):
+        raise ValueError("axial direction is not exactly incident in weak plane p1")
+    if not _exact_incident(p2_p_exact, u_p_exact):
+        raise ValueError("axial direction is not exactly incident in weak plane p2")
+
+    p2_from_C_exact = sp.simplify(C_p.inv().T * p1_p_exact)
+    if not _exact_projectively_parallel(p2_from_C_exact, p2_p_exact):
+        raise ValueError(
+            "supplied weak planes are not exactly related projectively by C^{-T}"
+        )
 
     u_p = np.asarray(u_p_exact, dtype=float).reshape(3)
     p1_p = np.asarray(p1_p_exact, dtype=float).reshape(3)
     p2_p = np.asarray(p2_p_exact, dtype=float).reshape(3)
     C_p_float = np.asarray(C_p, dtype=float)
-
-    axis_residual = _relative_residual(C_p_float @ u_p, u_p)
-    if axis_residual > 1.0e-10:
-        raise ValueError(
-            "supplied axis is not invariant under the correspondence: "
-            f"residual={axis_residual:.3e}"
-        )
-
-    p2_from_C = np.linalg.solve(C_p_float.T, p1_p)
-    plane_residual = _projective_vector_residual(p2_from_C, p2_p)
-    if plane_residual > 1.0e-10:
-        raise ValueError(
-            "supplied weak planes are not related by C^{-T}: "
-            f"projective residual={plane_residual:.3e}"
-        )
 
     branches = _orientation_branches(M_p, u_p, p1_p, p2_p, C_p_float)
     if not branches:
@@ -485,11 +583,11 @@ def evaluate_axial_weak_twin(
     p2_conv_exact = node_basis.plane_to_conventional(p2_p_exact)
     u_conv_exact = node_basis.direct_to_conventional(u_p_exact)
 
-    C_c_from_p = P * C_p * P.inv()
+    C_c_from_p = sp.simplify(P * C_p * P.inv())
     if C_c_from_p != C_c:
         raise AssertionError("primitive/conventional correspondence roundtrip failed")
 
-    return AxialWeakTwinResult(
+    result = AxialWeakTwinResult(
         axis_primitive=_primitive_integer_vector(u_p_exact, projective=False),
         plane1_primitive=_primitive_integer_vector(p1_p_exact, projective=True),
         plane2_primitive=_primitive_integer_vector(p2_p_exact, projective=True),
@@ -507,12 +605,27 @@ def evaluate_axial_weak_twin(
         branches=branches,
         selected_branch_index=0,
         note=(
-            "Cayron-2022 reticular weak-twin evaluation. The selected branch "
-            "minimizes generalized shear among the sign branches of Eq. (3). "
-            "An improper T is retained when it is the reticular minimum; it is "
-            "not silently relabelled as a proper physical OR."
+            "Cayron-2022 reticular weak-twin evaluation. Exact rational "
+            "crystallographic identities are proved before floating metric "
+            "calculations. The selected branch minimizes generalized shear "
+            "among Eq. (3) sign branches. Improper T is retained if selected."
         ),
     )
+
+    eps2_c = result.generalized_strain**2
+    B = _metric_basis(M_p)
+    for branch in result.branches:
+        F = np.asarray(branch.distortion_F1, dtype=float)
+        physical_f = np.linalg.solve(B.T, (B @ F).T).T
+        eps2_f = float(np.sum(physical_f * physical_f) - 3.0)
+        scale = max(abs(eps2_c), abs(eps2_f), 1.0)
+        if abs(eps2_c - eps2_f) / scale > 5.0e-10:
+            raise AssertionError(
+                "Cayron generalized-strain equivalence Eq. (6)==Eq. (7) failed: "
+                f"C-based={eps2_c:.16g}, F-based={eps2_f:.16g}"
+            )
+
+    return result
 
 
 def enumerate_ct_constrained_weak_planes(

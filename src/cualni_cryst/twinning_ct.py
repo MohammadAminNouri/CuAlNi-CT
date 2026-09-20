@@ -88,23 +88,26 @@ def classify_parent_order_two_isometry(
     *,
     tol: float = 1.0e-10,
 ) -> str:
-    """Classify a generic crystallographic order-two parent isometry."""
+    """Classify an order-two crystallographic isometry."""
 
-    matrix = _as_parent_symmetry(operation, metric_a, tol=tol)
-    involution = _relative_residual(matrix @ matrix, np.eye(3))
-    if involution > tol:
+    _as_parent_symmetry(operation, metric_a, tol=tol)
+    exact = sp.Matrix(operation)
+    if exact.shape != (3, 3):
+        raise ValueError("Parent symmetry must be 3x3")
+
+    if sp.simplify(exact * exact - sp.eye(3)) != sp.zeros(3):
         return "other"
 
-    determinant = float(np.linalg.det(matrix))
-    trace = float(np.trace(matrix))
+    determinant = sp.simplify(exact.det())
+    trace = sp.simplify(sp.trace(exact))
 
-    if abs(determinant + 1.0) <= 10.0 * tol and abs(trace - 1.0) <= 10.0 * tol:
+    if determinant == -1 and trace == 1:
         return "reflection"
-    if abs(determinant - 1.0) <= 10.0 * tol and abs(trace + 1.0) <= 10.0 * tol:
+    if determinant == 1 and trace == -1:
         return "twofold"
-    if _relative_residual(matrix, np.eye(3)) <= tol:
+    if sp.simplify(exact - sp.eye(3)) == sp.zeros(3):
         return "identity"
-    if _relative_residual(matrix, -np.eye(3)) <= tol:
+    if sp.simplify(exact + sp.eye(3)) == sp.zeros(3):
         return "inversion"
     return "other"
 
@@ -135,6 +138,28 @@ def _eigenvector(
     return vector
 
 
+def _exact_eigenvector(
+    operation: sp.Matrix,
+    eigenvalue: int,
+    *,
+    transpose: bool,
+    name: str,
+) -> sp.Matrix:
+    """Return the unique exact crystallographic eigendirection/covector."""
+
+    matrix = sp.Matrix(operation)
+    operator = (matrix.T if transpose else matrix) - eigenvalue * sp.eye(3)
+    nullspace = operator.nullspace()
+    if len(nullspace) != 1:
+        raise ValueError(
+            f"{name} must be one-dimensional; exact nullity={len(nullspace)}"
+        )
+    vector = sp.simplify(nullspace[0])
+    if vector == sp.zeros(3, 1):
+        raise ValueError(f"Failed to extract {name}")
+    return vector
+
+
 def _nonnegative_shear_squared(value: float, *, tol: float, label: str) -> float:
     if value < -tol:
         raise ValueError(f"Negative {label} shear^2 {value:.16g}")
@@ -148,12 +173,7 @@ def type_i_from_parent_reflection(
     correspondence: Correspondence,
     tol: float = 1.0e-10,
 ) -> CTTwin:
-    """Cayron Type-I twin from a generic parent mirror.
-
-    Implements the metric/correspondence equations restated by Cayron (2026,
-    Eqs. 18-21).  The rational K1 plane is inherited by correspondence; shear
-    amplitude and eta1 depend on the martensite metric.
-    """
+    """Cayron Type-I transformation twin, Eqs. (17)--(20)."""
 
     metric_a = _as_metric(M_a, name="M_a")
     metric_m = _as_metric(M_m, name="M_m")
@@ -164,21 +184,21 @@ def type_i_from_parent_reflection(
             f"(classified as {kind!r})"
         )
 
-    G = np.asarray(reflection_a, dtype=float)
-    p_a_raw = _eigenvector(
-        G.T,
-        -1.0,
+    p_a_exact = _exact_eigenvector(
+        reflection_a,
+        -1,
+        transpose=True,
         name="parent reflection-plane covector",
-        tol=tol,
     )
-    p_a = normalize_plane(p_a_raw, metric_a)
+    p_a = normalize_plane(np.asarray(p_a_exact, dtype=float).reshape(3), metric_a)
 
-    C = np.asarray(correspondence.C_M_from_A, dtype=float)
-    C_inv = np.linalg.inv(C)
-
-    p_m = normalize_plane(C_inv.T @ p_a, metric_m)
+    p_m_exact = correspondence.map_plane_A_to_M(p_a_exact)
+    p_m = normalize_plane(np.asarray(p_m_exact, dtype=float).reshape(3), metric_m)
     n_m = plane_to_unit_normal(p_m, metric_m)
-    C_int = C @ G @ C_inv
+
+    C_int_exact = correspondence.intercorrespondence_from_parent_symmetry(reflection_a)
+    C_int = np.asarray(C_int_exact, dtype=float)
+    C_inv = np.asarray(correspondence.C_A_from_M, dtype=float)
 
     shear_squared = float(
         np.trace(C_int.T @ metric_m @ C_int @ np.linalg.inv(metric_m)) - 3.0
@@ -218,8 +238,8 @@ def type_i_from_parent_reflection(
         intercorrespondence=C_int,
         rational_element="K1 is rational/correspondence-derived",
         equation_note=(
-            "Cayron Type-I: parent mirror -> rational K1; shear and eta1 "
-            "depend on the martensite metric."
+            "Cayron Type-I Eqs. (17)-(20): exact parent mirror and rational "
+            "K1/intercorrespondence; shear and eta1 depend on martensite metric."
         ),
     )
 
@@ -231,12 +251,7 @@ def type_ii_from_parent_twofold(
     correspondence: Correspondence,
     tol: float = 1.0e-10,
 ) -> CTTwin:
-    """Cayron Type-II twin from a generic proper parent twofold.
-
-    Implements the metric/correspondence equations restated by Cayron (2026,
-    Eqs. 22-25).  The rational eta2 direction is inherited by correspondence;
-    shear amplitude and K2 depend on the martensite metric.
-    """
+    """Cayron Type-II transformation twin, Eqs. (21)--(24)."""
 
     metric_a = _as_metric(M_a, name="M_a")
     metric_m = _as_metric(M_m, name="M_m")
@@ -247,20 +262,26 @@ def type_ii_from_parent_twofold(
             f"(classified as {kind!r})"
         )
 
-    G = np.asarray(rotation_a, dtype=float)
-    axis_a_raw = _eigenvector(
-        G,
-        1.0,
+    axis_a_exact = _exact_eigenvector(
+        rotation_a,
+        1,
+        transpose=False,
         name="parent twofold axis",
-        tol=tol,
     )
-    eta2_a = normalize_direct(axis_a_raw, metric_a)
+    eta2_a = normalize_direct(
+        np.asarray(axis_a_exact, dtype=float).reshape(3),
+        metric_a,
+    )
 
+    eta2_m_exact = correspondence.map_direction_A_to_M(axis_a_exact)
+    eta2_m = normalize_direct(
+        np.asarray(eta2_m_exact, dtype=float).reshape(3),
+        metric_m,
+    )
+
+    C_int_exact = correspondence.intercorrespondence_from_parent_symmetry(rotation_a)
+    C_int = np.asarray(C_int_exact, dtype=float)
     C = np.asarray(correspondence.C_M_from_A, dtype=float)
-    C_inv = np.linalg.inv(C)
-
-    eta2_m = normalize_direct(C @ eta2_a, metric_m)
-    C_int = C @ G @ C_inv
 
     shear_squared = float(
         np.trace(C_int @ np.linalg.inv(metric_m) @ C_int.T @ metric_m) - 3.0
@@ -276,7 +297,7 @@ def type_ii_from_parent_twofold(
     )
 
     p_m = metric_m @ eta2_m
-    C_star = np.linalg.inv(C_int).T
+    C_star = np.asarray(C_int_exact.inv().T, dtype=float)
     K2_raw = -(C_star - np.eye(3)) @ p_m
     if float(np.linalg.norm(K2_raw)) <= tol:
         raise ValueError("Collapsed CT Type-II K2")
@@ -303,8 +324,8 @@ def type_ii_from_parent_twofold(
         intercorrespondence=C_int,
         rational_element="eta2 is rational/correspondence-derived",
         equation_note=(
-            "Cayron Type-II: parent proper twofold -> rational eta2; "
-            "shear and K2 depend on the martensite metric."
+            "Cayron Type-II Eqs. (21)-(24): exact parent twofold and rational "
+            "eta2/intercorrespondence; shear and K2 depend on martensite metric."
         ),
     )
 
