@@ -1,0 +1,105 @@
+{
+  "purpose": "Opt-in Cu-Al-Ni literature benchmark states. None is a material default.",
+  "states": [
+    {
+      "key": "james_hane_2000_6m",
+      "source_key": "james_hane2000",
+      "composition_reported": "Cu-Al-Ni, 14 wt% Al, 4 wt% Ni; balance Cu",
+      "parent": {
+        "phase": "DO3 ordered cubic",
+        "a_angstrom": 5.836
+      },
+      "martensite": {
+        "phase": "long-period monoclinic",
+        "representation": "6M reduced cell",
+        "a_angstrom": 4.43,
+        "b_angstrom": 5.33,
+        "c_angstrom": 12.79,
+        "beta_deg": 95.68
+      },
+      "derived_reference": {
+        "exact_compatibility_angle_deg": 95.28
+      },
+      "warning": "Benchmark only. Do not reuse as an unknown specimen default."
+    },
+    {
+      "key": "landa_2007_2h",
+      "source_key": "landa2007_2h",
+      "composition_reported": "Cu-13.8Al-4.1Ni wt%",
+      "parent": {
+        "phase": "cubic austenite",
+        "a_angstrom": 5.835
+      },
+      "martensite": {
+        "phase": "2H orthorhombic",
+        "a_angstrom": 4.389,
+        "b_angstrom": 5.342,
+        "c_angstrom": 4.224
+      },
+      "warning": "Source-specific axis setting; do not reorder axes silently."
+    },
+    {
+      "key": "chen_2000_ebsd_2h",
+      "source_key": "chen2000_ebsd_2h",
+      "composition_reported": "Cu-12.55Al-4.84Ni wt%",
+      "observations": {
+        "or": [
+          "2H basal planes originate from parent {110}",
+          "[010]_2H originates from parent <001>"
+        ],
+        "twins": [
+          "A-C/B-D: {121}_2H mirror",
+          "A-D/B-C: {101}_2H mirror"
+        ]
+      },
+      "warning": "No lattice parameters are invented in this record."
+    },
+    {
+      "key": "otsuka_1974_stress_18r",
+      "source_key": "otsuka_nakamura_shimizu1974",
+      "composition_reported": "Cu-14.2Al-4.3Ni wt%",
+      "martensite": {
+        "phase": "stress-induced beta1' 18R",
+        "a_angstrom": 4.382,
+        "b_angstrom": 5.356,
+        "c_angstrom": 38.0,
+        "beta_deg": null
+      },
+      "warning": "Accessible source statement does not provide a unique monoclinic angle; metric intentionally incomplete."
+    },
+    {
+      "key": "ibarra_2006_beta3",
+      "source_key": "ibarra2006_tem",
+      "parent": {
+        "phase": "L21 beta3",
+        "space_group": "Fm-3m",
+        "a_angstrom": 5.8216
+      },
+      "martensite": {
+        "phase": "beta3'",
+        "space_group": "C2/m",
+        "a_angstrom": 13.8017,
+        "b_angstrom": 5.2856,
+        "c_angstrom": 4.3987,
+        "beta_deg": 113.6
+      }
+    },
+    {
+      "key": "ibarra_2006_gamma3",
+      "source_key": "ibarra2006_tem",
+      "parent": {
+        "phase": "L21 beta3",
+        "space_group": "Fm-3m",
+        "a_angstrom": 5.8216
+      },
+      "martensite": {
+        "phase": "gamma3'",
+        "space_group": "Pmmn",
+        "a_angstrom": 5.3424,
+        "b_angstrom": 4.2244,
+        "c_angstrom": 4.3896
+      },
+      "warning": "Orthorhombic axis order differs from some 2H publications; compare only through an explicit basis change."
+    }
+  ]
+}

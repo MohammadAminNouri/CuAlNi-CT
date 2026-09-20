@@ -3,23 +3,12 @@ from __future__ import annotations
 """Cross-theory mathematical consistency contracts.
 
 This module does not add a new phase-transformation theory.  It verifies that
-the independently implemented representations/theories already in CuAlNi-CT
-satisfy the identities that *must* connect them when they are fed the same
-physical crystallographic state.
+independently implemented representations satisfy identities that *must* hold
+when they are fed the same crystallographic state.
 
-The central contracts are:
-
-1. normalized CMC is the parent-metric congruence of dimensional CMC;
-2. normalized CMC = U^2 - I;
-3. eigenvalues(normalized CMC) = lambda_i^2 - 1;
-4. Cayron exact A/M metric compatibility and Ball-James lambda_2=1 give the
-   same exact numerical classification for a single variant;
-5. parent-whitened SMC = I - U^-2;
-6. all supported Cartesian frame conventions describe the same physical map.
-
-Passing these contracts does not prove that a theory matches experiment.
-It proves that the software's implementations of the connected mathematical
-objects are mutually coherent.
+Passing these contracts is a software/mathematical consistency statement, not
+experimental validation and not a claim that Cayron CT, PTMC and Ball-James
+are universally equivalent theories.
 """
 
 from dataclasses import asdict, dataclass
@@ -38,7 +27,11 @@ from .ct import (
 from .lattice import Lattice, metric_inv_sqrt, metric_sqrt
 from .numerics import DEFAULT_NUMERICAL_POLICY, NumericalPolicy, classify_residual
 from .representation import CartesianConvention, RepresentationBridge
-from .stretch import principal_stretches, stretch_from_metrics
+from .stretch import (
+    metric_native_stretch_spectrum,
+    principal_stretches,
+    stretch_from_metrics,
+)
 
 
 def _relative_residual(lhs: np.ndarray, rhs: np.ndarray) -> float:
@@ -55,6 +48,9 @@ class TheoryConsistencyAudit:
     normalized_cmc_from_dimensional_residual: float
     cmc_vs_stretch_residual: float
     cmc_eigenvalue_vs_lambda_residual: float
+    generalized_lambda_vs_whitened_lambda_residual: float
+    generalized_metric_orthonormality_residual: float
+    generalized_eigen_equation_residual: float
     lambda2_residual: float
     cmc_nearest_zero_residual: float
     exact_compatibility_agreement: bool
@@ -99,16 +95,16 @@ def audit_core_theory_consistency(
     *,
     policy: NumericalPolicy = DEFAULT_NUMERICAL_POLICY,
 ) -> TheoryConsistencyAudit:
-    """Audit mathematical identities linking CT, stretch theory and Cartesian frames.
+    """Audit identities linking CT metric objects, stretch theory and frames.
 
-    This function is deliberately generic: it does not assume cubic parent,
+    The function is deliberately generic: it does not assume cubic parent,
     monoclinic product, Cu-Al-Ni, or a particular literature parameter set.
     """
 
     M_a = parent.metric()
     M_m = product.metric()
 
-    # --- Contract 1: dimensional CMC -> normalized CMC ---------------------
+    # Contract 1: dimensional CMC -> normalized CMC.
     W = metric_inv_sqrt(M_a)
     cmc_dim = cmc(M_a, M_m, correspondence)
     D = normalized_cmc(M_a, M_m, correspondence)
@@ -118,7 +114,7 @@ def audit_core_theory_consistency(
         D_from_dimensional,
     )
 
-    # --- Contracts 2-3: normalized CMC <-> stretch ------------------------
+    # Contracts 2-3: normalized CMC <-> symmetric transformation stretch.
     U = stretch_from_metrics(M_a, M_m, correspondence)
     U2_minus_I = U.T @ U - np.eye(3)
     cmc_vs_stretch_residual = _relative_residual(D, U2_minus_I)
@@ -128,7 +124,19 @@ def audit_core_theory_consistency(
     q_from_lambda = np.sort(lambdas**2 - 1.0)
     cmc_eigenvalue_vs_lambda_residual = _relative_residual(q, q_from_lambda)
 
-    # --- Contract 4: exact CT A/M classification <-> lambda_2 = 1 --------
+    # Contract 3b: metric-native generalized eigenproblem must give the same
+    # principal stretches as the whitened Cartesian/orthonormal representation.
+    metric_native = metric_native_stretch_spectrum(M_a, M_m, correspondence)
+    generalized_lambda_vs_whitened_lambda_residual = _relative_residual(
+        np.sort(metric_native.lambdas),
+        np.sort(lambdas),
+    )
+    generalized_metric_orthonormality_residual = (
+        metric_native.metric_orthonormality_residual
+    )
+    generalized_eigen_equation_residual = metric_native.eigen_equation_residual
+
+    # Contract 4: exact single-variant A/M classification.
     ct_analysis = analyze_cmc(
         M_a,
         M_m,
@@ -138,17 +146,12 @@ def audit_core_theory_consistency(
     lambda2_residual = float(abs(lambdas[1] - 1.0))
     bj_exact = bool(lambda2_residual <= policy.exact_eigenvalue)
     exact_compatibility_agreement = bool(ct_analysis.exact_compatible == bj_exact)
-
-    # The nearest normalized-CMC zero residual is reported, never hidden.
     cmc_nearest_zero_residual = float(ct_analysis.nearest_zero_residual)
 
-    # --- Contract 5: SMC duality ------------------------------------------
+    # Contract 5: SMC duality.
     #
     # Ghat = M_A^-1/2 C^T M_M C M_A^-1/2 = U^2
-    #
-    # S M_C S = I - Ghat^-1
-    #
-    # with S = M_A^(1/2).
+    # S SMC S = I - Ghat^-1, S=M_A^1/2.
     S = metric_sqrt(M_a)
     SMC = smc(M_a, M_m, correspondence)
     Ghat = normalized_correspondence_metric(M_a, M_m, correspondence)
@@ -156,7 +159,8 @@ def audit_core_theory_consistency(
     rhs_smc = np.eye(3) - np.linalg.inv(Ghat)
     smc_duality_residual = _relative_residual(lhs_smc, rhs_smc)
 
-    # --- Contract 6: all supported Cartesian representations --------------
+    # Contract 6: all supported Cartesian representations describe the same
+    # physical map.
     representation_residuals: list[float] = []
     for parent_convention in CartesianConvention:
         for product_convention in CartesianConvention:
@@ -176,6 +180,9 @@ def audit_core_theory_consistency(
         normalized_cmc_from_dimensional_residual,
         cmc_vs_stretch_residual,
         cmc_eigenvalue_vs_lambda_residual,
+        generalized_lambda_vs_whitened_lambda_residual,
+        generalized_metric_orthonormality_residual,
+        generalized_eigen_equation_residual,
         smc_duality_residual,
     )
     maximum_algebraic_residual = max(algebraic_residuals)
@@ -192,6 +199,13 @@ def audit_core_theory_consistency(
         ),
         cmc_vs_stretch_residual=cmc_vs_stretch_residual,
         cmc_eigenvalue_vs_lambda_residual=cmc_eigenvalue_vs_lambda_residual,
+        generalized_lambda_vs_whitened_lambda_residual=(
+            generalized_lambda_vs_whitened_lambda_residual
+        ),
+        generalized_metric_orthonormality_residual=(
+            generalized_metric_orthonormality_residual
+        ),
+        generalized_eigen_equation_residual=generalized_eigen_equation_residual,
         lambda2_residual=lambda2_residual,
         cmc_nearest_zero_residual=cmc_nearest_zero_residual,
         exact_compatibility_agreement=exact_compatibility_agreement,

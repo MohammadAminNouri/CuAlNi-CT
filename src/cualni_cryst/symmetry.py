@@ -16,7 +16,14 @@ def canonical_matrix_sort_key(g: sp.Matrix) -> tuple:
 
 
 def cubic_full_m3m() -> list[sp.Matrix]:
-    """All 48 signed permutation matrices of cubic m-3m (O_h)."""
+    """All 48 crystallographic operations of cubic m-3m (O_h).
+
+    These are exact signed-permutation matrices in the conventional cubic
+    crystallographic basis.  The *full* group is intentionally returned:
+    reflections and other improper operations are required by Cayron's
+    correspondence/operator construction and, in particular, parent mirror
+    operations are the generators of CT Type-I twins.
+    """
     out: dict[tuple, sp.Matrix] = {}
     for perm in permutations(range(3)):
         P = sp.zeros(3)
@@ -28,25 +35,41 @@ def cubic_full_m3m() -> list[sp.Matrix]:
     mats = sorted(out.values(), key=canonical_matrix_sort_key)
     if len(mats) != 48:
         raise AssertionError(f"Expected 48 cubic operations, found {len(mats)}")
-    # identity first for human-readable tables
     I = sp.eye(3)
     mats.remove(I)
     return [I] + mats
 
 
+def proper_operations(
+    operations: list[sp.Matrix] | tuple[sp.Matrix, ...],
+) -> list[sp.Matrix]:
+    """Return the determinant +1 subgroup/part of a crystallographic operation list."""
+    return [sp.Matrix(g) for g in operations if sp.simplify(sp.det(g) - 1) == 0]
+
+
+def improper_operations(
+    operations: list[sp.Matrix] | tuple[sp.Matrix, ...],
+) -> list[sp.Matrix]:
+    """Return determinant -1 crystallographic operations."""
+    return [sp.Matrix(g) for g in operations if sp.simplify(sp.det(g) + 1) == 0]
+
+
 def cubic_proper_rotations() -> list[sp.Matrix]:
-    return [g for g in cubic_full_m3m() if int(g.det()) == 1]
+    """The 24 proper rotations of cubic m-3m."""
+    mats = proper_operations(cubic_full_m3m())
+    if len(mats) != 24:
+        raise AssertionError(f"Expected 24 proper cubic rotations, found {len(mats)}")
+    return mats
 
 
 def monoclinic_2_over_m_unique_b() -> list[sp.Matrix]:
     """Point group 2/m in conventional unique-b direct basis."""
-    mats = [
+    return [
         sp.eye(3),
-        sp.diag(-1, 1, -1),      # 2-fold around b
-        -sp.eye(3),              # inversion
-        sp.diag(1, -1, 1),       # mirror normal to b
+        sp.diag(-1, 1, -1),  # 2-fold around b
+        -sp.eye(3),  # inversion
+        sp.diag(1, -1, 1),  # mirror normal to b
     ]
-    return mats
 
 
 def orthorhombic_mmm() -> list[sp.Matrix]:
@@ -97,7 +120,11 @@ def classify_cubic_operation(g: sp.Matrix, atol: float = 1e-9) -> dict[str, obje
     idx = int(np.argmin(np.abs(vals2 - 1.0)))
     axis = np.real(vecs2[:, idx])
     axis /= np.max(np.abs(axis))
-    info.update(kind="rotoinversion", proper_partner_angle_deg=angle, axis=_canonical_direction(axis))
+    info.update(
+        kind="rotoinversion",
+        proper_partner_angle_deg=angle,
+        axis=_canonical_direction(axis),
+    )
     return info
 
 
@@ -131,11 +158,11 @@ class SymmetryInfo:
 
 
 def classify_symmetry(g: sp.Matrix) -> SymmetryInfo:
-    """Classify an exact signed-permutation crystallographic symmetry.
+    """Classify an exact signed-permutation symmetry of the cubic parent.
 
-    This helper is intended for the cubic parent group used in this project.
-    It keeps reflections separate from generic improper operations because
-    Cayron's Type-I construction depends specifically on parent mirrors.
+    This helper is deliberately cubic-specific.  Generic point-group support
+    lives in :mod:`point_groups`; do not use this classifier as a substitute
+    for metric validation in a non-cubic basis.
     """
     d = classify_cubic_operation(g)
     return SymmetryInfo(
@@ -146,3 +173,92 @@ def classify_symmetry(g: sp.Matrix) -> SymmetryInfo:
         axis=d.get("axis"),
         plane_normal=d.get("plane_normal"),
     )
+
+
+@dataclass(frozen=True)
+class CubicM3MInventory:
+    """Explicit inventory of the 48 operations of cubic m-3m.
+
+    Keeping this object visible is scientifically useful: CT topology uses the
+    full 48-element crystallographic group, whereas EBSD/physical orientation
+    matrices live in SO(3) and therefore use only the 24 proper rotations.
+    """
+
+    total: int
+    proper: int
+    improper: int
+    identity: int
+    inversion: int
+    reflections: int
+    proper_twofold_rotations: int
+    proper_threefold_rotations: int
+    proper_fourfold_rotations: int
+    rotoinversions_order4: int
+    rotoinversions_order6: int
+
+
+def cubic_m3m_inventory() -> CubicM3MInventory:
+    """Return and internally cross-check the exact m-3m operation counts."""
+    counts = {
+        "identity": 0,
+        "inversion": 0,
+        "reflections": 0,
+        "proper_twofold": 0,
+        "proper_threefold": 0,
+        "proper_fourfold": 0,
+        "rotoinv4": 0,
+        "rotoinv6": 0,
+    }
+    operations = cubic_full_m3m()
+    for g in operations:
+        info = classify_symmetry(g)
+        if info.kind == "identity":
+            counts["identity"] += 1
+        elif info.kind == "inversion":
+            counts["inversion"] += 1
+        elif info.kind == "reflection":
+            counts["reflections"] += 1
+        elif info.kind == "rotation":
+            if info.order == 2:
+                counts["proper_twofold"] += 1
+            elif info.order == 3:
+                counts["proper_threefold"] += 1
+            elif info.order == 4:
+                counts["proper_fourfold"] += 1
+        elif info.kind == "rotoinversion":
+            if info.order == 4:
+                counts["rotoinv4"] += 1
+            elif info.order == 6:
+                counts["rotoinv6"] += 1
+
+    proper = len(proper_operations(operations))
+    improper = len(improper_operations(operations))
+    inventory = CubicM3MInventory(
+        total=len(operations),
+        proper=proper,
+        improper=improper,
+        identity=counts["identity"],
+        inversion=counts["inversion"],
+        reflections=counts["reflections"],
+        proper_twofold_rotations=counts["proper_twofold"],
+        proper_threefold_rotations=counts["proper_threefold"],
+        proper_fourfold_rotations=counts["proper_fourfold"],
+        rotoinversions_order4=counts["rotoinv4"],
+        rotoinversions_order6=counts["rotoinv6"],
+    )
+    expected = CubicM3MInventory(
+        total=48,
+        proper=24,
+        improper=24,
+        identity=1,
+        inversion=1,
+        reflections=9,
+        proper_twofold_rotations=9,
+        proper_threefold_rotations=8,
+        proper_fourfold_rotations=6,
+        rotoinversions_order4=6,
+        rotoinversions_order6=8,
+    )
+    if inventory != expected:
+        raise AssertionError(f"Unexpected cubic m-3m inventory: {inventory!r}")
+    return inventory
