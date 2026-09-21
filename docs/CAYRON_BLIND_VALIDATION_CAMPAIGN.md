@@ -10,8 +10,11 @@ This campaign has three simultaneous goals:
 3. stress the same backend on crystal systems and coordinate representations
    unrelated to Cu-Al-Ni.
 
-No production equation in `src/cualni_cryst/` is modified by this campaign.
-It adds benchmark data, tests and this audit document only.
+The campaign does not modify the Cayron CT correspondence, Type-I,
+Type-II, CMC/SMC or shear equations. During the coordinate-covariance test it
+exposed a numerical instability in the compound-twin classification comparator.
+That comparator was replaced by a metric-native projective chord residual;
+the theoretical CT equations themselves remain unchanged.
 
 ## Input/output firewall
 
