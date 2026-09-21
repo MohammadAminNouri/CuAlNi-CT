@@ -1,0 +1,54 @@
+{
+  "benchmark_id": "cayron_2006_burgers_groupoid_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_blind_topology",
+  "source": {
+    "citation": "C. Cayron, Groupoid of orientational variants, Acta Crystallographica A 62 (2006) 21-40.",
+    "doi": "10.1107/S010876730503686X"
+  },
+  "blind_protocol": "Construct the Burgers OR from the two published parallelisms only. Variant/operator counts are withheld until after subgroup/coset construction.",
+  "input": {
+    "parent": {
+      "phase": "bcc beta",
+      "point_group": "m-3m"
+    },
+    "product": {
+      "phase": "hcp alpha",
+      "point_group": "6/mmm"
+    },
+    "burgers_or": {
+      "plane_product": [
+        0,
+        0,
+        1
+      ],
+      "plane_parent": [
+        1,
+        1,
+        0
+      ],
+      "direction_product": [
+        1,
+        0,
+        0
+      ],
+      "direction_parent": [
+        1,
+        -1,
+        1
+      ]
+    },
+    "construction": "Exact parent/product orientation is constructed only from the two Burgers parallelisms; published variant/operator counts are not used in construction."
+  },
+  "expected": {
+    "intersection_order": 4,
+    "variant_count": 12,
+    "operator_count": 7
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "5687e0b8b2312041de77684d6aaf51d542850b4affd0f71c71c879f41e70766d",
+    "expected_sha256": "8197c65c59663eb1d18bc7418aed2e2bc88d129ce3811e2ad14af0f23983ef96",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}

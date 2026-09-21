@@ -1,0 +1,97 @@
+{
+  "benchmark_id": "chen_2000_blind_2h_v1",
+  "schema_version": 1,
+  "kind": "permanent_regression_and_external_validation",
+  "source": {
+    "experimental_reference": "X. Chen et al. (2000), EBSD of Cu-Al-Ni 2H martensite",
+    "input_state_provenance": "Frozen original blind-run state; lattice/correspondence are calculation inputs, Chen twin observations remain comparison targets.",
+    "notes": "This file intentionally preserves the exact 5.836 / 4.382 / 5.356 / 4.222 Angstrom state used in the original blind run."
+  },
+  "blind_protocol": "Only input is supplied to the CT backend. The expected block is read after calculation and is hash-locked.",
+  "input": {
+    "parent": {
+      "phase": "DO3 ordered cubic",
+      "point_group": "m-3m",
+      "lattice": {
+        "kind": "cubic",
+        "a_angstrom": 5.836
+      }
+    },
+    "product": {
+      "phase": "2H orthorhombic martensite",
+      "point_group": "mmm",
+      "lattice": {
+        "kind": "orthorhombic",
+        "a_angstrom": 4.382,
+        "b_angstrom": 5.356,
+        "c_angstrom": 4.222
+      }
+    },
+    "package_C_M_from_A": [
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        -1
+      ]
+    ]
+  },
+  "expected": {
+    "correspondence_subgroup_order": 8,
+    "variant_count": 6,
+    "operator_count": 3,
+    "compound_family": {
+      "plane_M": [
+        1,
+        0,
+        1
+      ],
+      "direction_M": [
+        1,
+        0,
+        -1
+      ],
+      "representations": [
+        "I",
+        "II"
+      ]
+    },
+    "type_I_family": {
+      "plane_M": [
+        1,
+        2,
+        1
+      ],
+      "shear": 0.26066690926341635
+    },
+    "type_II_conjugate": {
+      "plane_M_ratio": [
+        1,
+        1.503634,
+        0.503634
+      ],
+      "direction_M": [
+        1,
+        -1,
+        1
+      ],
+      "shear": 0.26066690926341723,
+      "ratio_abs_tol": 5e-06
+    }
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "db67712dfefe24298cde96d67d19b3a3b87f88a33e8a231671354337bdcdacc0",
+    "expected_sha256": "fe227369b426c10d4513498c59398e097f33d682accf949e9661c828d2fa18aa",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}

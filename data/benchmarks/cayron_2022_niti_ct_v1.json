@@ -1,0 +1,186 @@
+{
+  "benchmark_id": "cayron_2022_niti_ct_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_blind_ct_twins",
+  "source": {
+    "citation": "C. Cayron, The Correspondence Theory and Its Application to NiTi Shape Memory Alloys, Crystals 12 (2022) 130.",
+    "doi": "10.3390/cryst12020130"
+  },
+  "blind_protocol": "Supply published B2/B19prime metrics, symmetries and correspondence only. Compute topology/twins before reading the expected twin-family block. Operator indices are never used as matching keys.",
+  "input": {
+    "parent": {
+      "phase": "B2",
+      "point_group": "m-3m",
+      "lattice": {
+        "kind": "cubic",
+        "a_angstrom": 3.015
+      }
+    },
+    "product": {
+      "phase": "B19prime",
+      "point_group": "2/m",
+      "setting": "unique_b",
+      "lattice": {
+        "kind": "monoclinic_unique_b",
+        "a_angstrom": 2.889,
+        "b_angstrom": 4.12,
+        "c_angstrom": 4.622,
+        "beta_deg": 96.8
+      }
+    },
+    "paper_C_A_to_M": [
+      [
+        0,
+        1,
+        -1
+      ],
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "package_convention": "u_M = C_M_from_A u_A; Cayron's printed basis matrix is inverted at the package boundary.",
+    "package_C_M_from_A": [
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        "1/2",
+        "1/2",
+        0
+      ],
+      [
+        "-1/2",
+        "1/2",
+        0
+      ]
+    ]
+  },
+  "expected": {
+    "intersection_order": 4,
+    "variant_count": 12,
+    "operator_count": 7,
+    "twin_families": [
+      {
+        "label": "compound_100_001",
+        "kind": "compound",
+        "plane_M": [
+          1,
+          0,
+          0
+        ],
+        "direction_M": [
+          0,
+          0,
+          1
+        ],
+        "shear": 0.2385,
+        "shear_abs_tol": 0.0005
+      },
+      {
+        "label": "compound_001_100",
+        "kind": "compound",
+        "plane_M": [
+          0,
+          0,
+          1
+        ],
+        "direction_M": [
+          1,
+          0,
+          0
+        ],
+        "shear": 0.2385,
+        "shear_abs_tol": 0.0005
+      },
+      {
+        "label": "O4_type_I",
+        "route": "I",
+        "plane_M": [
+          -1,
+          1,
+          1
+        ],
+        "shear": 0.3096,
+        "shear_abs_tol": 0.0005
+      },
+      {
+        "label": "O4_type_II",
+        "route": "II",
+        "plane_M": [
+          0.247,
+          0.506,
+          1
+        ],
+        "shear": 0.3096,
+        "shear_abs_tol": 0.0005,
+        "plane_projective_tol": 0.0003
+      },
+      {
+        "label": "O5_type_I",
+        "route": "I",
+        "plane_M": [
+          1,
+          1,
+          1
+        ],
+        "shear": 0.1422,
+        "shear_abs_tol": 0.0005
+      },
+      {
+        "label": "O5_type_II",
+        "route": "II",
+        "plane_M": [
+          -0.6686,
+          0.3376,
+          1
+        ],
+        "shear": 0.1422,
+        "shear_abs_tol": 0.0005,
+        "plane_projective_tol": 0.0004
+      },
+      {
+        "label": "O6_type_I",
+        "route": "I",
+        "plane_M": [
+          0,
+          1,
+          1
+        ],
+        "shear": 0.2804,
+        "shear_abs_tol": 0.0005
+      },
+      {
+        "label": "O6_type_II",
+        "route": "II",
+        "plane_M": [
+          0.7206,
+          1,
+          -1
+        ],
+        "shear": 0.2804,
+        "shear_abs_tol": 0.0005,
+        "plane_projective_tol": 0.0004
+      }
+    ],
+    "natural_or": {
+      "status": "not_blind_from_correspondence_alone",
+      "plane_parallelism": "(010)_B19prime // (110)_B2",
+      "direction_parallelism": "[101]_B19prime // [-1 1 1]_B2"
+    }
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "13d7ec3079bab184e37aa693a7a1e08760f3eb28f60959042fc3f0e2e5f32033",
+    "expected_sha256": "c00a17ab22a8ed84c3bb880ad393817d36bf34c7bf1add37ad1805c9512ad53e",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}

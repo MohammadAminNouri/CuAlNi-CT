@@ -1,0 +1,82 @@
+{
+  "benchmark_id": "cayron_2026_niti_c1_compatibility_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_blind_cmc_and_twin",
+  "source": {
+    "citation": "C. Cayron, Compatibilities and supercompatibility conditions in shape memory alloys determined from correspondence, metrics and symmetries, Acta Materialia 316 (2026) 122399.",
+    "doi": "10.1016/j.actamat.2026.122399"
+  },
+  "blind_protocol": "Supply the paper's hypothetical C1 normalized lattice and correspondence only. Compute CMC degeneracy, habit-plane count and CT twins before comparison with the expected block.",
+  "input": {
+    "parent": {
+      "phase": "B2",
+      "point_group": "m-3m",
+      "lattice": {
+        "kind": "cubic",
+        "a": 1.0,
+        "units": "dimensionless_reference"
+      }
+    },
+    "product": {
+      "phase": "B19prime_C1",
+      "point_group": "2/m",
+      "setting": "unique_b",
+      "lattice": {
+        "kind": "monoclinic_unique_b",
+        "a_over_a0": 0.9628,
+        "b_over_a0": "sqrt(2)",
+        "c_over_a0": 1.5435,
+        "beta_deg": 97.78
+      }
+    },
+    "package_C_M_from_A": [
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        "1/2",
+        "1/2",
+        0
+      ],
+      [
+        "-1/2",
+        "1/2",
+        0
+      ]
+    ]
+  },
+  "expected": {
+    "cmc": {
+      "exact_compatible": true,
+      "degeneracy_order": 1,
+      "inertia": [
+        1,
+        1,
+        1
+      ],
+      "habit_plane_count": 2
+    },
+    "compound_family": {
+      "plane_M": [
+        1,
+        0,
+        0
+      ],
+      "direction_M": [
+        0,
+        0,
+        1
+      ],
+      "shear": 0.27325,
+      "shear_abs_tol": 5e-05
+    }
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "999995c7caed8f5b64b71d754a0a6ba54f9af15842743da76787d75de63b2ca3",
+    "expected_sha256": "82ded2c00703b76e20babb5db287f0727f78a3ad05f3e38d1828abc9d7a63acb",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}

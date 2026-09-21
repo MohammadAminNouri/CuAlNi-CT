@@ -1,0 +1,65 @@
+{
+  "benchmark_id": "cayron_2019_bain_correspondence_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_blind_correspondence_topology",
+  "source": {
+    "citation": "C. Cayron, The transformation matrices (distortion, orientation, correspondence), their continuous forms, and their variants, Acta Crystallographica A 75 (2019) 411-437.",
+    "doi": "10.1107/S205327331900038X",
+    "corrigendum_note": "The campaign uses explicit crystallographic point groups; it does not reconstruct a point group as the full metric-isometry group."
+  },
+  "blind_protocol": "Invert the paper's printed basis/correspondence matrix only to cross the package coordinate convention. The published correspondence-variant count is not used during construction.",
+  "input": {
+    "parent": {
+      "phase": "fcc gamma",
+      "point_group": "m-3m"
+    },
+    "product": {
+      "phase": "bcc alpha",
+      "point_group": "m-3m"
+    },
+    "paper_correspondence_matrix": [
+      [
+        "1/2",
+        "-1/2",
+        "0"
+      ],
+      [
+        "1/2",
+        "1/2",
+        "0"
+      ],
+      [
+        "0",
+        "0",
+        "1"
+      ]
+    ],
+    "package_convention": "u_M = C_M_from_A u_A",
+    "package_C_M_from_A": [
+      [
+        "1",
+        "1",
+        "0"
+      ],
+      [
+        "-1",
+        "1",
+        "0"
+      ],
+      [
+        "0",
+        "0",
+        "1"
+      ]
+    ]
+  },
+  "expected": {
+    "correspondence_variant_count": 3
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "7fa6ee0006b07ae90bfb58161d9075ee353cc5d94a7a679c6dbafc637d6055cc",
+    "expected_sha256": "715d00516ef1fad7c5410980db6162eee99c23c7a17eda95b460879fdc362fb9",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}
