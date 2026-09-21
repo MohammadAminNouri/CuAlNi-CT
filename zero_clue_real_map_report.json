@@ -1,0 +1,277 @@
+{
+  "challenge_integrity": {
+    "challenge_json_sha256": "c51345e32d09e5b4ca9d4a2db7ec0f3a172fc3e78f100ece16b50497c35b5b21",
+    "observations_npz_sha256": "db172ea6c8bdf283bd7503fd0bd25bb7cced687aa71d0597ca8cabb81d749484",
+    "structural_zero_clue_contract": "PASS"
+  },
+  "consensus": {
+    "ordered_role_evidence": [
+      {
+        "candidate_parent_phase_id": 1,
+        "candidate_product_phase_id": 2,
+        "median_cross_phase_empirical_p": null,
+        "median_of_cross_phase_medians_deg": null,
+        "median_of_fit_medians_deg": null,
+        "median_of_holdout_medians_deg": null,
+        "statuses": [
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence"
+        ],
+        "thresholds_tested": 5,
+        "thresholds_with_blind_solution": 0
+      },
+      {
+        "candidate_parent_phase_id": 2,
+        "candidate_product_phase_id": 1,
+        "median_cross_phase_empirical_p": null,
+        "median_of_cross_phase_medians_deg": null,
+        "median_of_fit_medians_deg": null,
+        "median_of_holdout_medians_deg": null,
+        "statuses": [
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence"
+        ],
+        "thresholds_tested": 5,
+        "thresholds_with_blind_solution": 0
+      }
+    ],
+    "selection_policy": "No role is forced automatically. Compare stability across segmentation thresholds, untouched holdout residuals, and independent cross-phase permutation evidence."
+  },
+  "elapsed_seconds": 89.52869507000014,
+  "inputs_visible_to_solver": {
+    "anonymous_phase_ids": [
+      1,
+      2
+    ],
+    "chemical_identity_withheld": true,
+    "correspondence_withheld": true,
+    "expected_operator_families_withheld": true,
+    "orientation_relationship_withheld": true,
+    "parent_product_roles_withheld": true,
+    "phase_names_withheld": true
+  },
+  "map_audit": {
+    "coordinate_dimension": 2,
+    "duplicate_coordinate_pairs": 0,
+    "indexed_fraction": 0.5963875568252672,
+    "maximum_so3_residual": 2.3084038669998297e-15,
+    "n_indexed": 210427,
+    "n_points": 352836,
+    "nearest_neighbor_median": 1.7999999999999545,
+    "nearest_neighbor_minimum": 1.7999999999999545,
+    "phase_counts": {
+      "0": 142409,
+      "1": 208305,
+      "2": 2122
+    }
+  },
+  "neighbor_graph": {
+    "coordinate_dimension": 2,
+    "n_edges": 704484,
+    "radius": 2.07
+  },
+  "schema_version": 1,
+  "threshold_results": [
+    {
+      "elapsed_seconds": 15.344125593999706,
+      "n_cross_phase_grain_adjacencies": 0,
+      "n_grains": 1287,
+      "n_same_phase_grain_adjacencies": 414,
+      "ordered_role_tests": [
+        {
+          "candidate_parent_phase_id": 1,
+          "candidate_product_phase_id": 2,
+          "elapsed_seconds": 0.00019974499991803896,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 1287,
+          "n_product_grains": 0,
+          "n_product_product_boundaries": 0,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        },
+        {
+          "candidate_parent_phase_id": 2,
+          "candidate_product_phase_id": 1,
+          "elapsed_seconds": 0.00032346200077881804,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 0,
+          "n_product_grains": 1287,
+          "n_product_product_boundaries": 414,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        }
+      ],
+      "phase_grain_counts": {
+        "1": 1287,
+        "2": 0
+      },
+      "threshold_deg": 2.0
+    },
+    {
+      "elapsed_seconds": 15.527008105999812,
+      "n_cross_phase_grain_adjacencies": 0,
+      "n_grains": 1201,
+      "n_same_phase_grain_adjacencies": 274,
+      "ordered_role_tests": [
+        {
+          "candidate_parent_phase_id": 1,
+          "candidate_product_phase_id": 2,
+          "elapsed_seconds": 0.00018925000040326267,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 1201,
+          "n_product_grains": 0,
+          "n_product_product_boundaries": 0,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        },
+        {
+          "candidate_parent_phase_id": 2,
+          "candidate_product_phase_id": 1,
+          "elapsed_seconds": 0.0004026630003863829,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 0,
+          "n_product_grains": 1201,
+          "n_product_product_boundaries": 274,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        }
+      ],
+      "phase_grain_counts": {
+        "1": 1201,
+        "2": 0
+      },
+      "threshold_deg": 3.0
+    },
+    {
+      "elapsed_seconds": 15.481295454999781,
+      "n_cross_phase_grain_adjacencies": 0,
+      "n_grains": 1170,
+      "n_same_phase_grain_adjacencies": 238,
+      "ordered_role_tests": [
+        {
+          "candidate_parent_phase_id": 1,
+          "candidate_product_phase_id": 2,
+          "elapsed_seconds": 0.00020156099981250009,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 1170,
+          "n_product_grains": 0,
+          "n_product_product_boundaries": 0,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        },
+        {
+          "candidate_parent_phase_id": 2,
+          "candidate_product_phase_id": 1,
+          "elapsed_seconds": 0.00023217700072564185,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 0,
+          "n_product_grains": 1170,
+          "n_product_product_boundaries": 238,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        }
+      ],
+      "phase_grain_counts": {
+        "1": 1170,
+        "2": 0
+      },
+      "threshold_deg": 4.0
+    },
+    {
+      "elapsed_seconds": 15.057788263000475,
+      "n_cross_phase_grain_adjacencies": 0,
+      "n_grains": 1162,
+      "n_same_phase_grain_adjacencies": 224,
+      "ordered_role_tests": [
+        {
+          "candidate_parent_phase_id": 1,
+          "candidate_product_phase_id": 2,
+          "elapsed_seconds": 0.0001867080000010901,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 1162,
+          "n_product_grains": 0,
+          "n_product_product_boundaries": 0,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        },
+        {
+          "candidate_parent_phase_id": 2,
+          "candidate_product_phase_id": 1,
+          "elapsed_seconds": 0.00025541300055920146,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 0,
+          "n_product_grains": 1162,
+          "n_product_product_boundaries": 224,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        }
+      ],
+      "phase_grain_counts": {
+        "1": 1162,
+        "2": 0
+      },
+      "threshold_deg": 5.0
+    },
+    {
+      "elapsed_seconds": 14.836203286000455,
+      "n_cross_phase_grain_adjacencies": 0,
+      "n_grains": 1147,
+      "n_same_phase_grain_adjacencies": 205,
+      "ordered_role_tests": [
+        {
+          "candidate_parent_phase_id": 1,
+          "candidate_product_phase_id": 2,
+          "elapsed_seconds": 0.0001913190008053789,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 1147,
+          "n_product_grains": 0,
+          "n_product_product_boundaries": 0,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        },
+        {
+          "candidate_parent_phase_id": 2,
+          "candidate_product_phase_id": 1,
+          "elapsed_seconds": 0.00022738300049240934,
+          "n_cross_phase_grain_contacts": 0,
+          "n_fit_boundaries": 0,
+          "n_holdout_boundaries": 0,
+          "n_parent_grains": 0,
+          "n_product_grains": 1147,
+          "n_product_product_boundaries": 205,
+          "note": "The retained grain graph does not contain both phases with at least one interphase grain contact; blind interphase OR inference is therefore not experimentally identifiable.",
+          "status": "insufficient_evidence"
+        }
+      ],
+      "phase_grain_counts": {
+        "1": 1147,
+        "2": 0
+      },
+      "threshold_deg": 7.5
+    }
+  ]
+}
