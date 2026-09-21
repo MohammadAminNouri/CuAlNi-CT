@@ -1,0 +1,22 @@
+{
+  "benchmark_id": "ebsd_blind_or_discovery_v1",
+  "schema_version": 1,
+  "answer_bearing_inputs_forbidden": [
+    "orientation_relationship",
+    "expected_or",
+    "true_or",
+    "oracle",
+    "answer"
+  ],
+  "scenarios": [
+    "tetragonal_to_orthorhombic",
+    "hexagonal_to_orthorhombic",
+    "cubic_to_tetragonal",
+    "orthorhombic_to_monoclinic"
+  ],
+  "principle": "Oracle orientation relationships are generated only in the evaluator process and are not passed to the solver subprocess.",
+  "inverse_identification_target": "child_child_observable_parent_subgroup_embedding_modulo_product_conjugation",
+  "physical_or_matrix_uniqueness_claimed": false,
+  "normalizer_gauge_explicit": true,
+  "campaign_pass_metric": "blind_observable_embedding_distance_deg"
+}
