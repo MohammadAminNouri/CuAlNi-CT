@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-"""Run phase-survival forensics on a sealed anonymous EBSD challenge."""
+"""Run a sealed zero-clue EBSD forensic audit with compact scientific outputs.
+
+Human-readable JSON contains summaries only. Point/component label arrays are
+stored in a compressed NPZ sidecar and covered by a SHA-256 manifest.
+"""
 
 from dataclasses import fields, is_dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 from typing import Any, Mapping
 
 import numpy as np
@@ -15,8 +21,9 @@ from cualni_cryst.ebsd_analysis import build_neighbor_graph
 from cualni_cryst.ebsd_map import EBSDMap, EBSDPhase, audit_map
 from cualni_cryst.ebsd_phase_forensics import (
     PhaseForensicsSettings,
-    assert_component_segmentation_parity,
     assert_vectorized_disorientation_parity,
+    compact_phase_forensics_report,
+    phase_forensics_array_payload,
     run_phase_forensics,
 )
 from cualni_cryst.lattice import Lattice
@@ -44,7 +51,10 @@ def json_safe(value: Any) -> Any:
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (np.floating,)):
-        return float(value)
+        number = float(value)
+        return number if np.isfinite(number) else None
+    if isinstance(value, Path):
+        return str(value)
     if is_dataclass(value) and not isinstance(value, type):
         return {
             field.name: json_safe(getattr(value, field.name))
@@ -55,6 +65,62 @@ def json_safe(value: Any) -> Any:
     if isinstance(value, (tuple, list)):
         return [json_safe(v) for v in value]
     return value
+
+
+def atomic_write_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{path.name}.tmp-",
+        dir=path.parent,
+    )
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_name, path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def atomic_write_json(path: Path, payload: Any) -> None:
+    serializable = json_safe(payload)
+    data = (
+        json.dumps(
+            serializable,
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+    atomic_write_bytes(path, data)
+
+
+def atomic_write_npz(path: Path, arrays: Mapping[str, np.ndarray]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{path.stem}.tmp-",
+        suffix=".npz",
+        dir=path.parent,
+    )
+    os.close(fd)
+    try:
+        with open(tmp_name, "wb") as handle:
+            np.savez_compressed(handle, **arrays)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_name, path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
 
 
 def validate_contract(challenge: Mapping[str, Any]) -> None:
@@ -139,6 +205,10 @@ def phase_from_spec(spec: Mapping[str, Any]) -> EBSDPhase:
 def load_challenge(root: Path):
     challenge_path = root / "challenge.json"
     observations_path = root / "observations.npz"
+    if not challenge_path.is_file() or not observations_path.is_file():
+        raise FileNotFoundError(
+            "challenge directory must contain challenge.json and observations.npz"
+        )
     if sha256_file(challenge_path) != EXPECTED_CHALLENGE_SHA256:
         raise RuntimeError("challenge.json hash mismatch")
     if sha256_file(observations_path) != EXPECTED_OBSERVATIONS_SHA256:
@@ -158,9 +228,7 @@ def load_challenge(root: Path):
             if key.startswith("quality_")
         }
         data = EBSDMap(
-            orientations=np.asarray(
-                payload["orientations"], dtype=float
-            ),
+            orientations=np.asarray(payload["orientations"], dtype=float),
             phase_id=np.asarray(payload["phase_id"], dtype=int),
             indexed=np.asarray(payload["indexed"], dtype=bool),
             x=np.asarray(payload["x"], dtype=float),
@@ -176,16 +244,25 @@ def main() -> int:
     if len(sys.argv) not in {2, 3}:
         print(
             "usage: python tools/run_zero_clue_phase_forensics.py "
-            "data/real_blind_challenge [report.json]",
+            "data/real_blind_challenge [summary.json]",
             file=sys.stderr,
         )
         return 2
 
     root = Path(sys.argv[1]).resolve()
-    output = (
+    summary_path = (
         Path(sys.argv[2]).resolve()
         if len(sys.argv) == 3
         else Path("zero_clue_phase_forensics.json").resolve()
+    )
+    if summary_path.suffix.lower() != ".json":
+        raise ValueError("output path must end in .json")
+
+    arrays_path = summary_path.with_name(
+        summary_path.stem + "_arrays.npz"
+    )
+    manifest_path = summary_path.with_name(
+        summary_path.stem + "_manifest.json"
     )
 
     challenge, data, phases = load_challenge(root)
@@ -203,8 +280,6 @@ def main() -> int:
         flush=True,
     )
 
-    # Gate the optimized forensic primitives against the frozen scalar backend
-    # on this real map before trusting the full report.
     print("Cross-locking vectorized edge crystallography...", flush=True)
     assert_vectorized_disorientation_parity(
         data,
@@ -227,9 +302,13 @@ def main() -> int:
             challenge["settings"]["null_permutations"]
         ),
         random_seed=int(challenge["settings"]["random_seed"]),
+        reliability_component_min_points=2,
+        reliability_minimum_spatial_supported_pixel_fraction=0.20,
+        reliability_minimum_orientation_supported_pixel_fraction=0.20,
+        reliability_minimum_supported_components=8,
     )
 
-    print("Running phase-survival + direct-interface forensics...", flush=True)
+    print("Running reliability-gated phase forensics...", flush=True)
     report = run_phase_forensics(
         data,
         phases,
@@ -237,29 +316,84 @@ def main() -> int:
         settings=settings,
     )
 
+    compact = compact_phase_forensics_report(report)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "challenge_integrity": {
             "challenge_json_sha256": EXPECTED_CHALLENGE_SHA256,
             "observations_npz_sha256": EXPECTED_OBSERVATIONS_SHA256,
             "zero_clue_contract": "PASS",
         },
         "map_audit": audit_map(data),
-        "forensics": report,
+        "forensics": compact,
         "interpretation_contract": {
             "phase_extinction_is_never_silent": True,
             "minimum_size_is_not_auto_lowered": True,
+            "direct_interface_route_requires_phase_reliability_gate": True,
+            "singleton_dominated_populations_are_not_fit": True,
             "direct_interface_route_does_not_assign_transformation_direction": True,
             "fit_holdout_separation": True,
             "holdout_pairing_permutation_null": True,
+            "large_point_and_component_arrays_are_not_serialized_to_json": True,
             "all_phase_names_and_roles_remain_anonymous": True,
         },
     }
-    output.write_text(
-        json.dumps(json_safe(payload), indent=2, sort_keys=True) + "\n"
-    )
+    serializable = json_safe(payload)
+    encoded = (
+        json.dumps(
+            serializable,
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        + "\n"
+    ).encode("utf-8")
 
-    print("\n=== FORENSIC AUDIT COMPLETE ===", flush=True)
+    forbidden_large_array_keys = (
+        b'"component_id"',
+        b'"component_sizes"',
+        b'"component_phase_id"',
+    )
+    leaked = [
+        token.decode("utf-8")
+        for token in forbidden_large_array_keys
+        if token in encoded
+    ]
+    if leaked:
+        raise RuntimeError(
+            "compact summary attempted to serialize component arrays: "
+            + ", ".join(leaked)
+        )
+    if len(encoded) > 2_000_000:
+        raise RuntimeError(
+            f"compact summary unexpectedly exceeds 2 MB ({len(encoded)} bytes)"
+        )
+
+    arrays = phase_forensics_array_payload(report)
+    atomic_write_bytes(summary_path, encoded)
+    atomic_write_npz(arrays_path, arrays)
+
+    manifest = {
+        "schema_version": 1,
+        "summary": {
+            "path": summary_path.name,
+            "sha256": sha256_file(summary_path),
+            "bytes": summary_path.stat().st_size,
+        },
+        "arrays": {
+            "path": arrays_path.name,
+            "sha256": sha256_file(arrays_path),
+            "bytes": arrays_path.stat().st_size,
+            "keys": sorted(arrays),
+        },
+        "challenge": {
+            "challenge_json_sha256": EXPECTED_CHALLENGE_SHA256,
+            "observations_npz_sha256": EXPECTED_OBSERVATIONS_SHA256,
+        },
+    }
+    atomic_write_json(manifest_path, manifest)
+
+    print("\n=== RELIABILITY-GATED FORENSIC AUDIT COMPLETE ===", flush=True)
     for item in report.phase_survival:
         print(
             f"phase_{item.phase_id}: pixels={item.raw_indexed_pixels:,}, "
@@ -267,41 +401,41 @@ def main() -> int:
             f"largest={item.largest_raw_spatial_component}",
             flush=True,
         )
-    for warning in report.warnings:
-        print("WARNING:", warning, flush=True)
 
     for threshold in report.thresholds:
-        print(
-            f"\nthreshold={threshold.threshold_deg:g} deg",
-            flush=True,
-        )
-        for route in threshold.pair_routes:
+        print(f"\nthreshold={threshold.threshold_deg:g} deg", flush=True)
+        for gate in threshold.phase_reliability:
             print(
-                f"  pair {route.phase_a}-{route.phase_b}: "
-                f"raw_edges={route.raw_cross_phase_pixel_edges:,}, "
-                f"interface_units={route.orientation_interface_units:,}, "
-                f"direct_route={route.direct_interface_route_possible}",
+                f"  phase_{gate.phase_id}: interface_gate="
+                f"{'PASS' if gate.interface_inference_allowed else 'REJECT'}; "
+                f"raw_supported_fraction={gate.raw_supported_pixel_fraction:.3f}; "
+                f"orientation_supported_fraction="
+                f"{gate.orientation_supported_pixel_fraction:.3f}; "
+                f"supported_components={gate.orientation_supported_components}",
                 flush=True,
             )
-        for relation in threshold.direct_relations:
-            if relation.best is None:
+            if gate.reason_codes:
                 print(
-                    f"  relation {relation.phase_a}-{relation.phase_b}: "
-                    f"{relation.status}",
+                    "    reasons=" + ",".join(gate.reason_codes),
                     flush=True,
                 )
-            else:
+        for relation in threshold.direct_relations:
+            print(
+                f"  pair {relation.phase_a}-{relation.phase_b}: "
+                f"{relation.status}",
+                flush=True,
+            )
+            if relation.best is not None:
                 print(
-                    f"  relation {relation.phase_a}-{relation.phase_b}: "
-                    f"{relation.status}; "
-                    f"fit_med={relation.best.fit_median_deg:.3f} deg; "
-                    f"holdout_med={relation.best.holdout_median_deg:.3f} deg; "
-                    f"holdout_support={relation.best.holdout_support_fraction:.3f}; "
+                    f"    holdout_median={relation.best.holdout_median_deg:.3f} deg; "
+                    f"support={relation.best.holdout_support_fraction:.3f}; "
                     f"p={relation.best.null_empirical_p_value:.5f}",
                     flush=True,
                 )
 
-    print("\nreport:", output, flush=True)
+    print("\nsummary:", summary_path, flush=True)
+    print("arrays: ", arrays_path, flush=True)
+    print("manifest:", manifest_path, flush=True)
     return 0
 
 

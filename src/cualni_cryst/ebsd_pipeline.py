@@ -70,6 +70,10 @@ from .ebsd_map import (
     OrientationConvention,
     audit_map,
 )
+from .ebsd_phase_forensics import (
+    InsufficientPhaseEvidenceError,
+    assess_grain_route_reliability,
+)
 from .ebsd_reconstruction import (
     VariantAssignment,
     reconstruct_parent,
@@ -2237,6 +2241,28 @@ def run_pipeline(config_path: str | Path) -> PipelineResult:
             "grain segmentation produced no grains after filtering/minimum-size rules"
         )
 
+    minimum_product_grains = max(
+        2,
+        (
+            int(parent_settings["minimum_grains"])
+            if parent_settings["enabled"]
+            else 2
+        ),
+    )
+    product_reliability = assess_grain_route_reliability(
+        working_map,
+        segmentation,
+        grains,
+        phase_id=product_phase_id,
+        minimum_required_grains=minimum_product_grains,
+    )
+    if not product_reliability.allowed:
+        raise InsufficientPhaseEvidenceError(
+            "configured product phase failed the mandatory grain-level "
+            "experimental reliability gate before OR/CT map inference: "
+            + ",".join(product_reliability.reason_codes)
+        )
+
     sweep = sweep_segmentation_thresholds(
         working_map,
         phases,
@@ -2539,6 +2565,9 @@ def run_pipeline(config_path: str | Path) -> PipelineResult:
                 "neighbor_radius": neighbor_graph.radius,
                 "coordinate_dimension": neighbor_graph.coordinate_dimension,
                 "sweep": sweep_rows,
+            },
+            "phase_reliability": {
+                "product_grain_route": product_reliability,
             },
             "orientation_relationship": {
                 "configured": resolved_or,

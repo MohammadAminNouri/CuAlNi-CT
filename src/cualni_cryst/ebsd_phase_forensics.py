@@ -91,6 +91,10 @@ class PhaseForensicsSettings:
     null_significance_level: float = 0.05
     random_seed: int = 20260921
     mean_batch_size: int = 4096
+    reliability_component_min_points: int = 2
+    reliability_minimum_spatial_supported_pixel_fraction: float = 0.20
+    reliability_minimum_orientation_supported_pixel_fraction: float = 0.20
+    reliability_minimum_supported_components: int = 8
 
     def __post_init__(self) -> None:
         thresholds = tuple(float(x) for x in self.orientation_thresholds_deg)
@@ -143,6 +147,26 @@ class PhaseForensicsSettings:
             )
         if self.mean_batch_size < 1:
             raise ValueError("mean_batch_size must be positive")
+        if self.reliability_component_min_points < 2:
+            raise ValueError(
+                "reliability_component_min_points must be >= 2"
+            )
+        for name, value in (
+            (
+                "reliability_minimum_spatial_supported_pixel_fraction",
+                self.reliability_minimum_spatial_supported_pixel_fraction,
+            ),
+            (
+                "reliability_minimum_orientation_supported_pixel_fraction",
+                self.reliability_minimum_orientation_supported_pixel_fraction,
+            ),
+        ):
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must lie in [0,1]")
+        if self.reliability_minimum_supported_components < 1:
+            raise ValueError(
+                "reliability_minimum_supported_components must be >= 1"
+            )
 
 
 @dataclass(frozen=True)
@@ -176,6 +200,36 @@ class ThresholdPhaseSurvival:
     largest_orientation_component: int
     components_ge_size: Mapping[int, int]
     pixel_fraction_in_components_ge_size: Mapping[int, float]
+
+
+@dataclass(frozen=True)
+class PhaseReliabilityAssessment:
+    phase_id: int
+    threshold_deg: float
+    interface_inference_allowed: bool
+    minimum_component_points: int
+    raw_supported_components: int
+    raw_supported_pixel_fraction: float
+    orientation_supported_components: int
+    orientation_supported_pixel_fraction: float
+    reason_codes: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class GrainRouteReliabilityAssessment:
+    phase_id: int
+    allowed: bool
+    indexed_pixels: int
+    retained_pixels: int
+    retained_pixel_fraction: float
+    retained_grains: int
+    largest_retained_grain: int
+    minimum_required_grains: int
+    reason_codes: tuple[str, ...]
+
+
+class InsufficientPhaseEvidenceError(RuntimeError):
+    """Experimental evidence is insufficient for the requested EBSD route."""
 
 
 @dataclass(frozen=True)
@@ -246,6 +300,7 @@ class ForensicThresholdResult:
     threshold_deg: float
     segmentation: ComponentSegmentation
     phase_survival: tuple[ThresholdPhaseSurvival, ...]
+    phase_reliability: tuple[PhaseReliabilityAssessment, ...]
     pair_routes: tuple[PairRouteEvidence, ...]
     direct_relations: tuple[InterphaseRelationResult, ...]
 
@@ -849,6 +904,150 @@ def threshold_pair_route_evidence(
     return tuple(output)
 
 
+def assess_phase_interface_reliability(
+    raw_record: PhaseSurvivalRecord,
+    threshold_record: ThresholdPhaseSurvival,
+    settings: PhaseForensicsSettings,
+) -> PhaseReliabilityAssessment:
+    """Evaluate evidence sufficiency before any direct interphase OR fit."""
+
+    if raw_record.phase_id != threshold_record.phase_id:
+        raise ValueError("phase reliability records refer to different phases")
+
+    minimum = int(settings.reliability_component_min_points)
+    raw_components = int(
+        raw_record.raw_components_ge_size.get(minimum, 0)
+    )
+    raw_fraction = float(
+        raw_record.raw_pixel_fraction_in_components_ge_size.get(
+            minimum, 0.0
+        )
+    )
+    orientation_components_count = int(
+        threshold_record.components_ge_size.get(minimum, 0)
+    )
+    orientation_fraction = float(
+        threshold_record.pixel_fraction_in_components_ge_size.get(
+            minimum, 0.0
+        )
+    )
+
+    reasons: list[str] = []
+    if raw_record.raw_indexed_pixels <= 0:
+        reasons.append("no_indexed_pixels")
+    if (
+        raw_fraction
+        < settings.reliability_minimum_spatial_supported_pixel_fraction
+    ):
+        reasons.append(
+            "spatial_supported_pixel_fraction_below_minimum"
+        )
+    if (
+        orientation_fraction
+        < settings.reliability_minimum_orientation_supported_pixel_fraction
+    ):
+        reasons.append(
+            "orientation_supported_pixel_fraction_below_minimum"
+        )
+    if (
+        orientation_components_count
+        < settings.reliability_minimum_supported_components
+    ):
+        reasons.append("too_few_supported_orientation_components")
+
+    return PhaseReliabilityAssessment(
+        phase_id=raw_record.phase_id,
+        threshold_deg=threshold_record.threshold_deg,
+        interface_inference_allowed=not reasons,
+        minimum_component_points=minimum,
+        raw_supported_components=raw_components,
+        raw_supported_pixel_fraction=raw_fraction,
+        orientation_supported_components=orientation_components_count,
+        orientation_supported_pixel_fraction=orientation_fraction,
+        reason_codes=tuple(reasons),
+    )
+
+
+def filter_interface_units_for_reliability(
+    units: Sequence[InterfaceUnit],
+    segmentation: ComponentSegmentation,
+    *,
+    minimum_component_points: int,
+) -> tuple[InterfaceUnit, ...]:
+    """Keep only interfaces supported by nontrivial components on both sides."""
+
+    if minimum_component_points < 2:
+        raise ValueError("minimum_component_points must be >= 2")
+
+    sizes = np.asarray(segmentation.component_sizes, dtype=int)
+    output = []
+    for unit in units:
+        ca = int(unit.component_a)
+        cb = int(unit.component_b)
+        if not (0 <= ca < len(sizes) and 0 <= cb < len(sizes)):
+            raise ValueError("interface unit references an invalid component")
+        if (
+            sizes[ca] >= minimum_component_points
+            and sizes[cb] >= minimum_component_points
+        ):
+            output.append(unit)
+    return tuple(output)
+
+
+def assess_grain_route_reliability(
+    data: EBSDMap,
+    segmentation: GrainSegmentation,
+    grains: Sequence[Grain],
+    *,
+    phase_id: int,
+    minimum_required_grains: int = 2,
+) -> GrainRouteReliabilityAssessment:
+    """Mandatory gate for grain-level experimental inference."""
+
+    if minimum_required_grains < 1:
+        raise ValueError("minimum_required_grains must be >= 1")
+
+    phase_mask = data.indexed & (data.phase_id == int(phase_id))
+    indexed_pixels = int(np.count_nonzero(phase_mask))
+    retained_mask = phase_mask & (segmentation.grain_id >= 0)
+    retained_pixels = int(np.count_nonzero(retained_mask))
+    retained_grains = [
+        grain for grain in grains if grain.phase_id == int(phase_id)
+    ]
+    grain_count = len(retained_grains)
+    largest = max(
+        (int(grain.size) for grain in retained_grains),
+        default=0,
+    )
+    fraction = (
+        float(retained_pixels / indexed_pixels)
+        if indexed_pixels
+        else 0.0
+    )
+
+    reasons: list[str] = []
+    if indexed_pixels == 0:
+        reasons.append("no_indexed_pixels")
+    if retained_pixels == 0:
+        reasons.append("no_retained_pixels")
+    if grain_count == 0:
+        reasons.append("no_retained_grains")
+    if grain_count < minimum_required_grains:
+        reasons.append("too_few_retained_grains")
+
+    return GrainRouteReliabilityAssessment(
+        phase_id=int(phase_id),
+        allowed=not reasons,
+        indexed_pixels=indexed_pixels,
+        retained_pixels=retained_pixels,
+        retained_pixel_fraction=fraction,
+        retained_grains=grain_count,
+        largest_retained_grain=largest,
+        minimum_required_grains=int(minimum_required_grains),
+        reason_codes=tuple(reasons),
+    )
+
+
 def _candidate_equivalent_quaternions(
     candidate: np.ndarray,
     symmetry_a: Sequence[np.ndarray],
@@ -1312,13 +1511,19 @@ def run_phase_forensics(
         neighbor_graph,
     )
     spatial = spatial_components(data, neighbor_graph)
+    internal_survival_sizes = tuple(
+        sorted(
+            set(int(x) for x in settings.minimum_component_sizes)
+            | {int(settings.reliability_component_min_points)}
+        )
+    )
     phase_records = phase_survival_records(
         data,
         phases,
         neighbor_graph,
         spatial,
         edge_angles,
-        minimum_sizes=settings.minimum_component_sizes,
+        minimum_sizes=internal_survival_sizes,
     )
     raw_routes = raw_pair_route_evidence(
         data,
@@ -1354,8 +1559,22 @@ def run_phase_forensics(
         survival = threshold_phase_survival(
             segmentation,
             observed_phase_ids,
-            minimum_sizes=settings.minimum_component_sizes,
+            minimum_sizes=internal_survival_sizes,
         )
+        raw_by_phase = {
+            item.phase_id: item for item in phase_records
+        }
+        reliability = tuple(
+            assess_phase_interface_reliability(
+                raw_by_phase[item.phase_id],
+                item,
+                settings,
+            )
+            for item in survival
+        )
+        reliability_by_phase = {
+            item.phase_id: item for item in reliability
+        }
         for record in survival:
             raw_pixels = int(
                 np.count_nonzero(
@@ -1380,11 +1599,18 @@ def run_phase_forensics(
             segmentation,
             batch_size=settings.mean_batch_size,
         )
-        units = interface_units(
+        all_units = interface_units(
             data,
             neighbor_graph,
             segmentation,
             means,
+        )
+        units = filter_interface_units_for_reliability(
+            all_units,
+            segmentation,
+            minimum_component_points=(
+                settings.reliability_component_min_points
+            ),
         )
         routes = threshold_pair_route_evidence(
             raw_routes,
@@ -1394,6 +1620,40 @@ def run_phase_forensics(
 
         direct_relations = []
         for route in routes:
+            gate_a = reliability_by_phase[route.phase_a]
+            gate_b = reliability_by_phase[route.phase_b]
+            if (
+                not gate_a.interface_inference_allowed
+                or not gate_b.interface_inference_allowed
+            ):
+                reasons = []
+                if not gate_a.interface_inference_allowed:
+                    reasons.append(
+                        f"phase {route.phase_a}: "
+                        + ",".join(gate_a.reason_codes)
+                    )
+                if not gate_b.interface_inference_allowed:
+                    reasons.append(
+                        f"phase {route.phase_b}: "
+                        + ",".join(gate_b.reason_codes)
+                    )
+                direct_relations.append(
+                    InterphaseRelationResult(
+                        phase_a=route.phase_a,
+                        phase_b=route.phase_b,
+                        status="rejected_by_phase_reliability_gate",
+                        n_interface_units=route.orientation_interface_units,
+                        n_fit_units=0,
+                        n_holdout_units=0,
+                        best=None,
+                        alternatives=tuple(),
+                        note=(
+                            "Direct interphase optimization was not run. "
+                            "Evidence gate: " + " | ".join(reasons)
+                        ),
+                    )
+                )
+                continue
             if not route.direct_interface_route_possible:
                 direct_relations.append(
                     InterphaseRelationResult(
@@ -1432,6 +1692,7 @@ def run_phase_forensics(
                 threshold_deg=float(threshold),
                 segmentation=segmentation,
                 phase_survival=survival,
+                phase_reliability=reliability,
                 pair_routes=routes,
                 direct_relations=tuple(direct_relations),
             )
@@ -1443,6 +1704,60 @@ def run_phase_forensics(
         thresholds=tuple(threshold_results),
         warnings=tuple(warnings),
     )
+
+
+def compact_phase_forensics_report(
+    report: PhaseForensicsReport,
+) -> dict[str, Any]:
+    """Return the human-readable view with all large label arrays removed."""
+
+    return {
+        "phase_survival": report.phase_survival,
+        "raw_pair_routes": report.raw_pair_routes,
+        "thresholds": [
+            {
+                "threshold_deg": item.threshold_deg,
+                "segmentation": {
+                    "n_components": item.segmentation.n_components,
+                    "threshold_deg": item.segmentation.threshold_deg,
+                },
+                "phase_survival": item.phase_survival,
+                "phase_reliability": item.phase_reliability,
+                "pair_routes": item.pair_routes,
+                "direct_relations": item.direct_relations,
+            }
+            for item in report.thresholds
+        ],
+        "warnings": report.warnings,
+    }
+
+
+def phase_forensics_array_payload(
+    report: PhaseForensicsReport,
+) -> dict[str, np.ndarray]:
+    """Return reproducible large arrays for compressed NPZ persistence."""
+
+    payload: dict[str, np.ndarray] = {}
+    for item in report.thresholds:
+        token = (
+            f"{item.threshold_deg:g}"
+            .replace("-", "m")
+            .replace(".", "p")
+        )
+        prefix = f"threshold_{token}"
+        payload[f"{prefix}_component_id"] = np.asarray(
+            item.segmentation.component_id,
+            dtype=np.int64,
+        )
+        payload[f"{prefix}_component_sizes"] = np.asarray(
+            item.segmentation.component_sizes,
+            dtype=np.int64,
+        )
+        payload[f"{prefix}_component_phase_id"] = np.asarray(
+            item.segmentation.component_phase_id,
+            dtype=np.int64,
+        )
+    return payload
 
 
 def assert_vectorized_disorientation_parity(
