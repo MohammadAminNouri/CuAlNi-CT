@@ -1467,22 +1467,77 @@ class OrientationService:
 
         first_variants = self.variants(first)
         second_variants = self.variants(second_common)
+
+        # A crystallographic OR is a quotient object. A moving-phase crystal
+        # symmetry changes only the representative of the same product
+        # orientation:
+        #
+        #     R ~ R S_M^{-1}.
+        #
+        # Consequently the symmetry-reduced distance between two ORs must
+        # minimize not only over parent-derived orientation variants, but also
+        # over the relative proper moving-phase symmetry:
+        #
+        #     min angle(A S_M B^T).
+        #
+        # The former implementation compared only A B^T for the chosen coset
+        # representatives. That quantity depends on the arbitrary moving
+        # crystal representative and can overestimate the true quotient
+        # disorientation.
+        moving_phase = self.project.phase(first.moving_phase_id)
+        moving_symmetries = self.proper_symmetry_cartesian(
+            moving_phase,
+            first.moving_cartesian_convention,
+        )
+
         best_angle = float("inf")
         best_first = 0
         best_second = 0
         best_delta = np.eye(3)
+        best_key: tuple[float, int, int, int] | None = None
 
         for first_variant in first_variants:
-            A = np.asarray(first_variant.matrix_reference_from_moving)
+            A = np.asarray(
+                first_variant.matrix_reference_from_moving,
+                dtype=float,
+            )
             for second_variant in second_variants:
-                B = np.asarray(second_variant.matrix_reference_from_moving)
-                delta = misorientation_matrix(A, B)
-                angle = axis_angle_from_matrix(delta).angle_deg
-                if angle < best_angle:
-                    best_angle = angle
-                    best_first = first_variant.index
-                    best_second = second_variant.index
-                    best_delta = delta
+                B = np.asarray(
+                    second_variant.matrix_reference_from_moving,
+                    dtype=float,
+                )
+                for moving_symmetry_index, S_M in moving_symmetries:
+                    delta = A @ np.asarray(S_M, dtype=float) @ B.T
+
+                    # Stable principal SO(3) angle. Using atan2 avoids the
+                    # loss of sensitivity of acos((tr(R)-1)/2) near 0 deg,
+                    # while remaining well-conditioned near 180 deg.
+                    skew = 0.5 * np.array(
+                        [
+                            delta[2, 1] - delta[1, 2],
+                            delta[0, 2] - delta[2, 0],
+                            delta[1, 0] - delta[0, 1],
+                        ],
+                        dtype=float,
+                    )
+                    sine = float(np.linalg.norm(skew))
+                    cosine = float(
+                        np.clip((float(np.trace(delta)) - 1.0) / 2.0, -1.0, 1.0)
+                    )
+                    angle = math.degrees(math.atan2(sine, cosine))
+
+                    key = (
+                        angle,
+                        first_variant.index,
+                        second_variant.index,
+                        moving_symmetry_index,
+                    )
+                    if best_key is None or key < best_key:
+                        best_key = key
+                        best_angle = angle
+                        best_first = first_variant.index
+                        best_second = second_variant.index
+                        best_delta = delta
 
         return OrientationComparisonReport(
             first_orientation_id=first.orientation_id,
