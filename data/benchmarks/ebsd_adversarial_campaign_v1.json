@@ -1,0 +1,37 @@
+{
+  "benchmark_id": "ebsd_adversarial_campaign_v1",
+  "schema_version": 1,
+  "seed": 20260921,
+  "purpose": "Freeze failure semantics and invariants for the generic EBSD experimental-validation layer.",
+  "corruptions": {
+    "orientation_noise_sigma_deg": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "random_unindex_fraction": 0.3,
+    "random_orientation_outlier_fraction": 0.1,
+    "crystal_frame_offset_axis": [
+      1.0,
+      -2.0,
+      0.5
+    ],
+    "crystal_frame_offset_deg": 17.0,
+    "global_sample_rotation_axis": [
+      0.3,
+      1.0,
+      -0.2
+    ],
+    "global_sample_rotation_deg": 37.0,
+    "active_passive_corruption": "matrix_transpose"
+  },
+  "required_invariants": [
+    "global sample rotation leaves internal child/child theory score invariant",
+    "wrong crystal-frame and active/passive hypotheses are not silently repaired",
+    "segmentation threshold is sensitivity-reported, not automatically declared physical truth",
+    "variant graph retains overlapping parent-domain candidates as ambiguity",
+    "plane-trace validation requires explicit specimen surface normal",
+    "quality fields are never converted to angular uncertainty without calibration"
+  ],
+  "sha256_without_sha_field": "de45e84c5c614cbf265fb8f1ba5d08d40e8ca4c7e2e1abecce85aaf61bbf91b2"
+}
