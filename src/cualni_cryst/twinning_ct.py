@@ -364,19 +364,36 @@ def _projective_metric_sine(
     *,
     reciprocal: bool,
 ) -> float:
-    """Sine of the acute projective angle in a direct/reciprocal metric."""
+    """Stable projective separation in a direct/reciprocal metric.
 
-    G = np.linalg.inv(metric) if reciprocal else metric
-    u = np.asarray(lhs, dtype=float).reshape(3)
-    v = np.asarray(rhs, dtype=float).reshape(3)
-    uu = float(u @ G @ u)
-    vv = float(v @ G @ v)
-    if uu <= 0.0 or vv <= 0.0:
-        raise ValueError("Cannot compare zero/invalid crystallographic elements")
-    uv = float(u @ G @ v)
-    cosine_sq = (uv * uv) / (uu * vv)
-    cosine_sq = min(1.0, max(0.0, cosine_sq))
-    return float(np.sqrt(max(0.0, 1.0 - cosine_sq)))
+    The former sqrt(1-cos(theta)^2) expression is ill-conditioned near
+    theta=0 and can flip an exact compound relation after an exact basis
+    change. Here we compare normalized physical representatives using the
+    appropriate direct/reciprocal Gram matrix.
+
+    Opposite signs represent the same crystallographic line, so the residual
+    is min(||u-v||, ||u+v||).
+    """
+
+    M = _as_metric(metric, name="metric")
+    G = np.linalg.solve(M, np.eye(3)) if reciprocal else M
+    G = 0.5 * (G + G.T)
+
+    L = np.linalg.cholesky(G)
+
+    def embedded_unit(value: np.ndarray) -> np.ndarray:
+        crystal = np.asarray(value, dtype=float).reshape(3)
+        physical = L.T @ crystal
+        norm = float(np.linalg.norm(physical))
+        if norm <= 1.0e-14:
+            raise ValueError(
+                "Cannot compare zero/invalid crystallographic elements"
+            )
+        return physical / norm
+
+    u = embedded_unit(lhs)
+    v = embedded_unit(rhs)
+    return float(min(np.linalg.norm(u - v), np.linalg.norm(u + v)))
 
 
 def _same_physical_twin(
