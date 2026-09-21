@@ -1,0 +1,256 @@
+{
+  "benchmark_id": "cayron_2022_mg_weak_twins_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_correspondence_conditioned_blind_weak_twins",
+  "source": {
+    "citation": "C. Cayron, The concept of axial weak twins, Acta Materialia 236 (2022) 118128.",
+    "doi": "10.1016/j.actamat.2022.118128"
+  },
+  "blind_protocol": "For each case expose only lattice metric, exact rational correspondence and invariant axis to the search. Published weak planes, q_g, s_g and epsilon_g remain in expected and are compared only after enumeration. This is correspondence-conditioned blind validation, not a claim to reproduce undocumented GenOVa supercell candidate ordering.",
+  "input": {
+    "lattice": {
+      "kind": "hexagonal_3index",
+      "a_angstrom": 3.21,
+      "c_angstrom": 5.21,
+      "gamma_deg": 120.0
+    },
+    "cases": [
+      {
+        "id": "mg_a_basal_prismatic",
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "C": [
+          [
+            "1",
+            "-1/2",
+            "1"
+          ],
+          [
+            "0",
+            "0",
+            "2"
+          ],
+          [
+            "0",
+            "1/2",
+            "0"
+          ]
+        ],
+        "max_plane_index": 4
+      },
+      {
+        "id": "mg_a_basal_pyramidal",
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "C": [
+          [
+            "1",
+            "-1/4",
+            "3/4"
+          ],
+          [
+            "0",
+            "1/2",
+            "3/2"
+          ],
+          [
+            "0",
+            "-1/2",
+            "1/2"
+          ]
+        ],
+        "max_plane_index": 4
+      },
+      {
+        "id": "mg_a_second_sister",
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "C": [
+          [
+            "1",
+            "-1/2",
+            "1"
+          ],
+          [
+            "0",
+            "0",
+            "2"
+          ],
+          [
+            "0",
+            "1/2",
+            "0"
+          ]
+        ],
+        "max_plane_index": 4
+      },
+      {
+        "id": "mg_a_extension",
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "C": [
+          [
+            "1",
+            "-1/2",
+            "1"
+          ],
+          [
+            "0",
+            "0",
+            "2"
+          ],
+          [
+            "0",
+            "1/2",
+            "0"
+          ]
+        ],
+        "max_plane_index": 4
+      },
+      {
+        "id": "mg_a2b_weak",
+        "axis": [
+          1,
+          2,
+          0
+        ],
+        "C": [
+          [
+            "1/2",
+            "1/4",
+            "3/2"
+          ],
+          [
+            "0",
+            "1",
+            "0"
+          ],
+          [
+            "-1/2",
+            "1/4",
+            "1/2"
+          ]
+        ],
+        "max_plane_index": 6
+      }
+    ]
+  },
+  "expected": {
+    "cases": [
+      {
+        "id": "mg_a_basal_prismatic",
+        "plane1": [
+          0,
+          0,
+          1
+        ],
+        "plane2": [
+          0,
+          1,
+          0
+        ],
+        "q_g": 2,
+        "s_g": 0.092,
+        "s_g_abs_tol": 0.001,
+        "epsilon_g": 0.13,
+        "epsilon_abs_tol": 0.001
+      },
+      {
+        "id": "mg_a_basal_pyramidal",
+        "plane1": [
+          0,
+          0,
+          1
+        ],
+        "plane2": [
+          0,
+          1,
+          1
+        ],
+        "q_g": 4,
+        "s_g": 0.107,
+        "s_g_abs_tol": 0.001,
+        "epsilon_g": 0.137,
+        "epsilon_abs_tol": 0.001
+      },
+      {
+        "id": "mg_a_second_sister",
+        "plane1": [
+          0,
+          1,
+          1
+        ],
+        "plane2": [
+          0,
+          1,
+          4
+        ],
+        "q_g": 2,
+        "s_g": 0.118,
+        "s_g_abs_tol": 0.001,
+        "epsilon_g_source_reported": 0.137,
+        "epsilon_g_equation_from_printed_C": 0.1300860007,
+        "epsilon_status": "source_internal_discrepancy_not_used_as_pass_fail_target"
+      },
+      {
+        "id": "mg_a_extension",
+        "plane1": [
+          0,
+          1,
+          2
+        ],
+        "plane2": [
+          0,
+          1,
+          2
+        ],
+        "q_g": 2,
+        "s_g": 0.13,
+        "s_g_abs_tol": 0.001,
+        "epsilon_g": 0.13,
+        "epsilon_abs_tol": 0.001
+      },
+      {
+        "id": "mg_a2b_weak",
+        "plane1": [
+          -2,
+          1,
+          0
+        ],
+        "plane2": [
+          2,
+          -1,
+          -6
+        ],
+        "plane2_source_equivalent": [
+          -2,
+          1,
+          6
+        ],
+        "q_g": 4,
+        "s_g": 0.088,
+        "s_g_abs_tol": 0.001,
+        "epsilon_g": 0.113,
+        "epsilon_abs_tol": 0.001
+      }
+    ]
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "cbfa9d3b3ee0286b7264aa0e8b1427442c7721e5fcf674c80a6ba03b360441e5",
+    "expected_sha256": "ce58a2fa5a0e476f133f59af76f058122e68af45e071cf601659723a9b0b4ec6",
+    "mutation_policy": "immutable_v1; source correction requires new benchmark version"
+  }
+}

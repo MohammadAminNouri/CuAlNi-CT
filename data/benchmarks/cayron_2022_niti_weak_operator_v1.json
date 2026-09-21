@@ -1,0 +1,86 @@
+{
+  "benchmark_id": "cayron_2022_niti_weak_operator_v1",
+  "schema_version": 1,
+  "kind": "published_cayron_blind_higher_order_weak_operator",
+  "source": {
+    "citation": "C. Cayron, The Correspondence Theory and Its Application to NiTi Shape Memory Alloys, Crystals 12 (2022) 130.",
+    "doi": "10.3390/cryst12020130"
+  },
+  "blind_protocol": "Only the already-locked B2/B19prime metrics, symmetries and base correspondence are exposed. The code must identify non-classical higher-order operator classes, derive the rational invariant axis and intercorrespondence, then discover weak planes. Expected planes and weak-twin observables are hidden until comparison.",
+  "input": {
+    "base_benchmark": "cayron_2022_niti_ct_v1.json",
+    "protocol": {
+      "operator_selection": "Build exact CT correspondence groupoid from base benchmark input; exclude identity and all double cosets containing an exact Type-I mirror or Type-II proper twofold; analyze remaining proper crystallographic 3/4/6-fold elements.",
+      "weak_plane_search": {
+        "max_plane_index": 4,
+        "ranking": "metric-native intrinsic in-plane distortion; no expected plane supplied"
+      }
+    }
+  },
+  "expected": {
+    "weak_family": {
+      "parent_rotation_order": 4,
+      "parent_axis_B2": [
+        0,
+        1,
+        0
+      ],
+      "product_axis_B19prime": [
+        0,
+        1,
+        1
+      ],
+      "plane1_B19prime": [
+        1,
+        -3,
+        3
+      ],
+      "plane2_B19prime": [
+        3,
+        1,
+        -1
+      ],
+      "q_g": 2,
+      "s_g": 0.2911,
+      "s_g_abs_tol": 0.0005,
+      "epsilon_g": 0.2912,
+      "epsilon_abs_tol": 0.0005,
+      "misorientation_deg": 84.0,
+      "misorientation_abs_tol_deg": 0.2
+    },
+    "alternative_looser_pairs": [
+      {
+        "plane1": [
+          1,
+          -1,
+          1
+        ],
+        "plane2": [
+          1,
+          1,
+          -1
+        ],
+        "misorientation_deg": 86.0
+      },
+      {
+        "plane1": [
+          0,
+          -1,
+          1
+        ],
+        "plane2": [
+          1,
+          0,
+          0
+        ],
+        "misorientation_deg": 85.0
+      }
+    ]
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "24a2c2f3bd25b4fdf4538567be5874560da073302e5ee769d4c6957467552fe8",
+    "expected_sha256": "32af32a620de1768a4f34c0a4eca114036fac589c95cc7c3b1c5df375ae50714",
+    "mutation_policy": "immutable_v1; source correction requires new benchmark version"
+  }
+}
