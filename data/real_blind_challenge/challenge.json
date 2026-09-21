@@ -1,0 +1,67 @@
+{
+  "analysis_contract": {
+    "chemical_identity_withheld": true,
+    "correspondence_withheld": true,
+    "expected_operator_families_withheld": true,
+    "literature_labels_withheld": true,
+    "orientation_relationship_withheld": true,
+    "parent_product_roles_withheld": true,
+    "phase_names_withheld": true,
+    "solver_must_test_all_unordered_phase_pairs": true
+  },
+  "data_file": "observations.npz",
+  "grid_metadata": {
+    "XCELLS": "594",
+    "XSTEP": "1.8000",
+    "YCELLS": "594",
+    "YSTEP": "1.8000"
+  },
+  "orientation_convention": "crystal_to_sample_cartesian_matrices",
+  "phases": [
+    {
+      "anonymous_label": "phase_1",
+      "id": 1,
+      "lattice": {
+        "a": 3.66,
+        "alpha_deg": 90.0,
+        "b": 3.66,
+        "beta_deg": 90.0,
+        "c": 3.66,
+        "gamma_deg": 90.0
+      },
+      "point_group": "m-3m"
+    },
+    {
+      "anonymous_label": "phase_2",
+      "id": 2,
+      "lattice": {
+        "a": 2.866,
+        "alpha_deg": 90.0,
+        "b": 2.866,
+        "beta_deg": 90.0,
+        "c": 2.866,
+        "gamma_deg": 90.0
+      },
+      "point_group": "m-3m"
+    }
+  ],
+  "schema_version": 1,
+  "settings": {
+    "consensus_thresholds_deg": [
+      1.0,
+      2.0,
+      3.0,
+      5.0
+    ],
+    "minimum_grain_points": 5,
+    "null_permutations": 128,
+    "random_seed": 20260921,
+    "segmentation_thresholds_deg": [
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      7.5
+    ]
+  }
+}
