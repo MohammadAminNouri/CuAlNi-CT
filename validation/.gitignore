@@ -1,0 +1,18 @@
+# Raw/large validation artifacts belong outside git.
+raw/
+artifacts/
+*.ang
+*.ctf
+*.h5
+*.hdf5
+*.h5oina
+*.h5ebsd
+*.npz
+*.npy
+*.zip
+*.7z
+*.rar
+*.tif
+*.tiff
+*.bmp
+*.raw

@@ -1,0 +1,29 @@
+name: Experimental validation scope guard
+
+on:
+  push:
+    branches:
+      - "next/experimental-validation"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-core-scope:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify frozen-core scope
+        run: |
+          python tools/check_experimental_validation_scope.py \
+            --base-tag ct-ebsd-reliability-gate-v1 \
+            --head HEAD
+
+      - name: Scope-guard self-test
+        run: |
+          python tools/check_experimental_validation_scope.py --self-test
