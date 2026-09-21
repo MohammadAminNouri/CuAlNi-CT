@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "input": {
+    "path": "replace_with_real_map.ang",
+    "format": "ang"
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "austenite_DO3",
+      "point_group": "m-3m",
+      "lattice": {
+        "a": 5.836,
+        "b": 5.836,
+        "c": 5.836,
+        "length_unit": "angstrom"
+      }
+    },
+    {
+      "id": 2,
+      "name": "martensite",
+      "point_group": "mmm",
+      "lattice": {
+        "a": 4.382,
+        "b": 5.356,
+        "c": 4.222,
+        "length_unit": "angstrom"
+      }
+    }
+  ],
+  "parent_phase_id": 1,
+  "product_phase_id": 2,
+  "orientation_relationship": {
+    "mode": "parallelisms",
+    "parallelisms": [
+      {
+        "parent": {
+          "kind": "plane",
+          "indices": [
+            1,
+            1,
+            0
+          ]
+        },
+        "product": {
+          "kind": "plane",
+          "indices": [
+            0,
+            0,
+            1
+          ]
+        },
+        "projective": true
+      },
+      {
+        "parent": {
+          "kind": "direction",
+          "indices": [
+            0,
+            0,
+            1
+          ]
+        },
+        "product": {
+          "kind": "direction",
+          "indices": [
+            0,
+            1,
+            0
+          ]
+        },
+        "projective": true
+      }
+    ],
+    "candidate_index": 0
+  },
+  "quality_filters": [],
+  "segmentation": {
+    "main_threshold_deg": 5.0,
+    "sweep_thresholds_deg": [
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0,
+      8.0
+    ],
+    "minimum_grain_points": 5,
+    "neighbor_radius_factor": 1.15,
+    "kam_max_neighbor_misorientation_deg": 5.0
+  },
+  "theory": {
+    "quotient_tolerance_deg": 2e-07,
+    "operator_equivalence_tolerance_deg": 2e-06,
+    "crosscheck_topology": true
+  },
+  "or_refinement": {
+    "enabled": true,
+    "use_if_accepted": false,
+    "maximum_correction_deg": 5.0,
+    "trim_fraction": 0.65,
+    "huber_delta_deg": 2.0,
+    "minimum_improvement_deg2": 0.02,
+    "multi_start_step_deg": 0.75,
+    "maximum_iterations": 120
+  },
+  "parent_reconstruction": {
+    "enabled": true,
+    "link_tolerance_deg": 3.0,
+    "reconstruction_tolerance_deg": 3.0,
+    "minimum_grains": 2
+  },
+  "boundary_classification": {
+    "maximum_residual_deg": 3.0,
+    "minimum_margin_deg": 0.5
+  },
+  "trace_validation": {
+    "enabled": false
+  },
+  "output": {
+    "directory": "ebsd_results",
+    "run_name": "real-map-001",
+    "overwrite": false
+  }
+}
