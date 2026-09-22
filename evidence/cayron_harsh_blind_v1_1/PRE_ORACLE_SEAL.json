@@ -1,0 +1,62 @@
+{
+  "campaign": "cayron_harsh_blind_v1_1",
+  "cases": [
+    {
+      "axis_sign_metamorphic_replay": "PASS",
+      "case_id": "case_001",
+      "metamorphic_serialization_replay": null,
+      "mode": "orientation_topology",
+      "prediction_file_sha256": "ed660a0dea3711617902d791f0e7f920d0ae43f91e4a5aebe8d21f6dc9df87df",
+      "prediction_sha256": "1248ec46d1edf13bd5edcd2bdd8a947528d4dd2342404684e1baf5e846df2efb",
+      "scientific_input_sha256": null,
+      "status": "PASS"
+    },
+    {
+      "axis_sign_metamorphic_replay": "PASS",
+      "case_id": "case_002",
+      "metamorphic_serialization_replay": null,
+      "mode": "orientation_topology",
+      "prediction_file_sha256": "516c20cf426ef193e3d7f26e4a28a194d15bff6edc949931adbb39b2e9e62635",
+      "prediction_sha256": "d7635c779cd3fb6ff667539e6df718cd061a748cf08beceb0ef8ef3ec88a0450",
+      "scientific_input_sha256": null,
+      "status": "PASS"
+    },
+    {
+      "axis_sign_metamorphic_replay": null,
+      "case_id": "case_003",
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "b8ec31f2a4ac2198153cdca2290367cdcaa5a1ff084f8b8aad18da5ce3814787",
+      "prediction_sha256": "552df57e000ef59ac0f8f821ae6250c1da46d1846b5454be08bc7ac16ac19e01",
+      "scientific_input_sha256": "b855ce2c05bed2eae8ea2dfca8766eedbebd49b7c5fc5577228f7030fdbb5851",
+      "status": "PASS"
+    },
+    {
+      "axis_sign_metamorphic_replay": null,
+      "case_id": "case_004",
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "b28fd277e0f9eb465c1439ea71a82067f9acf0dfa94954490ec00178e25188ee",
+      "prediction_sha256": "1d0c9c2eca3a6e5fb03cf6d82571f2d574758b73f574f4d0575e7309a5701f75",
+      "scientific_input_sha256": "7ea5b87c163cedf434e678fa0df8d2e7ced12bdc96f107166976d22af7a06f19",
+      "status": "PASS"
+    },
+    {
+      "axis_sign_metamorphic_replay": null,
+      "case_id": "case_005",
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "ad284ae4cf2b6fe1421ab48b8e06f47659d070b0db82cc002a34135dcbe4532a",
+      "prediction_sha256": "ff560c83f722373758501bb57f5f004d6dd6824c828f26450e1618b951f2f6b4",
+      "scientific_input_sha256": "2b423bec64c6aaff311662847605edd224bc89f314596402abaeb5f16e699d8b",
+      "status": "PASS"
+    }
+  ],
+  "frozen_core": "f7c616379108c0ec06d804e4692cd437c35ec4e0",
+  "literature_outputs_loaded": false,
+  "manifest_sha256": "c2d082911508fd28cc7b13cb9d4c5a9464205fade6bd6e7709f8d4b7ca423709",
+  "oracle_loaded": false,
+  "repository_head": "b7558327d8a468ac6945424860bd4fd7b524d70e",
+  "schema_version": 1,
+  "state": "PRE_ORACLE_FROZEN"
+}

@@ -1,0 +1,54 @@
+{
+  "case_id": "case_004",
+  "correspondence": {
+    "matrix": [
+      [
+        0,
+        1,
+        -1
+      ],
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "mode": "M_from_A"
+  },
+  "mode": "transformation",
+  "parent": {
+    "cell": {
+      "a": 3.01,
+      "alpha_deg": 90.0,
+      "b": 3.01,
+      "beta_deg": 90.0,
+      "c": 3.01,
+      "gamma_deg": 90.0
+    },
+    "point_group": "m-3m"
+  },
+  "product": {
+    "cell": {
+      "a": 2.898,
+      "alpha_deg": 90.0,
+      "b": 4.108,
+      "beta_deg": 97.78,
+      "c": 4.646,
+      "gamma_deg": 90.0
+    },
+    "point_group": "2/m"
+  },
+  "schema_version": 1,
+  "solver_options": {
+    "ball_james_fraction_samples": 101,
+    "include_ct_closing_gap": true,
+    "include_ct_supercompatibility": true,
+    "ptmc_dilatational_factor": 1.0,
+    "ptmc_mode": "all_twinning"
+  }
+}

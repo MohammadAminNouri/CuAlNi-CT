@@ -1,0 +1,361 @@
+{
+  "all_cases_passed_internal_blind_checks": true,
+  "campaign": "cayron_harsh_blind_v1",
+  "campaign_manifest_sha256": "38b0484f614dc1df7fd6c3f5c9d039cf9b342e9f9eb8b64e6a849aae8ee3b35e",
+  "cases": [
+    {
+      "axis_sign_metamorphic_replay": "PASS",
+      "case_id": "case_001",
+      "mode": "orientation_topology",
+      "prediction_file_sha256": "ed660a0dea3711617902d791f0e7f920d0ae43f91e4a5aebe8d21f6dc9df87df",
+      "prediction_path": "/tmp/cayron_harsh_blind_1790081610/case_001/prediction.json",
+      "prediction_sha256": "1248ec46d1edf13bd5edcd2bdd8a947528d4dd2342404684e1baf5e846df2efb",
+      "solver_output_summary": {
+        "candidate_count": 4,
+        "topology_audits": [
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 2,
+            "full_orientation_operator_count": 24,
+            "full_orientation_variant_count": 24,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.9336042935369866e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 1,
+            "proper_orientation_operator_count": 24,
+            "proper_orientation_variant_count": 24,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 2,
+            "full_orientation_operator_count": 24,
+            "full_orientation_variant_count": 24,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 3.0714366630308746e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 1,
+            "proper_orientation_operator_count": 24,
+            "proper_orientation_variant_count": 24,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 2,
+            "full_orientation_operator_count": 24,
+            "full_orientation_variant_count": 24,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.5986624074170695e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 1,
+            "proper_orientation_operator_count": 24,
+            "proper_orientation_variant_count": 24,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 2,
+            "full_orientation_operator_count": 24,
+            "full_orientation_variant_count": 24,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.676529751017682e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 1,
+            "proper_orientation_operator_count": 24,
+            "proper_orientation_variant_count": 24,
+            "proper_reference_group_order": 24
+          }
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "axis_sign_metamorphic_replay": "PASS",
+      "case_id": "case_002",
+      "mode": "orientation_topology",
+      "prediction_file_sha256": "516c20cf426ef193e3d7f26e4a28a194d15bff6edc949931adbb39b2e9e62635",
+      "prediction_path": "/tmp/cayron_harsh_blind_1790081610/case_002/prediction.json",
+      "prediction_sha256": "d7635c779cd3fb6ff667539e6df718cd061a748cf08beceb0ef8ef3ec88a0450",
+      "solver_output_summary": {
+        "candidate_count": 4,
+        "topology_audits": [
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 4,
+            "full_orientation_operator_count": 7,
+            "full_orientation_variant_count": 12,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.827631872582723e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 2,
+            "proper_orientation_operator_count": 7,
+            "proper_orientation_variant_count": 12,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 4,
+            "full_orientation_operator_count": 7,
+            "full_orientation_variant_count": 12,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 1.7941641749111084e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 2,
+            "proper_orientation_operator_count": 7,
+            "proper_orientation_variant_count": 12,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 4,
+            "full_orientation_operator_count": 7,
+            "full_orientation_variant_count": 12,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.3398192558073983e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 2,
+            "proper_orientation_operator_count": 7,
+            "proper_orientation_variant_count": 12,
+            "proper_reference_group_order": 24
+          },
+          {
+            "correspondence_intersection_order": null,
+            "correspondence_operator_count": null,
+            "correspondence_variant_count": null,
+            "full_moving_group_order": 48,
+            "full_orientation_intersection_order": 4,
+            "full_orientation_operator_count": 7,
+            "full_orientation_variant_count": 12,
+            "full_reference_group_order": 48,
+            "maximum_orientation_intersection_residual": 2.676986001736672e-16,
+            "note": "Full point groups follow Cayron's crystallographic coset/double-coset construction. Proper subgroups are used only to emit SO(3) orientation matrices. Equality H_T=H_C, when reported, is a computed result for this OR candidate and transformation state, not a general assumption.",
+            "one_to_one_correspondence_orientation_topology": null,
+            "orientation_correspondence_intersections_equal": null,
+            "proper_moving_group_order": 24,
+            "proper_orientation_intersection_order": 2,
+            "proper_orientation_operator_count": 7,
+            "proper_orientation_variant_count": 12,
+            "proper_reference_group_order": 24
+          }
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "case_003",
+      "correspondence_M_from_A_exact": [
+        [
+          0,
+          1,
+          -1
+        ],
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "b8ec31f2a4ac2198153cdca2290367cdcaa5a1ff084f8b8aad18da5ce3814787",
+      "prediction_path": "/tmp/cayron_harsh_blind_1790081610/case_003/prediction.json",
+      "prediction_sha256": "552df57e000ef59ac0f8f821ae6250c1da46d1846b5454be08bc7ac16ac19e01",
+      "scientific_input_sha256": "b855ce2c05bed2eae8ea2dfca8766eedbebd49b7c5fc5577228f7030fdbb5851",
+      "solver_output_summary": {
+        "cayron_topology": {
+          "operator_count": 7,
+          "parent_group_order": 48,
+          "product_group_order": 4,
+          "subgroup_order": 4,
+          "variant_count": 12
+        },
+        "row_counts": {
+          "by_prediction_kind": {
+            "ball_james_mm": 168,
+            "ct_am_degeneracy": 1,
+            "ct_closing_gap_or": 64,
+            "ct_mm_twin": 16,
+            "ptmc_parameter_diagnostic": 168
+          },
+          "by_theory": {
+            "ball_james": 168,
+            "cayron_ct": 81,
+            "ptmc": 168
+          },
+          "total_rows": 417
+        },
+        "warnings": [
+          "CT closing-gap candidates are all retained because no natural OR was supplied; no preferred CT OR is selected.",
+          "CT has no exact finite A/M habit-plane branch for these inputs; approximate CMC diagnostics, when admissible, remain explicitly marked approximate."
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "case_004",
+      "correspondence_M_from_A_exact": [
+        [
+          0,
+          1,
+          -1
+        ],
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "b28fd277e0f9eb465c1439ea71a82067f9acf0dfa94954490ec00178e25188ee",
+      "prediction_path": "/tmp/cayron_harsh_blind_1790081610/case_004/prediction.json",
+      "prediction_sha256": "1d0c9c2eca3a6e5fb03cf6d82571f2d574758b73f574f4d0575e7309a5701f75",
+      "scientific_input_sha256": "7ea5b87c163cedf434e678fa0df8d2e7ced12bdc96f107166976d22af7a06f19",
+      "solver_output_summary": {
+        "cayron_topology": {
+          "operator_count": 7,
+          "parent_group_order": 48,
+          "product_group_order": 4,
+          "subgroup_order": 4,
+          "variant_count": 12
+        },
+        "row_counts": {
+          "by_prediction_kind": {
+            "ball_james_mm": 168,
+            "ct_am_degeneracy": 1,
+            "ct_closing_gap_or": 64,
+            "ct_mm_twin": 16,
+            "ptmc_parameter_diagnostic": 168
+          },
+          "by_theory": {
+            "ball_james": 168,
+            "cayron_ct": 81,
+            "ptmc": 168
+          },
+          "total_rows": 417
+        },
+        "warnings": [
+          "CT closing-gap candidates are all retained because no natural OR was supplied; no preferred CT OR is selected.",
+          "CT has no exact finite A/M habit-plane branch for these inputs; approximate CMC diagnostics, when admissible, remain explicitly marked approximate."
+        ]
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "case_005",
+      "correspondence_M_from_A_exact": [
+        [
+          1,
+          0,
+          -1
+        ],
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      "metamorphic_serialization_replay": "PASS",
+      "mode": "transformation",
+      "prediction_file_sha256": "ad284ae4cf2b6fe1421ab48b8e06f47659d070b0db82cc002a34135dcbe4532a",
+      "prediction_path": "/tmp/cayron_harsh_blind_1790081610/case_005/prediction.json",
+      "prediction_sha256": "ff560c83f722373758501bb57f5f004d6dd6824c828f26450e1618b951f2f6b4",
+      "scientific_input_sha256": "2b423bec64c6aaff311662847605edd224bc89f314596402abaeb5f16e699d8b",
+      "solver_output_summary": {
+        "cayron_topology": {
+          "operator_count": 3,
+          "parent_group_order": 48,
+          "product_group_order": 8,
+          "subgroup_order": 8,
+          "variant_count": 6
+        },
+        "row_counts": {
+          "by_prediction_kind": {
+            "ball_james_mm": 60,
+            "ct_am_habit": 2,
+            "ct_closing_gap_or": 48,
+            "ct_mm_twin": 12,
+            "ptmc_habit": 192,
+            "ptmc_parameter_diagnostic": 60
+          },
+          "by_theory": {
+            "ball_james": 60,
+            "cayron_ct": 62,
+            "ptmc": 252
+          },
+          "total_rows": 374
+        },
+        "warnings": [
+          "CT closing-gap candidates are all retained because no natural OR was supplied; no preferred CT OR is selected.",
+          "CT has no exact finite A/M habit-plane branch for these inputs; approximate CMC diagnostics, when admissible, remain explicitly marked approximate."
+        ]
+      },
+      "status": "PASS"
+    }
+  ],
+  "literature_outputs_loaded": false,
+  "oracle_loaded": false,
+  "repository": {
+    "backbone_tag": "cayron-first-backbone-v1",
+    "frozen_core": "f7c616379108c0ec06d804e4692cd437c35ec4e0",
+    "head": "b7558327d8a468ac6945424860bd4fd7b524d70e"
+  },
+  "schema_version": 1
+}
