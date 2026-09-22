@@ -1,0 +1,737 @@
+{
+  "all_cases_passed": true,
+  "all_external_checks_passed": true,
+  "cases": [
+    {
+      "case_id": "case_001",
+      "checks": [
+        {
+          "actual": {
+            "moving_first": "(1 1 0)",
+            "moving_second": "[1 -1 1]",
+            "reference_first": "(1 1 1)",
+            "reference_second": "[1 -1 0]"
+          },
+          "check_id": "case_001.input_relation",
+          "expected": {
+            "moving_first": "(1 1 0)",
+            "moving_second": "[1 -1 1]",
+            "reference_first": "(1 1 1)",
+            "reference_second": "[1 -1 0]"
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              2,
+              2,
+              2,
+              2
+            ],
+            "unique_values": [
+              2
+            ]
+          },
+          "check_id": "case_001.intersection_order",
+          "expected": 2,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              24,
+              24,
+              24,
+              24
+            ],
+            "unique_values": [
+              24
+            ]
+          },
+          "check_id": "case_001.variant_count",
+          "expected": 24,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              24,
+              24,
+              24,
+              24
+            ],
+            "unique_values": [
+              24
+            ]
+          },
+          "check_id": "case_001.operator_count",
+          "expected": 24,
+          "passed": true,
+          "source_class": "external"
+        }
+      ],
+      "identity": "KS",
+      "passed": true
+    },
+    {
+      "case_id": "case_002",
+      "checks": [
+        {
+          "actual": {
+            "moving_first": "(1 1 0)",
+            "moving_second": "[0 0 1]",
+            "reference_first": "(1 1 1)",
+            "reference_second": "[1 -1 0]"
+          },
+          "check_id": "case_002.input_relation",
+          "expected": {
+            "moving_first": "(1 1 0)",
+            "moving_second": "[0 0 1]",
+            "reference_first": "(1 1 1)",
+            "reference_second": "[1 -1 0]"
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              4,
+              4,
+              4,
+              4
+            ],
+            "unique_values": [
+              4
+            ]
+          },
+          "check_id": "case_002.intersection_order",
+          "expected": 4,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              12,
+              12,
+              12,
+              12
+            ],
+            "unique_values": [
+              12
+            ]
+          },
+          "check_id": "case_002.variant_count",
+          "expected": 12,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "candidate_count": 4,
+            "per_candidate": [
+              7,
+              7,
+              7,
+              7
+            ],
+            "unique_values": [
+              7
+            ]
+          },
+          "check_id": "case_002.operator_count",
+          "expected": 7,
+          "passed": true,
+          "source_class": "external"
+        }
+      ],
+      "identity": "NW",
+      "passed": true
+    },
+    {
+      "case_id": "case_003",
+      "checks": [
+        {
+          "actual": 4,
+          "check_id": "003.Hc",
+          "expected": 4,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 12,
+          "check_id": "003.variants",
+          "expected": 12,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 7,
+          "check_id": "003.operators",
+          "expected": 7,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "compound",
+            "direction": [
+              0.0,
+              0.0,
+              0.2163565556036348
+            ],
+            "plane": [
+              -2.868677352919785,
+              2.115660496883228e-15,
+              0.0
+            ],
+            "primary_residual": 7.375038167780965e-16,
+            "row_id": "ct_twin_1_1",
+            "secondary_residual": null,
+            "shear": 0.23848556136110513,
+            "shear_abs_diff": 1.443863889485919e-05
+          },
+          "check_id": "003.O2.compound.100",
+          "expected": {
+            "classification": "compound",
+            "primary": [
+              1,
+              0,
+              0
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.2385,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "compound",
+            "direction": [
+              0.34614053305642095,
+              0.0,
+              0.0
+            ],
+            "plane": [
+              0.0,
+              2.1156604968832276e-15,
+              -4.589486578468414
+            ],
+            "primary_residual": 4.609797764326958e-16,
+            "row_id": "ct_twin_1_0",
+            "secondary_residual": null,
+            "shear": 0.23848556136110513,
+            "shear_abs_diff": 0.00041443863889487065
+          },
+          "check_id": "003.O2.compound.001",
+          "expected": {
+            "classification": "compound",
+            "primary": [
+              0,
+              0,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.2389,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_I",
+            "direction": [
+              -0.10665168307541528,
+              -0.09069504990165746,
+              -0.19734673297707273
+            ],
+            "plane": [
+              2.1826039933011017,
+              2.1826039933011017,
+              -2.1826039933011017
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_2_1",
+            "secondary_residual": null,
+            "shear": 0.3096094059862001,
+            "shear_abs_diff": 9.405986200139438e-06
+          },
+          "check_id": "003.O4.typeI",
+          "expected": {
+            "classification": "type_I",
+            "primary": [
+              -1,
+              1,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.3096,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_II",
+            "direction": [
+              0.22638758653092458,
+              -0.11319379326546229,
+              -0.11319379326546229
+            ],
+            "plane": [
+              -0.905230353814822,
+              1.8552726927745886,
+              -3.665733400404234
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_2_0",
+            "secondary_residual": null,
+            "shear": 0.3096094059862001,
+            "shear_abs_diff": 9.405986200139438e-06
+          },
+          "check_id": "003.O4.typeII",
+          "expected": {
+            "classification": "type_II",
+            "primary": [
+              -2,
+              1,
+              1
+            ],
+            "primary_kind": "direction",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.3096,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_I",
+            "direction": [
+              -0.21451703900091398,
+              -0.07261606300437815,
+              0.14190097599653584
+            ],
+            "plane": [
+              2.016639286718728,
+              -2.016639286718728,
+              2.016639286718728
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_5_2",
+            "secondary_residual": null,
+            "shear": 0.14222414904643996,
+            "shear_abs_diff": 2.4149046439964073e-05
+          },
+          "check_id": "003.O5.typeI",
+          "expected": {
+            "classification": "type_I",
+            "primary": [
+              1,
+              1,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.1422,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_II",
+            "direction": [
+              0.24731271786080747,
+              0.12365635893040373,
+              0.12365635893040373
+            ],
+            "plane": [
+              -2.1527507583238132,
+              1.0864630784973746,
+              3.21903843815025
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_5_0",
+            "secondary_residual": null,
+            "shear": 0.1422241490464384,
+            "shear_abs_diff": 2.414904643840976e-05
+          },
+          "check_id": "003.O5.typeII",
+          "expected": {
+            "classification": "type_II",
+            "primary": [
+              2,
+              1,
+              1
+            ],
+            "primary_kind": "direction",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.1422,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_I",
+            "direction": [
+              0.19666155397520718,
+              -0.125043786730313,
+              -0.125043786730313
+            ],
+            "plane": [
+              0.0,
+              3.06586973850155,
+              -3.06586973850155
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_6_1",
+            "secondary_residual": null,
+            "shear": 0.2804043049502354,
+            "shear_abs_diff": 4.304950235400895e-06
+          },
+          "check_id": "003.O6.typeI",
+          "expected": {
+            "classification": "type_I",
+            "primary": [
+              0,
+              1,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.2804,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_II",
+            "direction": [
+              0.0,
+              0.161506248344672,
+              0.161506248344672
+            ],
+            "plane": [
+              -1.8212870041693774,
+              -2.5276630003466236,
+              2.5276630003466236
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_6_0",
+            "secondary_residual": null,
+            "shear": 0.2804043049502346,
+            "shear_abs_diff": 4.304950234623739e-06
+          },
+          "check_id": "003.O6.typeII",
+          "expected": {
+            "classification": "type_II",
+            "primary": [
+              0,
+              1,
+              1
+            ],
+            "primary_kind": "direction",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": 0.2804,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        }
+      ],
+      "identity": "Cayron 2022 NiTi",
+      "passed": true
+    },
+    {
+      "case_id": "case_004",
+      "checks": [
+        {
+          "actual": 4,
+          "check_id": "004.Hc",
+          "expected": 4,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 12,
+          "check_id": "004.variants",
+          "expected": 12,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 7,
+          "check_id": "004.operators",
+          "expected": 7,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 0,
+          "check_id": "004.no_exact_AM_compatibility",
+          "expected": 0,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 0,
+          "check_id": "004.no_exact_supercompatibility",
+          "expected": 0,
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": -0.03495194115802758,
+          "check_id": "004.lambda2_minus_one",
+          "expected": -0.03495194115802758,
+          "passed": true,
+          "source_class": "external"
+        }
+      ],
+      "identity": "Cayron 2026 measured binary NiTi",
+      "passed": true
+    },
+    {
+      "case_id": "case_005",
+      "checks": [
+        {
+          "actual": {
+            "classification": "type_I",
+            "direction": [
+              -0.15150292352069625,
+              0.12049559198980025,
+              0.08948826045890416
+            ],
+            "plane": [
+              -2.0096069097407314,
+              -4.019213819481463,
+              2.0096069097407314
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_2_7",
+            "secondary_residual": 3.679341708189011e-05,
+            "shear": 0.26066690926341723,
+            "shear_abs_diff": 0.0003330907365827751
+          },
+          "check_id": "005.external.121.TypeI.full_elements",
+          "expected": {
+            "classification": "type_I",
+            "primary": [
+              1,
+              2,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 0.0008,
+            "secondary": [
+              1,
+              0.7954,
+              0.5907
+            ],
+            "secondary_kind": "direction",
+            "secondary_tol": 0.0008,
+            "shear": 0.261,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "type_II",
+            "direction": [
+              -0.12335911168289956,
+              -0.12335911168289956,
+              0.12335911168289956
+            ],
+            "plane": [
+              -2.6250270811463774,
+              3.9470802789792123,
+              1.3220531978328354
+            ],
+            "primary_residual": 1.6814228340257728e-05,
+            "row_id": "ct_twin_2_0",
+            "secondary_residual": 0.0,
+            "shear": 0.26066690926341723,
+            "shear_abs_diff": 0.0003330907365827751
+          },
+          "check_id": "005.external.121.TypeII.full_elements",
+          "expected": {
+            "classification": "type_II",
+            "primary": [
+              1,
+              1.5036,
+              0.5036
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 0.0008,
+            "secondary": [
+              1,
+              1,
+              1
+            ],
+            "secondary_kind": "direction",
+            "secondary_tol": 1e-06,
+            "shear": 0.261,
+            "shear_tol": 0.0005
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": {
+            "classification": "compound",
+            "direction": [
+              0.16433857511271904,
+              4.344906349394453e-16,
+              -0.16433857511271904
+            ],
+            "plane": [
+              3.040395767799693,
+              0.0,
+              3.040395767799693
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_1_1",
+            "secondary_residual": null,
+            "shear": 0.0744097391659312,
+            "shear_abs_diff": null
+          },
+          "check_id": "005.external.101.family",
+          "expected": {
+            "classification": null,
+            "primary": [
+              1,
+              0,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": null,
+            "shear_tol": null
+          },
+          "passed": true,
+          "source_class": "external"
+        },
+        {
+          "actual": 8,
+          "check_id": "005.internal.Hc",
+          "expected": 8,
+          "passed": true,
+          "source_class": "internal_regression"
+        },
+        {
+          "actual": 6,
+          "check_id": "005.internal.variants",
+          "expected": 6,
+          "passed": true,
+          "source_class": "internal_regression"
+        },
+        {
+          "actual": 3,
+          "check_id": "005.internal.operators",
+          "expected": 3,
+          "passed": true,
+          "source_class": "internal_regression"
+        },
+        {
+          "actual": {
+            "classification": "compound",
+            "direction": [
+              0.16433857511271904,
+              4.344906349394453e-16,
+              -0.16433857511271904
+            ],
+            "plane": [
+              3.040395767799693,
+              0.0,
+              3.040395767799693
+            ],
+            "primary_residual": 0.0,
+            "row_id": "ct_twin_1_1",
+            "secondary_residual": null,
+            "shear": 0.0744097391659312,
+            "shear_abs_diff": null
+          },
+          "check_id": "005.internal.101.compound",
+          "expected": {
+            "classification": "compound",
+            "primary": [
+              1,
+              0,
+              1
+            ],
+            "primary_kind": "plane",
+            "primary_tol": 1e-06,
+            "secondary": null,
+            "secondary_kind": null,
+            "secondary_tol": null,
+            "shear": null,
+            "shear_tol": null
+          },
+          "passed": true,
+          "source_class": "internal_regression"
+        }
+      ],
+      "external_passed": true,
+      "identity": "Cu-Al-Ni beta1(D03) -> gamma-prime",
+      "internal_regression_passed": true,
+      "passed": true
+    }
+  ],
+  "mode": "READ_ONLY_FORENSIC_AUDIT_V3_1",
+  "orientation_benchmark_binding": "KS/NW identity is bound to stored plane+direction parallelism, never inferred from solver topology counts",
+  "solver_rerun": false,
+  "tolerances_changed_after_result": false
+}

@@ -1,0 +1,92 @@
+{
+  "case_id": "case_005",
+  "correspondence": {
+    "matrix": [
+      [
+        "1/2",
+        0,
+        "1/2"
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        "-1/2",
+        0,
+        "1/2"
+      ]
+    ],
+    "mode": "A_from_M",
+    "verification_pairs": [
+      {
+        "A": [
+          "1/2",
+          0,
+          "-1/2"
+        ],
+        "M": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "A": [
+          0,
+          1,
+          0
+        ],
+        "M": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "A": [
+          "1/2",
+          0,
+          "1/2"
+        ],
+        "M": [
+          0,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "mode": "transformation",
+  "parent": {
+    "cell": {
+      "a": 5.836,
+      "alpha_deg": 90.0,
+      "b": 5.836,
+      "beta_deg": 90.0,
+      "c": 5.836,
+      "gamma_deg": 90.0
+    },
+    "point_group": "m-3m"
+  },
+  "product": {
+    "cell": {
+      "a": 4.382,
+      "alpha_deg": 90.0,
+      "b": 5.356,
+      "beta_deg": 90.0,
+      "c": 4.222,
+      "gamma_deg": 90.0
+    },
+    "point_group": "mmm"
+  },
+  "schema_version": 1,
+  "solver_options": {
+    "ball_james_fraction_samples": 101,
+    "include_ct_closing_gap": true,
+    "include_ct_supercompatibility": true,
+    "ptmc_dilatational_factor": 1.0,
+    "ptmc_mode": "all_twinning"
+  }
+}
