@@ -1,0 +1,29 @@
+{
+  "profile": "core",
+  "command": [
+    "/home/codespace/.python/current/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--durations=15",
+    "tests/test_user_workflow.py",
+    "tests/test_user_input_adversarial.py",
+    "tests/test_representation_adversarial.py",
+    "tests/test_weak_operator_adversarial_v2.py",
+    "tests/test_representation_bridge.py",
+    "tests/test_physical_equivalence_validation.py",
+    "tests/test_cayron_exact_robustness.py",
+    "tests/test_ct_generality_campaign.py",
+    "tests/test_weak_operator_engine.py",
+    "tests/test_weak_twins.py",
+    "tests/test_operator_crosslock.py",
+    "tests/test_units_and_console_clarity.py",
+    "tests/test_scientific_contracts.py",
+    "tests/test_project_io.py"
+  ],
+  "elapsed_seconds": 183.8616335079996,
+  "returncode": 0,
+  "passed": true,
+  "repository_mutated_by_runner": false,
+  "oracle_loaded": false
+}

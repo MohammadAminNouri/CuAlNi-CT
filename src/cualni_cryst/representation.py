@@ -306,9 +306,30 @@ class RepresentationBridge:
         return self.C.T @ self.product.metric() @ self.C
 
     def deformation_gradient_cartesian(self) -> np.ndarray:
-        """Return F = B_M C B_A^-1 in the selected Cartesian frames."""
+        """Return the physical F = B_M C B_A^-1.
 
-        return self.product_frame.B @ self.C @ self.parent_frame.B_inv
+        Both lattice embeddings are required to be right-handed. Therefore
+        sign(det(F)) == sign(det(C)). A negative determinant would make the
+        polar factor an improper orthogonal transformation (det(R)=-1), not a
+        physically admissible martensitic deformation rotation. Refuse such a
+        map explicitly instead of letting it surface later as a cryptic
+        polar-det residual of 2.
+        """
+
+        F = self.product_frame.B @ self.C @ self.parent_frame.B_inv
+        det_f = float(np.linalg.det(F))
+        if not np.isfinite(det_f):
+            raise ValueError(
+                "Physical deformation gradient has a non-finite determinant."
+            )
+        if det_f <= 0.0:
+            raise ValueError(
+                "Physical deformation gradient must preserve handedness "
+                f"(det(F) > 0); got det(F)={det_f:.12g}. "
+                "Check the correspondence direction and basis handedness. "
+                "The code will not silently flip an axis."
+            )
+        return F
 
     def right_cauchy_green_cartesian(self) -> np.ndarray:
         F = self.deformation_gradient_cartesian()

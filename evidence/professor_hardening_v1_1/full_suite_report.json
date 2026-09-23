@@ -1,0 +1,16 @@
+{
+  "profile": "full",
+  "command": [
+    "/home/codespace/.python/current/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--durations=15",
+    "tests"
+  ],
+  "elapsed_seconds": 775.722402387999,
+  "returncode": 0,
+  "passed": true,
+  "repository_mutated_by_runner": false,
+  "oracle_loaded": false
+}
