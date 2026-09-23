@@ -1,0 +1,43 @@
+{
+  "benchmark_id": "cayron_2026_o2_type_i_source_audit_v1",
+  "equation_derived_closure": {
+    "eq43_dz": "0",
+    "relation": "c=sqrt(2); a=1/sin(beta)=c/(sqrt(2)*sin(beta))",
+    "status": "PROJECT_DERIVED_RESULT",
+    "type_i_cci_squared": "1"
+  },
+  "independent_audit": {
+    "imports_cualni_cryst": false,
+    "path": "validation/independent/audit_cayron2026_independent_v1.py",
+    "sha256": "c522def0ea8b05ba2af7ddea8c18727986639e36da98e8af42bc476e2fb645db"
+  },
+  "interpretation_policy": "Do not silently alter the printed paper relation and do not attribute the project-derived closure to the author without author confirmation.",
+  "lock": {
+    "algorithm": "sha256(canonical-json-without-lock)",
+    "payload_sha256": "2a8b127c1d350398e5c19ccd4e735825587d9b83c496963df4f14e0663ca54ac"
+  },
+  "positive_controls": {
+    "o2_type_ii": {
+      "status": "VERIFIED_PUBLISHED_RESULT"
+    },
+    "o4_appendix_c": {
+      "status": "VERIFIED_PUBLISHED_RESULT"
+    },
+    "table_3": {
+      "status": "VERIFIED_PUBLISHED_RESULT"
+    }
+  },
+  "printed_o2_type_i": {
+    "claimed_shear_direction_A": "[1 -1 0]",
+    "eq43_dz": "1/2",
+    "habit_plane_A": "(001)",
+    "relation": "c=sqrt(2); a=c/sin(beta)",
+    "status": "SOURCE_INTERNAL_INCONSISTENCY",
+    "type_i_cci_squared": "1/2"
+  },
+  "schema_version": 1,
+  "source": {
+    "citation": "C. Cayron, Acta Materialia 316 (2026) 122399",
+    "doi": "10.1016/j.actamat.2026.122399"
+  }
+}
