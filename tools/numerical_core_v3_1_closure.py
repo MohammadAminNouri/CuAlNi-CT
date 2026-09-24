@@ -17,6 +17,7 @@ import subprocess
 
 EXPECTED_BRANCH = 'science/universal-validation-recovered'
 EXPECTED_BLOBS = {'src/cualni_cryst/ball_james.py': '5ffafe7e3e14725d8e8a634c1165d9c00e0b1c60',
+ 'src/cualni_cryst/crystal_objects.py': '325e38481dbc59179fec9a1171e7a06c87efc880',
  'src/cualni_cryst/ct.py': '213ca06c283a0419a37554e0344daec86e258536',
  'src/cualni_cryst/james_hane.py': '967d33f7f36678b37f836ef1aa37f5c85dace81a',
  'src/cualni_cryst/lattice.py': '56f5b222ea5c722a4c6c9ca8dfba041c78b38d05',
@@ -53,6 +54,9 @@ PAYLOADS_B64 = {'docs/NUMERICAL_CORE_V3.md': 'IyBOdW1lcmljYWwgQ29yZSBWMyDigJQgZX
  'validation/engineered/ptmc_oracle.py': 'ZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKaW1wb3J0IG51bXB5IGFzIG5wCmZyb20gc2NpcHkub3B0aW1pemUgaW1wb3J0IGJyZW50cSwgbWluaW1pemVfc2NhbGFyCgoKZGVmIG1pZGRsZV9zdihGOiBucC5uZGFycmF5KSAtPiBmbG9hdDoKICAgIHJldHVybiBmbG9hdChucC5zb3J0KG5wLmxpbmFsZy5zdmQobnAuYXNhcnJheShGLCBmbG9hdCksIGNvbXB1dGVfdXY9RmFsc2UpKVsxXSkKCgpkZWYgaW5kZXBlbmRlbnRfcHRtY19yb290cygKICAgIFU6IG5wLm5kYXJyYXksCiAgICBhOiBucC5uZGFycmF5LAogICAgbjogbnAubmRhcnJheSwKICAgICosCiAgICB0b2w6IGZsb2F0ID0gMWUtOSwKKSAtPiBsaXN0W2Zsb2F0XToKICAgICIiIkluZGVwZW5kZW50IHNjYW4rYnJhY2tldGluZyBQVE1DIG9yYWNsZSB1c2luZyB0aGUgc2FtZSBkZWNsYXJlZCB0b2xlcmFuY2UuCgogICAgVGhlIHJvdXRlIGlzIGludGVudGlvbmFsbHkgdW5saWtlIHByb2R1Y3Rpb246IGl0IHNjYW5zIHRoZSBtaWRkbGUgc2luZ3VsYXIKICAgIHZhbHVlIGRpcmVjdGx5LCBicmFja2V0cyBzaWduIGNoYW5nZXMsIGFuZCBtaW5pbWl6ZXMgYWJzb2x1dGUgcmVzaWR1YWwgdG8KICAgIGRldGVjdCB0YW5nZW50L2RvdWJsZSByb290cy4gIEl0IGRvZXMgbm90IHVzZSB0aGUgZGV0ZXJtaW5hbnQgcG9seW5vbWlhbC4KICAgICIiIgogICAgaWYgdG9sIDw9IDAuMDoKICAgICAgICByYWlzZSBWYWx1ZUVycm9yKCJ0b2wgbXVzdCBiZSBwb3NpdGl2ZSIpCiAgICBVID0gbnAuYXNhcnJheShVLCBmbG9hdCkKICAgIGEgPSBucC5hc2FycmF5KGEsIGZsb2F0KQogICAgbiA9IG5wLmFzYXJyYXkobiwgZmxvYXQpCgogICAgZGVmIGgoZik6CiAgICAgICAgcmV0dXJuIG1pZGRsZV9zdihVICsgZmxvYXQoZikgKiBucC5vdXRlcihhLCBuKSkgLSAxLjAKCiAgICBncmlkID0gbnAubGluc3BhY2UoMC4wLCAxLjAsIDQwMDEpCiAgICB2YWxzID0gbnAuYXJyYXkoW2goeCkgZm9yIHggaW4gZ3JpZF0pCiAgICByb290cyA9IFtdCiAgICBmb3IgaSBpbiByYW5nZShsZW4oZ3JpZCkgLSAxKToKICAgICAgICB4MCwgeDEgPSBncmlkW2ldLCBncmlkW2kgKyAxXQogICAgICAgIHkwLCB5MSA9IHZhbHNbaV0sIHZhbHNbaSArIDFdCiAgICAgICAgaWYgYWJzKHkwKSA8PSB0b2w6CiAgICAgICAgICAgIHJvb3RzLmFwcGVuZChmbG9hdCh4MCkpCiAgICAgICAgaWYgeTAgKiB5MSA8IDA6CiAgICAgICAgICAgIHJvb3RzLmFwcGVuZChmbG9hdChicmVudHEoaCwgeDAsIHgxLCB4dG9sPTFlLTEzLCBydG9sPTFlLTEzKSkpCgogICAgIyBUYW5nZW50L2RvdWJsZSByb290cy4gIEFjY2VwdGFuY2UgdXNlcyB0aGUgZXhhY3QgY2FsbGVyIHRvbGVyYW5jZSByYXRoZXIKICAgICMgdGhhbiB0aGUgZm9ybWVyIGhpZGRlbiAyZS04IHJlbGF4YXRpb24uCiAgICBjb2Fyc2UgPSBncmlkWzo6MTAwXQogICAgaWYgY29hcnNlWy0xXSAhPSAxLjA6CiAgICAgICAgY29hcnNlID0gbnAuYXBwZW5kKGNvYXJzZSwgMS4wKQogICAgZm9yIGxvLCBoaSBpbiB6aXAoY29hcnNlWzotMV0sIGNvYXJzZVsxOl0pOgogICAgICAgIHJlcyA9IG1pbmltaXplX3NjYWxhcigKICAgICAgICAgICAgbGFtYmRhIHg6IGFicyhoKHgpKSwKICAgICAgICAgICAgYm91bmRzPShmbG9hdChsbyksIGZsb2F0KGhpKSksCiAgICAgICAgICAgIG1ldGhvZD0iYm91bmRlZCIsCiAgICAgICAgICAgIG9wdGlvbnM9eyJ4YXRvbCI6IDFlLTEzfSwKICAgICAgICApCiAgICAgICAgaWYgcmVzLmZ1biA8PSB0b2w6CiAgICAgICAgICAgIHJvb3RzLmFwcGVuZChmbG9hdChyZXMueCkpCgogICAgcm9vdHMgPSBzb3J0ZWQobWluKDEuMCwgbWF4KDAuMCwgcikpIGZvciByIGluIHJvb3RzKQogICAgdW5pcXVlID0gW10KICAgIG1lcmdlID0gbWF4KDEwLjAgKiB0b2wsIDFlLTEwKQogICAgZm9yIHIgaW4gcm9vdHM6CiAgICAgICAgaWYgbm90IHVuaXF1ZSBvciBhYnMociAtIHVuaXF1ZVstMV0pID4gbWVyZ2U6CiAgICAgICAgICAgIHVuaXF1ZS5hcHBlbmQocikKICAgIHJldHVybiB1bmlxdWUK'}
 JAMES_HANE_OLD = '    if rhs < -1e-12 or rhs > 1+1e-12:\n        raise ValueError(f"No real exact-compatibility beta for rhs={rhs}")\n    rhs = min(1.0,max(0.0,rhs))\n'
 JAMES_HANE_NEW = '    # Only a machine-roundoff guard is allowed at the acos domain edge.\n    # A genuinely out-of-domain rhs is not silently projected into [0,1].\n    edge_tol = 64.0 * np.finfo(float).eps\n    if rhs < -edge_tol or rhs > 1.0 + edge_tol:\n        raise ValueError(f"No real exact-compatibility beta for rhs={rhs}")\n    if rhs < 0.0:\n        rhs = 0.0\n    elif rhs > 1.0:\n        rhs = 1.0\n'
+
+CRYSTAL_ANGLES_OLD = 'def direction_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:\n    """Oriented angle in [0,180] between two direct directions."""\n\n    _require_same_basis(a, b)\n    M = lattice.metric()\n    denominator = metric_norm(a.array, M) * metric_norm(b.array, M)\n    cosine = metric_dot(a.array, b.array, M) / denominator\n    return float(np.rad2deg(np.arccos(_unit_interval_clip(cosine))))\n\n\ndef axis_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:\n    """Projective acute angle in [0,90], identifying u and -u."""\n\n    angle = direction_angle_deg(a, b, lattice)\n    return float(min(angle, 180.0 - angle))\n\n\ndef plane_normal_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:\n    """Oriented angle in [0,180] between reciprocal plane normals."""\n\n    _require_same_basis(a, b)\n    M = lattice.metric()\n    denominator = plane_norm(a.array, M) * plane_norm(b.array, M)\n    cosine = reciprocal_dot(a.array, b.array, M) / denominator\n    return float(np.rad2deg(np.arccos(_unit_interval_clip(cosine))))\n\n\ndef interplanar_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:\n    """Acute crystallographic plane angle in [0,90], identifying ± normals."""\n\n    angle = plane_normal_angle_deg(a, b, lattice)\n    return float(min(angle, 180.0 - angle))\n'
+CRYSTAL_ANGLES_NEW = 'def direction_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:\n    """Oriented angle in [0,180] between two direct directions.\n\n    Evaluate the metric angle with ``atan2(||x×y||, x·y)`` rather than\n    ``acos(cos θ)``. For nearly parallel or antiparallel vectors this avoids\n    the endpoint loss of significance of ``acos`` while preserving the exact\n    metric definition. If ``M=L L^T`` then ``x=L^T u`` satisfies\n    ``x·y = u^T M v``.\n    """\n\n    _require_same_basis(a, b)\n    M = lattice.metric()\n    L = np.linalg.cholesky(M)\n    x = L.T @ a.array\n    y = L.T @ b.array\n    sine_numerator = float(np.linalg.norm(np.cross(x, y)))\n    cosine_numerator = float(x @ y)\n    return float(np.rad2deg(np.arctan2(sine_numerator, cosine_numerator)))\n\n\ndef axis_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:\n    """Projective acute angle in [0,90], identifying u and -u."""\n\n    angle = direction_angle_deg(a, b, lattice)\n    return float(min(angle, 180.0 - angle))\n\n\ndef plane_normal_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:\n    """Oriented angle in [0,180] between reciprocal plane normals.\n\n    With ``M=L L^T``, reciprocal Cartesian representatives may be taken as\n    ``x=L^-1 p`` because ``x·y = p^T M^-1 q``. The ``atan2`` form is stable\n    at the projective endpoints and returns exactly 0/180 for exactly\n    proportional binary64 index vectors such as ``(hkl)`` and ``(-h-k-l)``.\n    """\n\n    _require_same_basis(a, b)\n    M = lattice.metric()\n    L = np.linalg.cholesky(M)\n    x = np.linalg.solve(L, a.array)\n    y = np.linalg.solve(L, b.array)\n    sine_numerator = float(np.linalg.norm(np.cross(x, y)))\n    cosine_numerator = float(x @ y)\n    return float(np.rad2deg(np.arctan2(sine_numerator, cosine_numerator)))\n\n\ndef interplanar_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:\n    """Acute crystallographic plane angle in [0,90], identifying ± normals."""\n\n    angle = plane_normal_angle_deg(a, b, lattice)\n    return float(min(angle, 180.0 - angle))\n'
 
 
 def run(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -135,6 +139,20 @@ def patch_james_hane(repo: Path) -> str:
     return rel
 
 
+def patch_crystal_angles(repo: Path) -> str:
+    rel = "src/cualni_cryst/crystal_objects.py"
+    path = repo / rel
+    text = path.read_text(encoding="utf-8")
+    text = replace_once(
+        text,
+        CRYSTAL_ANGLES_OLD,
+        CRYSTAL_ANGLES_NEW,
+        "stable metric/projective angle evaluation",
+    )
+    path.write_text(text, encoding="utf-8")
+    return rel
+
+
 def source_guards(repo: Path) -> None:
     ct = (repo / "src/cualni_cryst/ct.py").read_text(encoding="utf-8")
     required_ct = [
@@ -202,6 +220,21 @@ def source_guards(repo: Path) -> None:
         raise RuntimeError("PTMC hidden-tolerance guard missing")
 
 
+    crystal_objects = (repo / "src/cualni_cryst/crystal_objects.py").read_text(
+        encoding="utf-8"
+    )
+    required_angles = [
+        "np.arctan2(sine_numerator, cosine_numerator)",
+        "x = L.T @ a.array",
+        "x = np.linalg.solve(L, a.array)",
+    ]
+    missing = [x for x in required_angles if x not in crystal_objects]
+    if missing:
+        raise RuntimeError(
+            f"stable crystallographic-angle source guard failed: {missing}"
+        )
+
+
 def compile_changed(repo: Path, paths: list[str]) -> None:
     failures = []
     for rel in paths:
@@ -227,6 +260,7 @@ def main() -> int:
     preflight(repo)
     written = write_payloads(repo)
     written.append(patch_james_hane(repo))
+    written.append(patch_crystal_angles(repo))
     source_guards(repo)
     compile_changed(repo, written)
 
@@ -254,6 +288,8 @@ def main() -> int:
     print("Metamorphic fixed thresholds replaced by error decomposition: YES")
     print("Ball-James theorem/formulas changed: NO")
     print("PTMC determinant equation changed: NO")
+    print("Crystallographic angle definitions changed: NO")
+    print("Angle endpoint evaluation stabilized with atan2: YES")
     print("manifest:", out)
     return 0
 
