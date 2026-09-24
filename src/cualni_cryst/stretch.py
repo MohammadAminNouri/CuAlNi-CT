@@ -5,11 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.linalg import eigh
 from scipy.optimize import linear_sum_assignment
 
+from .adaptive_metric import (
+    adaptive_metric_eigensystem,
+    adaptive_symmetric_whitened_stretch,
+)
 from .correspondence import Correspondence
 from .ct import normalized_correspondence_metric
+from .numerics import DEFAULT_NUMERICAL_POLICY
 
 
 def positive_definite_sqrt(A: np.ndarray) -> np.ndarray:
@@ -26,20 +30,21 @@ def stretch_from_metrics(
     M_m: np.ndarray,
     correspondence: Correspondence,
 ) -> np.ndarray:
-    r"""Return U in the parent metric-whitened orthonormal basis.
+    r"""Return U in the parent symmetric metric-whitened orthonormal basis.
 
     .. math::
 
         U^2=M_A^{-1/2}C^T M_M C M_A^{-1/2}.
 
-    For a cubic parent ``M_A=a0^2 I`` this reduces to
-    ``U^2 = C^T M_M C / a0^2``.
-
-    This is a representation bridge, not a statement that correspondence,
-    deformation and stretch are the same object.
+    The equation is unchanged.  Arithmetic precision is escalated when the
+    metric pencil is close to the compatibility boundary or badly conditioned.
     """
-    return positive_definite_sqrt(
-        normalized_correspondence_metric(M_a, M_m, correspondence)
+    C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
+    return adaptive_symmetric_whitened_stretch(
+        M_a,
+        M_m,
+        C,
+        decision_tol=DEFAULT_NUMERICAL_POLICY.exact_eigenvalue,
     )
 
 
@@ -59,10 +64,6 @@ class MetricNativeStretchSpectrum:
 
     and are normalized such that ``V.T @ M_A @ V = I``.  The principal
     stretches are ``lambda_i = sqrt(mu_i)``.
-
-    This is useful for arbitrary non-Cartesian parent cells because it works
-    directly with the two metrics and the correspondence; no arbitrary
-    Cartesian basis is required to define the spectrum.
     """
 
     mu: np.ndarray
@@ -77,47 +78,26 @@ def metric_native_stretch_spectrum(
     M_m: np.ndarray,
     correspondence: Correspondence,
 ) -> MetricNativeStretchSpectrum:
-    r"""Solve the exact generalized metric eigenproblem.
+    r"""Solve the unchanged generalized metric eigenproblem adaptively.
 
     .. math::
 
         (C^T M_M C)v_i=\mu_i M_A v_i,
         \qquad \lambda_i=\sqrt{\mu_i}.
-
-    For positive-definite parent/product metrics and an invertible
-    correspondence, all ``mu_i`` must be strictly positive.
     """
-    M_a = np.asarray(M_a, dtype=float).reshape(3, 3)
-    M_m = np.asarray(M_m, dtype=float).reshape(3, 3)
-    M_a = 0.5 * (M_a + M_a.T)
-    M_m = 0.5 * (M_m + M_m.T)
-    if np.min(np.linalg.eigvalsh(M_a)) <= 0:
-        raise ValueError("Parent metric must be symmetric positive definite")
-    if np.min(np.linalg.eigvalsh(M_m)) <= 0:
-        raise ValueError("Martensite metric must be symmetric positive definite")
-
     C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
-    if abs(float(np.linalg.det(C))) < 1e-14:
-        raise ValueError("Correspondence must be invertible")
-
-    G = 0.5 * (C.T @ M_m @ C + (C.T @ M_m @ C).T)
-    mu, V = eigh(G, M_a)
-    order = np.argsort(mu)
-    mu = np.asarray(mu[order], dtype=float)
-    V = np.asarray(V[:, order], dtype=float)
-    if np.min(mu) <= 0:
-        raise ValueError(f"Generalized stretch eigenvalues must be positive; mu={mu}")
-
-    scale = max(float(np.linalg.norm(G)), 1.0)
-    eigen_res = float(np.linalg.norm(G @ V - M_a @ V @ np.diag(mu)) / scale)
-    metric_res = float(np.linalg.norm(V.T @ M_a @ V - np.eye(3)))
-
+    spec = adaptive_metric_eigensystem(
+        M_a,
+        M_m,
+        C,
+        decision_tol=DEFAULT_NUMERICAL_POLICY.exact_eigenvalue,
+    )
     return MetricNativeStretchSpectrum(
-        mu=mu,
-        lambdas=np.sqrt(mu),
-        eigenvectors_crystal=V,
-        metric_orthonormality_residual=metric_res,
-        eigen_equation_residual=eigen_res,
+        mu=spec.mu,
+        lambdas=np.sqrt(spec.mu),
+        eigenvectors_crystal=spec.eigenvectors_crystal,
+        metric_orthonormality_residual=spec.metric_orthonormality_residual,
+        eigen_equation_residual=spec.eigen_equation_residual,
     )
 
 
@@ -208,11 +188,7 @@ def match_matrix_family(
     reference: list[np.ndarray],
     tol: float = 1e-9,
 ) -> tuple[bool, np.ndarray]:
-    """Backward-compatible family check.
-
-    New scientific code should prefer :func:`optimal_match_matrix_family`,
-    which additionally reports the one-to-one assignment and residuals.
-    """
+    """Backward-compatible family check."""
     result = optimal_match_matrix_family(derived, reference, tol=tol)
     return result.success, result.residual_matrix
 

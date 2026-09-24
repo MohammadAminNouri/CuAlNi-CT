@@ -261,13 +261,23 @@ def _require_same_basis(a: Direction | Plane, b: Direction | Plane) -> None:
 
 
 def direction_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:
-    """Oriented angle in [0,180] between two direct directions."""
+    """Oriented angle in [0,180] between two direct directions.
+
+    Evaluate the metric angle with ``atan2(||x×y||, x·y)`` rather than
+    ``acos(cos θ)``. For nearly parallel or antiparallel vectors this avoids
+    the endpoint loss of significance of ``acos`` while preserving the exact
+    metric definition. If ``M=L L^T`` then ``x=L^T u`` satisfies
+    ``x·y = u^T M v``.
+    """
 
     _require_same_basis(a, b)
     M = lattice.metric()
-    denominator = metric_norm(a.array, M) * metric_norm(b.array, M)
-    cosine = metric_dot(a.array, b.array, M) / denominator
-    return float(np.rad2deg(np.arccos(_unit_interval_clip(cosine))))
+    L = np.linalg.cholesky(M)
+    x = L.T @ a.array
+    y = L.T @ b.array
+    sine_numerator = float(np.linalg.norm(np.cross(x, y)))
+    cosine_numerator = float(x @ y)
+    return float(np.rad2deg(np.arctan2(sine_numerator, cosine_numerator)))
 
 
 def axis_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:
@@ -278,13 +288,22 @@ def axis_angle_deg(a: Direction, b: Direction, lattice: Lattice) -> float:
 
 
 def plane_normal_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:
-    """Oriented angle in [0,180] between reciprocal plane normals."""
+    """Oriented angle in [0,180] between reciprocal plane normals.
+
+    With ``M=L L^T``, reciprocal Cartesian representatives may be taken as
+    ``x=L^-1 p`` because ``x·y = p^T M^-1 q``. The ``atan2`` form is stable
+    at the projective endpoints and returns exactly 0/180 for exactly
+    proportional binary64 index vectors such as ``(hkl)`` and ``(-h-k-l)``.
+    """
 
     _require_same_basis(a, b)
     M = lattice.metric()
-    denominator = plane_norm(a.array, M) * plane_norm(b.array, M)
-    cosine = reciprocal_dot(a.array, b.array, M) / denominator
-    return float(np.rad2deg(np.arccos(_unit_interval_clip(cosine))))
+    L = np.linalg.cholesky(M)
+    x = np.linalg.solve(L, a.array)
+    y = np.linalg.solve(L, b.array)
+    sine_numerator = float(np.linalg.norm(np.cross(x, y)))
+    cosine_numerator = float(x @ y)
+    return float(np.rad2deg(np.arctan2(sine_numerator, cosine_numerator)))
 
 
 def interplanar_angle_deg(a: Plane, b: Plane, lattice: Lattice) -> float:

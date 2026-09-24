@@ -141,8 +141,14 @@ def six_m_exact_compatibility_angles(a0: float, a: float, c6m: float) -> tuple[f
     alpha = math.sqrt(2.0)*a/a0
     gamma = math.sqrt(2.0)*c6m/(3.0*a0)
     rhs = ((1-alpha**2)*(1-gamma**2))/(alpha**2*gamma**2)
-    if rhs < -1e-12 or rhs > 1+1e-12:
+    # Only a machine-roundoff guard is allowed at the acos domain edge.
+    # A genuinely out-of-domain rhs is not silently projected into [0,1].
+    edge_tol = 64.0 * np.finfo(float).eps
+    if rhs < -edge_tol or rhs > 1.0 + edge_tol:
         raise ValueError(f"No real exact-compatibility beta for rhs={rhs}")
-    rhs = min(1.0,max(0.0,rhs))
+    if rhs < 0.0:
+        rhs = 0.0
+    elif rhs > 1.0:
+        rhs = 1.0
     acute = math.degrees(math.acos(math.sqrt(rhs)))
     return acute, 180.0-acute

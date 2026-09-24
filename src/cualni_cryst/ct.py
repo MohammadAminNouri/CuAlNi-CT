@@ -7,6 +7,11 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.linalg import eigh
 
+from .adaptive_metric import (
+    adaptive_metric_eigensystem,
+    adaptive_smc,
+    validate_metric_pencil_inputs,
+)
 from .correspondence import Correspondence
 from .lattice import (
     metric_inv_sqrt,
@@ -18,16 +23,11 @@ from .lattice import (
 
 
 def _validated_metric(M: np.ndarray, name: str) -> np.ndarray:
-    M = np.asarray(M, dtype=float).reshape(3, 3)
-    if not np.all(np.isfinite(M)):
-        raise ValueError(f"{name} contains non-finite entries")
-    if np.linalg.norm(M - M.T, ord="fro") > 1e-10 * max(np.linalg.norm(M), 1.0):
-        raise ValueError(f"{name} must be symmetric")
-    M = 0.5 * (M + M.T)
-    eig = np.linalg.eigvalsh(M)
-    if np.min(eig) <= 0:
-        raise ValueError(f"{name} must be positive definite; eigenvalues={eig}")
-    return M
+    try:
+        A, _, _ = validate_metric_pencil_inputs(M, M, np.eye(3))
+    except Exception as exc:
+        raise ValueError(f"{name} is not a valid SPD metric: {exc}") from exc
+    return A
 
 
 def _validated_inputs(
@@ -35,14 +35,8 @@ def _validated_inputs(
     M_m: np.ndarray,
     correspondence: Correspondence,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    M_a = _validated_metric(M_a, "M_a")
-    M_m = _validated_metric(M_m, "M_m")
     C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
-    if not np.all(np.isfinite(C)):
-        raise ValueError("Correspondence contains non-finite entries")
-    if abs(float(np.linalg.det(C))) < 1e-14:
-        raise ValueError("Correspondence must be invertible")
-    return M_a, M_m, C
+    return validate_metric_pencil_inputs(M_a, M_m, C)
 
 
 def cmc(
@@ -53,7 +47,7 @@ def cmc(
     r"""Dimensional CMC = C^T M_M C - M_A (Cayron 2026 Eq. 32)."""
     M_a, M_m, C = _validated_inputs(M_a, M_m, correspondence)
     A = C.T @ M_m @ C - M_a
-    return 0.5 * (A + A.T)
+    return A
 
 
 def normalized_correspondence_metric(
@@ -96,6 +90,13 @@ class CMCAnalysis:
     nearest_zero_residual: float
     signature_after_nearest_zero: tuple[int, int]
     inertia: tuple[int, int, int]  # (negative, zero, positive)
+    generalized_mu: np.ndarray | None = None
+    eigenvectors_crystal: np.ndarray | None = None
+    generalized_eigen_residual: float = float("nan")
+    metric_orthonormality_residual: float = float("nan")
+    solver_source: str = ""
+    precision_escalated: bool = False
+    route_disagreement: float = float("nan")
 
 
 def analyze_cmc(
@@ -104,18 +105,30 @@ def analyze_cmc(
     correspondence: Correspondence,
     tol: float = 1e-8,
 ) -> CMCAnalysis:
-    """Analyze Cayron's CMC degeneracy in a parent metric-orthonormal basis.
+    r"""Analyze Cayron CMC degeneracy without changing the CMC equation.
 
-    The dimensionless matrix is used so that ``tol`` is an algebraic tolerance,
-    not a length-squared tolerance.  Exact first-order compatibility requires
-    one zero eigenvalue and opposite signs for the other two.  Two and three
-    zero eigenvalues are the second- and third-order degeneracies described by
-    Cayron.
+    The normalized CMC spectrum is evaluated through the exactly equivalent
+    generalized symmetric-definite pencil
+
+    .. math::
+
+        (C^T M_M C)v_i=\mu_i M_Av_i,\qquad \eta_i=\mu_i-1.
+
+    In exact arithmetic, ``eta_i`` are exactly the eigenvalues of
+    ``M_A^{-1/2}(C^T M_M C)M_A^{-1/2}-I``.  Numerical precision is escalated
+    when required; ``tol`` itself is never enlarged.
     """
     if tol <= 0:
         raise ValueError("tol must be positive")
-    D = normalized_cmc(M_a, M_m, correspondence)
-    vals, Q = eigh(0.5 * (D + D.T))
+    M_a, M_m, C = _validated_inputs(M_a, M_m, correspondence)
+    spec = adaptive_metric_eigensystem(M_a, M_m, C, decision_tol=tol)
+    vals = np.asarray(spec.mu - 1.0, dtype=float)
+    V = np.asarray(spec.eigenvectors_crystal, dtype=float)
+    # Backward-compatible representation of the eigenvectors in the symmetric
+    # M_A^(1/2) orthonormal basis.  Habit-plane construction below does not
+    # depend on this extra transformation.
+    Q = metric_sqrt(M_a) @ V
+
     zero = np.abs(vals) <= tol
     neg = vals < -tol
     pos = vals > tol
@@ -128,68 +141,62 @@ def analyze_cmc(
         sum(x < -tol for x in nz_near),
     )
 
+    common = dict(
+        eigenvalues=vals,
+        eigenvectors_whitened=Q,
+        nearest_zero_index=nearest,
+        nearest_zero_residual=float(abs(vals[nearest])),
+        signature_after_nearest_zero=sig,
+        inertia=inertia,
+        generalized_mu=np.asarray(spec.mu, float),
+        eigenvectors_crystal=V,
+        generalized_eigen_residual=spec.eigen_equation_residual,
+        metric_orthonormality_residual=spec.metric_orthonormality_residual,
+        solver_source=spec.source,
+        precision_escalated=spec.escalated,
+        route_disagreement=spec.route_disagreement,
+    )
+
     if nullity == 3:
         return CMCAnalysis(
-            vals,
-            Q,
-            True,
-            3,
-            "third-order degeneracy: pulled-back martensite metric equals parent metric",
-            None,
-            nearest,
-            float(abs(vals[nearest])),
-            sig,
-            inertia,
+            exact_compatible=True,
+            degeneracy_order=3,
+            reason="third-order degeneracy: pulled-back martensite metric equals parent metric",
+            zero_index=None,
+            **common,
         )
 
     if nullity == 2:
         return CMCAnalysis(
-            vals,
-            Q,
-            True,
-            2,
-            "second-order degeneracy: one compatible habit plane",
-            None,
-            nearest,
-            float(abs(vals[nearest])),
-            sig,
-            inertia,
+            exact_compatible=True,
+            degeneracy_order=2,
+            reason="second-order degeneracy: one compatible habit plane",
+            zero_index=None,
+            **common,
         )
 
     if nullity == 1:
         iz = int(np.where(zero)[0][0])
         others = [vals[i] for i in range(3) if i != iz]
-        # Cayron: q_i=0 and q_j q_k <= 0.  With exactly one zero eigenvalue,
-        # strict opposite signs give first-order degeneracy.
         ok = bool(others[0] * others[1] < 0.0)
         return CMCAnalysis(
-            vals,
-            Q,
-            ok,
-            1 if ok else 0,
-            (
+            exact_compatible=ok,
+            degeneracy_order=1 if ok else 0,
+            reason=(
                 "first-order degeneracy: two compatible habit planes"
                 if ok
                 else "one zero eigenvalue but the remaining CMC eigenvalues have the same sign"
             ),
-            iz,
-            nearest,
-            float(abs(vals[nearest])),
-            sig,
-            inertia,
+            zero_index=iz,
+            **common,
         )
 
     return CMCAnalysis(
-        vals,
-        Q,
-        False,
-        0,
-        "no exact CMC degeneracy",
-        None,
-        nearest,
-        float(abs(vals[nearest])),
-        sig,
-        inertia,
+        exact_compatible=False,
+        degeneracy_order=0,
+        reason="no exact CMC degeneracy",
+        zero_index=None,
+        **common,
     )
 
 
@@ -200,30 +207,96 @@ def _planes_from_eigensystem(
     M_a: np.ndarray,
     tol: float,
 ) -> list[np.ndarray]:
+    """Legacy whitened-basis factorization, retained for equivalence tests."""
     idx = [i for i in range(3) if i != zero_index]
     i, j = idx
-    qi, qj = vals[i], vals[j]
-    if qi * qj > tol:
+    qi, qj = float(vals[i]), float(vals[j])
+    if qi * qj >= 0.0:
         return []
     if abs(qi) <= tol or abs(qj) <= tol:
-        # Second-order degeneracy is handled explicitly by the caller.
         return []
     if qi > 0:
         ip, ineg = i, j
     else:
         ip, ineg = j, i
 
-    # In the whitened eigenbasis the cone factors as
-    # sqrt(q+) X +/- sqrt(-q-) Z = 0.
     p1h = np.sqrt(vals[ip]) * Q[:, ip] + np.sqrt(-vals[ineg]) * Q[:, ineg]
     p2h = np.sqrt(vals[ip]) * Q[:, ip] - np.sqrt(-vals[ineg]) * Q[:, ineg]
-
-    # u_hat = M_A^(1/2) u_A, hence p_A = M_A^(1/2) p_hat.
     S = metric_sqrt(M_a)
     return [
         normalize_plane(S @ p1h, M_a),
         normalize_plane(S @ p2h, M_a),
     ]
+
+
+def _planes_from_generalized_eigensystem(
+    vals: np.ndarray,
+    V: np.ndarray,
+    zero_index: int,
+    M_a: np.ndarray,
+    tol: float,
+) -> list[np.ndarray]:
+    r"""Factor the same CMC cone directly in crystal coordinates.
+
+    If ``V.T M_A V = I`` and ``eta_i=mu_i-1``, then
+
+    .. math::
+
+        p_A=M_A\left(\sqrt{\eta_+}v_+\pm\sqrt{-\eta_-}v_-\right),
+
+    which is algebraically identical to the former whitened-basis formula.
+    """
+    idx = [i for i in range(3) if i != zero_index]
+    i, j = idx
+    qi, qj = float(vals[i]), float(vals[j])
+    if qi * qj >= 0.0:
+        return []
+    if abs(qi) <= tol or abs(qj) <= tol:
+        return []
+    if qi > 0.0:
+        ip, ineg = i, j
+    else:
+        ip, ineg = j, i
+
+    p1 = M_a @ (
+        np.sqrt(vals[ip]) * V[:, ip]
+        + np.sqrt(-vals[ineg]) * V[:, ineg]
+    )
+    p2 = M_a @ (
+        np.sqrt(vals[ip]) * V[:, ip]
+        - np.sqrt(-vals[ineg]) * V[:, ineg]
+    )
+    return [normalize_plane(p1, M_a), normalize_plane(p2, M_a)]
+
+
+def habit_planes_from_analysis(
+    M_a: np.ndarray,
+    analysis: CMCAnalysis,
+    tol: float,
+) -> list[np.ndarray]:
+    """Construct exact CT habit planes from an already-computed CMC analysis."""
+    if tol <= 0.0:
+        raise ValueError("tol must be positive")
+    if not analysis.exact_compatible or analysis.degeneracy_order == 3:
+        return []
+    M_a = _validated_metric(M_a, "M_a")
+    vals = np.asarray(analysis.eigenvalues, float)
+    V = analysis.eigenvectors_crystal
+    if V is None:
+        raise RuntimeError("CMC analysis does not contain generalized eigenvectors")
+    V = np.asarray(V, float)
+    zero = np.abs(vals) <= tol
+
+    if analysis.degeneracy_order == 2:
+        k = int(np.where(~zero)[0][0])
+        # eta_k (v_k^T M_A u)^2 = 0, hence p_A is proportional to M_A v_k.
+        return [normalize_plane(M_a @ V[:, k], M_a)]
+
+    if analysis.zero_index is None:
+        raise RuntimeError("first-order CMC analysis lacks a zero eigenvalue index")
+    return _planes_from_generalized_eigensystem(
+        vals, V, analysis.zero_index, M_a, tol
+    )
 
 
 def habit_planes_from_cmc(
@@ -232,23 +305,9 @@ def habit_planes_from_cmc(
     correspondence: Correspondence,
     tol: float = 1e-8,
 ) -> list[np.ndarray]:
-    """Exact CT A/M habit-plane covectors.
-
-    Returns an empty list if exact CMC degeneracy is absent.  Third-order
-    degeneracy also returns an empty list because every direction preserves
-    length and there is no unique finite set of habit planes to enumerate.
-    """
+    """Exact CT A/M habit-plane covectors."""
     ana = analyze_cmc(M_a, M_m, correspondence, tol)
-    if not ana.exact_compatible or ana.degeneracy_order == 3:
-        return []
-    vals, Q = ana.eigenvalues, ana.eigenvectors_whitened
-    zero = np.abs(vals) <= tol
-    S = metric_sqrt(M_a)
-    if ana.degeneracy_order == 2:
-        k = int(np.where(~zero)[0][0])
-        return [normalize_plane(S @ Q[:, k], M_a)]
-    assert ana.zero_index is not None
-    return _planes_from_eigensystem(vals, Q, ana.zero_index, M_a, tol)
+    return habit_planes_from_analysis(M_a, ana, tol)
 
 
 @dataclass(frozen=True)
@@ -266,16 +325,29 @@ def approximate_cmc_habit_planes(
 ) -> ApproximateCMCResult:
     """Nearest-zero diagnostic for measured alloys near exact compatibility.
 
-    The nearest eigenvalue of normalized CMC is set to zero *only* to generate
-    a diagnostic candidate plane.  This is not an exact CT prediction, and the
+    The nearest generalized CMC eigenvalue is set to zero *only* to generate a
+    diagnostic candidate plane.  This is not an exact CT prediction, and the
     returned nonzero residual must be reported with the candidate.
     """
-    D = normalized_cmc(M_a, M_m, correspondence)
-    vals, Q = eigh(D)
+    from .numerics import DEFAULT_NUMERICAL_POLICY
+
+    M_a, M_m, C = _validated_inputs(M_a, M_m, correspondence)
+    spec = adaptive_metric_eigensystem(
+        M_a,
+        M_m,
+        C,
+        decision_tol=DEFAULT_NUMERICAL_POLICY.exact_eigenvalue,
+    )
+    vals = np.asarray(spec.mu - 1.0, float)
+    V = np.asarray(spec.eigenvectors_crystal, float)
     iz = int(np.argmin(np.abs(vals)))
     other = [vals[i] for i in range(3) if i != iz]
-    admiss = bool(other[0] * other[1] < 0)
-    planes = tuple(_planes_from_eigensystem(vals, Q, iz, M_a, 0.0)) if admiss else ()
+    admiss = bool(other[0] * other[1] < 0.0)
+    planes = (
+        tuple(_planes_from_generalized_eigensystem(vals, V, iz, M_a, 0.0))
+        if admiss
+        else ()
+    )
     return ApproximateCMCResult(
         float(abs(vals[iz])),
         planes,
@@ -297,12 +369,16 @@ def smc(
 
         SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}.
 
-    SMC is not the inverse of CMC.
+    The exact identity
+
+    .. math::
+
+        (C^T M_M C)^{-1}=C^{-1}M_M^{-1}C^{-T}
+
+    permits solve/high-precision evaluation without changing the equation.
     """
     M_a, M_m, C = _validated_inputs(M_a, M_m, correspondence)
-    Ci = np.linalg.inv(C)
-    S = np.linalg.inv(M_a) - Ci @ np.linalg.inv(M_m) @ Ci.T
-    return 0.5 * (S + S.T)
+    return adaptive_smc(M_a, M_m, C)
 
 
 def ips_shear_from_habit_plane(
@@ -369,10 +445,11 @@ def analyze_austenite_martensite(
     C: Correspondence,
     tol: float = 1e-8,
 ) -> CTAMResult:
+    analysis = analyze_cmc(M_a, M_m, C, tol)
     return CTAMResult(
         cmc(M_a, M_m, C),
         normalized_cmc(M_a, M_m, C),
-        analyze_cmc(M_a, M_m, C, tol),
-        tuple(habit_planes_from_cmc(M_a, M_m, C, tol)),
+        analysis,
+        tuple(habit_planes_from_analysis(M_a, analysis, tol)),
         approximate_cmc_habit_planes(M_a, M_m, C),
     )

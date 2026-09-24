@@ -6,25 +6,23 @@ import numpy as np
 
 from validation.engineered.physical import first_order_case, encode_truth
 from validation.engineered.high_precision import conditioning_diagnostic
+from validation.engineered.certified_binary64 import (
+    exact_binary64_nonsingular,
+    exact_canonical_metric_spd,
+)
 from validation.engineered.production import evaluate
 from validation.engineered.jsonutil import to_jsonable
 
 
-def test_conditioning_sweep_is_differentiated_against_high_precision_oracle():
-    """Separate solver error from unavoidable ill-conditioning.
-
-    Stable/moderate pencils must agree tightly with the high-precision oracle.
-    In extreme regimes explicit rejection is acceptable.  A finite but grossly
-    wrong answer with a small backward residual is recorded as ill-conditioned,
-    not mislabelled as an algebraic-formula error.
-    """
+def test_conditioning_sweep_uses_forward_accuracy_not_backward_residual_alone():
+    """A tiny backward residual is not accepted as proof of forward accuracy."""
     exponents = np.linspace(0.0, 12.0, 25)
     rows = []
     unacceptable = []
 
     for i, exponent in enumerate(exponents):
         base = first_order_case("conditioning-base", i)
-        Ba = np.diag([1.0, 10**(exponent/2.0), 10**exponent])
+        Ba = np.diag([1.0, 10 ** (exponent / 2.0), 10**exponent])
         case = encode_truth(
             base.truth,
             "conditioning-encoding",
@@ -37,15 +35,31 @@ def test_conditioning_sweep_is_differentiated_against_high_precision_oracle():
         try:
             prod = evaluate(case)
         except Exception as exc:
+            parent_spd = exact_canonical_metric_spd(case.M_parent)
+            product_spd = exact_canonical_metric_spd(case.M_product)
+            corr_nonsingular = exact_binary64_nonsingular(case.C_m_from_a)
+            encoded_problem_valid = bool(
+                parent_spd and product_spd and corr_nonsingular
+            )
             row = {
                 "exponent": float(exponent),
                 "condition_Ma": cond_ma,
                 "production_exception": repr(exc),
-                "classification": "explicit_rejection",
+                "canonical_parent_exact_spd": parent_spd,
+                "canonical_product_exact_spd": product_spd,
+                "correspondence_exact_nonsingular": corr_nonsingular,
+                "classification": (
+                    "unexpected_rejection_of_exact_valid_pencil"
+                    if encoded_problem_valid
+                    else "encoded_problem_left_spd_or_nonsingular_domain"
+                ),
             }
             rows.append(row)
-            # Rejection below roughly 1/eps^(1/2) in metric conditioning is too early.
-            if cond_ma < 1e12:
+            # A production rejection is acceptable only when an independent
+            # exact-rational check proves that the *encoded* binary64 problem
+            # is no longer a valid SPD/nonsingular metric pencil.  Condition
+            # number alone is not used as a validity criterion.
+            if encoded_problem_valid:
                 unacceptable.append(row)
             continue
 
@@ -54,38 +68,29 @@ def test_conditioning_sweep_is_differentiated_against_high_precision_oracle():
             case.M_product,
             case.C_m_from_a,
             prod.mu,
-            digits=70,
+            digits=90,
         )
         row = {
             "exponent": float(exponent),
             **diag,
             "generalized_eigen_equation_residual": prod.generalized_eigen_equation_residual,
             "generalized_metric_orthonormality_residual": prod.generalized_metric_orthonormality_residual,
+            "solver_source": prod.ct_analysis.solver_source,
+            "precision_escalated": bool(prod.ct_analysis.precision_escalated),
         }
 
-        # Real SPD pencils should have real eigenvalues.  Significant imaginary
-        # high-precision roots mean the decimalized input itself has crossed a
-        # numerical validity boundary.
-        if diag["max_imag"] > 1e-18:
-            row["classification"] = "high_precision_input_boundary"
-        elif cond_ma <= 1e8:
-            row["classification"] = "stable_zone"
-            if diag["max_relative_forward_error"] > 2e-7:
-                unacceptable.append(row)
+        if diag["max_imag"] > 1e-25:
+            row["classification"] = "oracle_input_boundary"
         elif cond_ma <= 1e14:
-            row["classification"] = "conditioning_transition"
-            if (
-                diag["max_relative_forward_error"] > 2e-3
-                and diag["max_pencil_backward_residual"] > 2e-8
-            ):
+            row["classification"] = "required_forward_accuracy_zone"
+            if diag["max_relative_forward_error"] > 5e-10:
+                unacceptable.append(row)
+            if cond_ma >= 1e8 and not prod.ct_analysis.precision_escalated:
                 unacceptable.append(row)
         else:
-            row["classification"] = "extreme_conditioning"
-            # Still reject silent catastrophic nonsense.
-            if (
-                diag["max_relative_forward_error"] > 5e-2
-                and diag["max_pencil_backward_residual"] > 1e-6
-            ):
+            row["classification"] = "extreme_binary64_conditioning"
+            # Even here, a returned finite answer must not be grossly wrong.
+            if diag["max_relative_forward_error"] > 5e-5:
                 unacceptable.append(row)
         rows.append(row)
 
