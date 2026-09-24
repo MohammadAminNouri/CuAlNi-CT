@@ -1,4 +1,5 @@
 name: Final scientific and app readiness
+# run final readiness against committed V3.1 core
 
 on:
   workflow_dispatch:

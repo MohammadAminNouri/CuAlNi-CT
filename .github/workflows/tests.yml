@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest -vv
+          python -m pytest -vv
 
       - name: Run symbolic reference
         run: |
