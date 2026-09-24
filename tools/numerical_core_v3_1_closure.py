@@ -174,7 +174,12 @@ def source_guards(repo: Path) -> None:
 
     meta = (repo / "validation/engineered/metamorphic.py").read_text(encoding="utf-8")
     required_meta = [
-        "P_1 - T(P_0)",
+        # Verify the implemented decomposition itself rather than a prose marker:
+        # P1-T(P0) = [O1-T(O0)] + [P1-O1] - T(P0-O0).
+        "P1 - TP0",
+        "O1 - TO0",
+        "P1 - O1",
+        "transform(P0 - O0)",
         "decomposition_bound_abs",
         "oracle_encoding_drift_abs",
         "lambda_decomposition_ratio",
