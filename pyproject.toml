@@ -15,7 +15,6 @@ dependencies = [
   "pandas>=2.0",
 ]
 
-
 [project.scripts]
 cualni-cryst = "cualni_cryst.__main__:main"
 cualni-calpad = "cualni_cryst.calpad:main"
@@ -25,6 +24,7 @@ cualni-two = "cualni_cryst.two_phase:main"
 cualni-project = "cualni_cryst.project_io:main"
 
 [project.optional-dependencies]
+app = ["streamlit>=1.40,<2"]
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [tool.setuptools.packages.find]
