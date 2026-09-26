@@ -107,7 +107,7 @@ jobs:
             exit 1
           fi
 
-      -      - name: Verify only intended workstation files changed
+      - name: Verify only intended workstation files changed
         shell: bash
         run: |
           python - <<'PY'
