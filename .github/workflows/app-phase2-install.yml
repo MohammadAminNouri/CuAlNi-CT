@@ -114,6 +114,7 @@ jobs:
           import subprocess
 
           expected = {
+              ".github/workflows/tests.yml",
               "app/workbench.py",
               "app/ui_components.py",
               "app/streamlit_app.py",
