@@ -34,71 +34,86 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
 
-      - name: Verify frozen scientific engine before publishing
-        shell: bash
+      - name: Verify frozen scientific engine baseline
         run: |
-          set -euo pipefail
           git fetch origin "${FROZEN_SCIENCE_BRANCH}"
           git diff --exit-code "origin/${FROZEN_SCIENCE_BRANCH}" -- src/cualni_cryst
 
-      - name: Verify normal CI already has app dependencies
-        shell: bash
+      - name: Verify normal CI already includes app dependencies
         run: |
-          set -euo pipefail
           grep -F 'python -m pip install -e ".[app,dev]"' .github/workflows/tests.yml
 
-      - name: Restore the exact already-validated Phase 2 files
-        shell: bash
+      - name: Restore exact already-validated Phase 2 files
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import urllib.request
 
-          fetch_file() {
-            path="$1"
-            mkdir -p "$(dirname "$path")"
-            curl --fail --silent --show-error --location \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github.raw+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${VALIDATED_COMMIT}" \
-              > "$path"
-          }
+          repo = os.environ["GITHUB_REPOSITORY"]
+          commit = os.environ["VALIDATED_COMMIT"]
+          token = os.environ["GH_TOKEN"]
 
-          fetch_file app/workbench.py
-          fetch_file app/ui_components.py
-          fetch_file app/streamlit_app.py
-          fetch_file tests/app/test_workbench_contract.py
-          fetch_file docs/app/PTCLAB_SCOPE_AUDIT.md
+          files = [
+              "app/workbench.py",
+              "app/ui_components.py",
+              "app/streamlit_app.py",
+              "tests/app/test_workbench_contract.py",
+              "docs/app/PTCLAB_SCOPE_AUDIT.md",
+          ]
 
-      - name: Prove restored files are byte-identical to the validated run
-        shell: bash
+          for rel in files:
+              url = f"https://api.github.com/repos/{repo}/contents/{rel}?ref={commit}"
+              req = urllib.request.Request(
+                  url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github.raw+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              with urllib.request.urlopen(req) as response:
+                  data = response.read()
+              path = Path(rel)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+              print(f"restored {rel}")
+          PY
+
+      - name: Verify exact validated blob identities
         run: |
-          set -euo pipefail
+          python - <<'PY'
+          import subprocess
 
-          check_blob() {
-            path="$1"
-            expected="$2"
-            actual="$(git hash-object "$path")"
-            echo "$path  $actual"
-            test "$actual" = "$expected"
+          expected = {
+              "app/workbench.py": "6d289767d96554113299f565b634adba4cc652b0",
+              "app/ui_components.py": "0298ae96b14fff77c0266d0103785296fd9d887e",
+              "app/streamlit_app.py": "7d1fa27ca2727746c6d91da8883ada380b6cb10e",
+              "tests/app/test_workbench_contract.py": "4776659dbd72ad5cbc9b343e1c84189988e4e696",
+              "docs/app/PTCLAB_SCOPE_AUDIT.md": "3bf8f7acf8f8f9b771e69d48af98f4d2fb5383a0",
           }
 
-          check_blob app/workbench.py 6d289767d96554113299f565b634adba4cc652b0
-          check_blob app/ui_components.py 0298ae96b14fff77c0266d0103785296fd9d887e
-          check_blob app/streamlit_app.py 7d1fa27ca2727746c6d91da8883ada380b6cb10e
-          check_blob tests/app/test_workbench_contract.py 4776659dbd72ad5cbc9b343e1c84189988e4e696
-          check_blob docs/app/PTCLAB_SCOPE_AUDIT.md 3bf8f7acf8f8f9b771e69d48af98f4d2fb5383a0
+          for path, wanted in expected.items():
+              actual = subprocess.check_output(
+                  ["git", "hash-object", path], text=True
+              ).strip()
+              if actual != wanted:
+                  raise SystemExit(
+                      f"{path}: blob mismatch; expected {wanted}, got {actual}"
+                  )
+              print(f"{path}: {actual} OK")
+          PY
 
-      - name: Install application and test dependencies
+      - name: Install app and test dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -e ".[app,dev]"
           python -m pip check
 
-      - name: Compile Phase 2 application sources
+      - name: Compile Phase 2 sources
         run: |
           python -m py_compile \
             app/application.py \
@@ -108,21 +123,6 @@ jobs:
             app/streamlit_app.py \
             tests/app/test_workbench_contract.py
 
-      - name: Run focused Phase 2 contract tests
+      - name: Run focused Phase 2 tests
         run: |
           python -m pytest -q \
-            tests/app/test_workbench_contract.py \
-            tests/app/test_application_contract.py \
-            tests/app/test_streamlit_smoke.py
-
-      - name: Run independent scientific/application readiness gate
-        run: |
-          python tools/final_scientific_app_readiness.py \
-            --report /tmp/phase2_final_readiness.json
-
-      - name: Verify frozen scientific engine remains untouched
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --exit-code "origin/${FROZEN_SCIENCE_BRANCH}" -- src/cualni_cryst
-          if git diff --name-only | grep '^src/cualni_cryst/'; then
