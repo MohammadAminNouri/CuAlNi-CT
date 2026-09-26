@@ -342,7 +342,7 @@ point_groups = point_group_options()
 with setup_tab:
     st.markdown("## Define the two phases")
     st.caption("The editor exposes only independent conventional-cell parameters for the selected crystal family. The backend still validates the full metric and point-group consistency.")
-    with st.form("setup_form", clear_on_submit=False):
+    with st.container():
         left, right = st.columns(2, gap="large")
         with left:
             parent = smart_phase_editor(
@@ -372,7 +372,7 @@ with setup_tab:
             with st.expander("Advanced transformation metadata"):
                 transformation_id = st.text_input("Transformation ID", value="A_to_M")
                 transformation_label = st.text_input("Display name", value="Parent → Product")
-        calculate = st.form_submit_button("Calculate transformation", type="primary", use_container_width=True)
+        calculate = st.button("Calculate transformation", type="primary", use_container_width=True)
 
     if calculate:
         try:
