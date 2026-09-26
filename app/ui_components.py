@@ -321,10 +321,23 @@ def vector_editor(
 
 
 def matrix_frame(matrix: object, *, digits: int = 10) -> pd.DataFrame:
-    frame = pd.DataFrame(matrix, index=["1", "2", "3"], columns=["1", "2", "3"])
-    return frame.applymap(lambda x: round(float(x), digits) if isinstance(x, (int, float)) else x)
+    frame = pd.DataFrame(matrix)
 
+    frame.index = [str(i + 1) for i in range(frame.shape[0])]
+    frame.columns = [str(i + 1) for i in range(frame.shape[1])]
 
+    formatter = lambda x: (
+        round(float(x), digits)
+        if isinstance(x, (int, float))
+        else x
+    )
+
+    if hasattr(frame, "map"):
+        return frame.map(formatter)
+
+    return frame.applymap(formatter)
+
+    
 def vector_frame(vectors: Iterable[Sequence[float]], *, prefix: str) -> pd.DataFrame:
     rows = []
     for index, vector in enumerate(vectors, start=1):
