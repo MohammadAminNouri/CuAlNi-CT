@@ -107,23 +107,46 @@ jobs:
             exit 1
           fi
 
-      - name: Verify only intended workstation files changed
+      -      - name: Verify only intended workstation files changed
         shell: bash
         run: |
-          git diff --name-only | sort | tee /tmp/phase2-changed-files.txt
           python - <<'PY'
           import subprocess
+
           expected = {
               "app/workbench.py",
               "app/ui_components.py",
               "app/streamlit_app.py",
               "tests/app/test_workbench_contract.py",
               "docs/app/PTCLAB_SCOPE_AUDIT.md",
-              ".github/workflows/tests.yml",
           }
-          changed = set(filter(None, subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()))
+
+          tracked = set(filter(
+              None,
+              subprocess.check_output(
+                  ["git", "diff", "--name-only"],
+                  text=True
+              ).splitlines()
+          ))
+
+          untracked = set(filter(
+              None,
+              subprocess.check_output(
+                  ["git", "ls-files", "--others", "--exclude-standard"],
+                  text=True
+              ).splitlines()
+          ))
+
+          changed = tracked | untracked
+
           if changed != expected:
-              raise SystemExit(f"Unexpected changed files. expected={sorted(expected)} actual={sorted(changed)}")
+              raise SystemExit(
+                  f"Unexpected changed files. expected={sorted(expected)} actual={sorted(changed)}"
+              )
+
+          print("Validated workstation files:")
+          for path in sorted(changed):
+              print(path)
           PY
 
       - name: Commit validated workstation upgrade
