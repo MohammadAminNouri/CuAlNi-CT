@@ -610,6 +610,50 @@ _PARAMETER_NEUTRAL: dict[str, float] = {
 }
 
 
+def _registered_point_group_definition(phase: Any):
+    """Resolve a PhaseState point-group label without discarding setting metadata.
+
+    Modern ProjectState/JSON phases store canonical Hermann--Mauguin symbols
+    (for example ``2/m``).  Some truth-locked legacy/reference phases predate
+    that registry and include the conventional setting in the same display
+    string, for example ``2/m (unique b)``.
+
+    We accept that older form *only* when the parenthetical suffix exactly
+    matches the registry's conventional setting for the resolved base symbol.
+    This is intentionally stricter than blindly stripping parentheses: an
+    inconsistent or genuinely non-standard setting must continue to fail
+    loudly instead of being assigned the wrong crystal family.
+    """
+
+    raw = str(phase.point_group_symbol).strip()
+    try:
+        return resolve_point_group(raw)
+    except ValueError as original_error:
+        if not raw.endswith(")") or "(" not in raw:
+            raise
+
+        base, suffix = raw.rsplit("(", 1)
+        base = base.strip()
+        suffix = suffix[:-1].strip()
+        if not base or not suffix:
+            raise original_error
+
+        try:
+            definition = resolve_point_group(base)
+        except ValueError:
+            raise original_error
+
+        normalize = lambda text: " ".join(str(text).casefold().split())
+        if normalize(suffix) != normalize(definition.conventional_setting):
+            raise ValueError(
+                "Point-group label contains a setting annotation that does not "
+                "match the registered conventional setting: "
+                f"label={raw!r}, registered_setting={definition.conventional_setting!r}. "
+                "Refusing to infer a crystal family from an inconsistent setting."
+            ) from original_error
+        return definition
+
+
 def independent_product_lattice_parameters(
     project: Any,
     transformation_id: str,
@@ -623,7 +667,7 @@ def independent_product_lattice_parameters(
 
     transformation = project.transformation(transformation_id)
     phase = project.phase(transformation.product_phase_id)
-    family = resolve_point_group(phase.point_group_symbol).crystal_family
+    family = _registered_point_group_definition(phase).crystal_family
     if family == "cubic":
         return ("a_scale",)
     if family in {"tetragonal", "hexagonal", "trigonal"}:
@@ -691,7 +735,7 @@ def symmetry_preserving_product_grid(
 
     transformation = project.transformation(transformation_id)
     product_phase = project.phase(transformation.product_phase_id)
-    family = resolve_point_group(product_phase.point_group_symbol).crystal_family
+    family = _registered_point_group_definition(product_phase).crystal_family
     old = product_phase.lattice
     output: list[tuple[str, Any, dict[str, Any]]] = []
 

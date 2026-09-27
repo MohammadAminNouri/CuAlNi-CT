@@ -183,6 +183,16 @@ class ExperimentResidual:
     theory_branch: str
     residuals: PhysicalResiduals
     uncertainty_normalized: dict[str, float] = field(default_factory=dict)
+    comparable_components: tuple[str, ...] = ()
+    unavailable_components: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def comparison_status(self) -> str:
+        if self.comparable_components:
+            return "compared"
+        if self.unavailable_components:
+            return "relevant_but_not_comparable"
+        return "no_shared_observable"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -192,6 +202,9 @@ class ExperimentResidual:
             "theory_branch": self.theory_branch,
             "residuals": self.residuals.to_dict(),
             "uncertainty_normalized": dict(self.uncertainty_normalized),
+            "comparable_components": list(self.comparable_components),
+            "unavailable_components": dict(self.unavailable_components),
+            "comparison_status": self.comparison_status,
         }
 
 
@@ -687,6 +700,76 @@ class PhysicalBranchMatcher:
         )
         return matches, unmatched
 
+    @staticmethod
+    def _declared_observable_overlap(
+        observation: ComparisonRow,
+        prediction: ComparisonRow,
+    ) -> tuple[str, ...]:
+        """Observable families explicitly present on both rows before frame semantics.
+
+        This differs from :meth:`PhysicalResiduals.available`: a shared declared
+        observable can be intentionally *not comparable* (for example a
+        parent-reference experimental twin direction versus a Ball--James
+        current-configuration shear direction).  Such a pair must be retained
+        in the report as N/A with an explanation rather than silently dropped.
+        """
+
+        def any_present(row: ComparisonRow, names: tuple[str, ...]) -> bool:
+            return any(getattr(row, name) is not None for name in names)
+
+        families = {
+            "orientation_relationship": ("or_parent_from_product",),
+            "habit_plane": (
+                "habit_normal_parent_cartesian",
+                "habit_plane_parent_crystal",
+            ),
+            "twin_plane": (
+                "twin_normal_parent_cartesian",
+                "twin_plane_parent_crystal",
+            ),
+            "twin_direction": (
+                "twin_direction_parent_cartesian",
+                "twin_direction_parent_crystal",
+            ),
+            "shear_magnitude": ("shear_magnitude",),
+            "shape_vector": (
+                "shape_vector_parent_cartesian",
+                "shape_vector_parent_crystal",
+            ),
+            "shape_magnitude": ("shape_vector_magnitude",),
+        }
+        return tuple(
+            family
+            for family, names in families.items()
+            if any_present(observation, names) and any_present(prediction, names)
+        )
+
+    def _unavailable_experiment_components(
+        self,
+        observation: ComparisonRow,
+        prediction: ComparisonRow,
+        declared_overlap: tuple[str, ...],
+        residuals: PhysicalResiduals,
+    ) -> dict[str, str]:
+        """Explain shared observables intentionally excluded from comparison."""
+
+        unavailable: dict[str, str] = {}
+        if (
+            "twin_direction" in declared_overlap
+            and residuals.twin_direction_angle_deg is None
+            and self._mixed_reference_current_twin_direction_semantics(
+                observation, prediction
+            )
+        ):
+            unavailable["twin_direction_angle_deg"] = (
+                "Experimental/CT twin direction is a parent-reference object, "
+                "whereas Ball-James/PTMC exposes the current-configuration "
+                "rank-one shear direction. No residual is formed without an "
+                "explicit branch-specific push-forward or a current-configuration "
+                "experimental direction."
+            )
+        return unavailable
+
     def experiment_residuals(
         self,
         report: UnifiedTheoryReport,
@@ -705,8 +788,20 @@ class PhysicalBranchMatcher:
                 if key.startswith("uncertainty_") and float(value) > 0.0
             }
             for prediction in predictions:
+                declared_overlap = self._declared_observable_overlap(
+                    observation, prediction
+                )
+                if not declared_overlap:
+                    continue
                 residuals = self.residuals(observation, prediction)
-                if not residuals.available():
+                unavailable = self._unavailable_experiment_components(
+                    observation, prediction, declared_overlap, residuals
+                )
+                # Keep relevant pairs even when every shared observable is
+                # intentionally N/A because its configurations are incompatible.
+                # Silent omission would falsely look like "no experimental datum".
+                comparable = residuals.available()
+                if not comparable and not unavailable:
                     continue
                 normalized: dict[str, float] = {}
                 mapping = {
@@ -732,6 +827,8 @@ class PhysicalBranchMatcher:
                         theory_branch=prediction.branch_label,
                         residuals=residuals,
                         uncertainty_normalized=normalized,
+                        comparable_components=comparable,
+                        unavailable_components=unavailable,
                     )
                 )
         return tuple(output)
