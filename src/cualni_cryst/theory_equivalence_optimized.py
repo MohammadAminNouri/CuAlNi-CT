@@ -10,7 +10,10 @@ three things only:
 * family-specific residual evaluation so unrelated observables are not
   recomputed for every candidate pair;
 * exact/approximate separation for A/M equivalence: approximate CT CMC habit
-  diagnostics are excluded from exact-equivalence assignment by construction.
+  diagnostics are excluded from exact-equivalence assignment by construction;
+* source-faithful A/M semantics inherited from ``PhysicalBranchMatcher``:
+  theory-native vectors are converted to a common parent-identity rank-one
+  observable only when their mathematical contract permits it.
 
 The public residual definitions and tolerances remain those of
 ``theory_equivalence``.
@@ -52,8 +55,9 @@ class CachedPhysicalBranchMatcher(PhysicalBranchMatcher):
     def __init__(self, project: Any, transformation_id: str) -> None:
         super().__init__(project, transformation_id)
         self._habit_cache: dict[str, Array | None] = {}
-        self._shape_cache: dict[str, Array | None] = {}
-        self._rank_one_cache: dict[str, Array | None] = {}
+        self._stored_shape_cache: dict[str, Array | None] = {}
+        self._am_shape_cache: dict[str, Array | None] = {}
+        self._am_rank_one_cache: dict[str, Array | None] = {}
         self._twin_normal_cache: dict[str, Array | None] = {}
         self._twin_direction_cache: dict[str, Array | None] = {}
         self._or_cache: dict[str, Array | None] = {}
@@ -73,11 +77,26 @@ class CachedPhysicalBranchMatcher(PhysicalBranchMatcher):
     def _habit_normal(self, row: ComparisonRow) -> Array | None:
         return self._cached(self._habit_cache, row, lambda: super(CachedPhysicalBranchMatcher, self)._habit_normal(row))
 
-    def _shape_vector(self, row: ComparisonRow) -> Array | None:
-        return self._cached(self._shape_cache, row, lambda: super(CachedPhysicalBranchMatcher, self)._shape_vector(row))
+    def _stored_shape_vector(self, row: ComparisonRow) -> Array | None:
+        return self._cached(
+            self._stored_shape_cache,
+            row,
+            lambda: super(CachedPhysicalBranchMatcher, self)._stored_shape_vector(row),
+        )
 
-    def _rank_one_tensor(self, row: ComparisonRow) -> Array | None:
-        return self._cached(self._rank_one_cache, row, lambda: super(CachedPhysicalBranchMatcher, self)._rank_one_tensor(row))
+    def _am_rank_one_shape_vector(self, row: ComparisonRow) -> Array | None:
+        return self._cached(
+            self._am_shape_cache,
+            row,
+            lambda: super(CachedPhysicalBranchMatcher, self)._am_rank_one_shape_vector(row),
+        )
+
+    def _am_rank_one_tensor(self, row: ComparisonRow) -> Array | None:
+        return self._cached(
+            self._am_rank_one_cache,
+            row,
+            lambda: super(CachedPhysicalBranchMatcher, self)._am_rank_one_tensor(row),
+        )
 
     def _twin_normal(self, row: ComparisonRow) -> Array | None:
         return self._cached(self._twin_normal_cache, row, lambda: super(CachedPhysicalBranchMatcher, self)._twin_normal(row))
@@ -87,25 +106,6 @@ class CachedPhysicalBranchMatcher(PhysicalBranchMatcher):
 
     def _or_in_symmetric_metric_frame(self, row: ComparisonRow) -> Array | None:
         return self._cached(self._or_cache, row, lambda: super(CachedPhysicalBranchMatcher, self)._or_in_symmetric_metric_frame(row))
-
-    @staticmethod
-    def _rows(
-        report: UnifiedTheoryReport,
-        theory: TheoryKind,
-        kinds: Iterable[PredictionKind],
-    ) -> list[ComparisonRow]:
-        """Return exact-equivalence candidates.
-
-        CT ``exact=False`` A/M rows are nearest-degeneracy diagnostics, not exact
-        CT compatibility predictions.  They therefore cannot enter the exact
-        equivalence assignment pool.  They remain in the unified report and can
-        be compared separately as diagnostics.
-        """
-        allowed = set(kinds)
-        rows = PhysicalBranchMatcher._rows(report, theory, allowed)
-        if theory is TheoryKind.CAYRON_CT and PredictionKind.CT_AM_HABIT in allowed:
-            rows = [row for row in rows if row.exact is True]
-        return rows
 
     @staticmethod
     def _dedupe_exact_or_rows(rows: list[ComparisonRow]) -> list[ComparisonRow]:
@@ -169,12 +169,19 @@ class CachedPhysicalBranchMatcher(PhysicalBranchMatcher):
         if family is MatchFamily.AM_INTERFACE:
             h1 = self._habit_normal(left)
             h2 = self._habit_normal(right)
-            s1 = self._shape_vector(left)
-            s2 = self._shape_vector(right)
+            # Compare the common macroscopic rank-one observable only after
+            # theory-native vectors have been mapped into the same contract.
+            # Exact CT uses the audited SMC->rank-one bridge; Ball--James and
+            # true-IPS PTMC already expose b in RU-I=b⊗n. Approximate CT and
+            # uniformly dilated PTMC rows intentionally return N/A here.
+            s1 = self._am_rank_one_shape_vector(left)
+            s2 = self._am_rank_one_shape_vector(right)
+            t1 = self._am_rank_one_tensor(left)
+            t2 = self._am_rank_one_tensor(right)
             d1 = None if s1 is None else s1 / np.linalg.norm(s1)
             d2 = None if s2 is None else s2 / np.linalg.norm(s2)
-            t1 = self._rank_one_tensor(left)
-            t2 = self._rank_one_tensor(right)
+            m1 = None if s1 is None else float(np.linalg.norm(s1))
+            m2 = None if s2 is None else float(np.linalg.norm(s2))
             return PhysicalResiduals(
                 habit_plane_angle_deg=(
                     projective_angle_deg(h1, h2)
@@ -191,9 +198,7 @@ class CachedPhysicalBranchMatcher(PhysicalBranchMatcher):
                     if d1 is not None and d2 is not None
                     else None
                 ),
-                shape_magnitude_relative=_relative_scalar(
-                    left.shape_vector_magnitude, right.shape_vector_magnitude
-                ),
+                shape_magnitude_relative=_relative_scalar(m1, m2),
                 rank_one_tensor_relative=_relative_tensor(t1, t2),
             )
 

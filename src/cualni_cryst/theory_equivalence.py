@@ -26,6 +26,12 @@ from .orientation_kernel import (
 )
 from .representation import CartesianConvention
 from .physical_validation import cross_validate_ct_mallard_ball_james
+from .theory_observable_contracts import (
+    AMRankOneBridgeAudit,
+    ShapeVectorRole,
+    audit_smc_rank_one_bridge,
+    infer_native_shape_vector_role,
+)
 from .theory_unified import (
     ComparisonRow,
     PredictionKind,
@@ -323,6 +329,12 @@ class PhysicalBranchMatcher:
             algebraic_tolerance=max(tolerance, 1.0e-10),
         )
         self.orientation_service = OrientationService(project)
+        self._am_stretch = self.kernel.kinematics_from_correspondence().stretch_A
+        self._am_bridge_guard_tolerance = 10.0 * max(
+            project.numerical_policy.exact_eigenvalue,
+            project.numerical_policy.representation,
+            project.numerical_policy.algebraic,
+        )
 
     def _habit_normal(self, row: ComparisonRow) -> Array | None:
         direct = _unit(row.habit_normal_parent_cartesian)
@@ -335,8 +347,8 @@ class PhysicalBranchMatcher:
             phase="A",
         )
 
-    def _shape_vector(self, row: ComparisonRow) -> Array | None:
-        """Return the physical parent-frame shape vector with its magnitude and sign."""
+    def _stored_shape_vector(self, row: ComparisonRow) -> Array | None:
+        """Physicalize the vector stored by the native theory row, unchanged."""
 
         if row.shape_vector_parent_cartesian is not None:
             value = np.asarray(row.shape_vector_parent_cartesian, dtype=float).reshape(3)
@@ -350,19 +362,56 @@ class PhysicalBranchMatcher:
             return None
         return value
 
-    def _shape_direction(self, row: ComparisonRow) -> Array | None:
-        return _unit(self._shape_vector(row))
+    @staticmethod
+    def _shape_vector_role(row: ComparisonRow) -> ShapeVectorRole:
+        """Return the producer-defined native vector contract, fail-closed."""
 
-    def _rank_one_tensor(self, row: ComparisonRow) -> Array | None:
-        """Return b⊗m in the common parent Cartesian frame when both factors exist.
+        return infer_native_shape_vector_role(
+            theory=row.theory,
+            prediction_kind=row.prediction_kind,
+            exact=row.exact,
+            metadata=row.metadata,
+        )
 
-        The habit normal is explicitly normalized.  This removes the arbitrary
-        rank-one gauge while preserving the physical sign coupling between b and m.
-        Comparing this tensor prevents false agreement caused by independently
-        projectivizing the habit plane and shape direction.
+    def _ct_am_bridge_audit(self, row: ComparisonRow) -> AMRankOneBridgeAudit | None:
+        if self._shape_vector_role(row) is not ShapeVectorRole.CT_SMC_IPS_D:
+            return None
+        if row.prediction_kind is not PredictionKind.CT_AM_HABIT or row.exact is not True:
+            return None
+        stored = self._stored_shape_vector(row)
+        normal = self._habit_normal(row)
+        if stored is None or normal is None:
+            return None
+        audit = audit_smc_rank_one_bridge(stored, normal, self._am_stretch)
+        if audit.maximum_residual > self._am_bridge_guard_tolerance:
+            raise AssertionError(
+                "Exact CT A/M SMC-to-rank-one observable bridge failed its "
+                "independent deformation audit: "
+                f"max residual={audit.maximum_residual:.3e}, "
+                f"guard={self._am_bridge_guard_tolerance:.3e}"
+            )
+        return audit
+
+    def _am_rank_one_shape_vector(self, row: ComparisonRow) -> Array | None:
+        """Return b for the common exact ``R F-I=b⊗n`` A/M observable.
+
+        Native theory vectors are never overwritten. Exact CT SMC ``d`` is
+        converted only at this comparison boundary and only after an independent
+        deformation audit. Ball--James and true-IPS PTMC rows already expose
+        ``b``. Approximate CT, dilated PTMC and unspecified experiment vectors
+        remain N/A rather than being guessed into equivalence.
         """
 
-        shape = self._shape_vector(row)
+        role = self._shape_vector_role(row)
+        if role is ShapeVectorRole.CT_SMC_IPS_D:
+            audit = self._ct_am_bridge_audit(row)
+            return None if audit is None else audit.rank_one_shape_cartesian
+        if role is ShapeVectorRole.RANK_ONE_PARENT_IDENTITY_B:
+            return self._stored_shape_vector(row)
+        return None
+
+    def _am_rank_one_tensor(self, row: ComparisonRow) -> Array | None:
+        shape = self._am_rank_one_shape_vector(row)
         normal = self._habit_normal(row)
         if shape is None or normal is None:
             return None
@@ -449,10 +498,12 @@ class PhysicalBranchMatcher:
     def residuals(self, left: ComparisonRow, right: ComparisonRow) -> PhysicalResiduals:
         habit_left = self._habit_normal(left)
         habit_right = self._habit_normal(right)
-        shape_left = self._shape_direction(left)
-        shape_right = self._shape_direction(right)
-        tensor_left = self._rank_one_tensor(left)
-        tensor_right = self._rank_one_tensor(right)
+        shape_vector_left = self._am_rank_one_shape_vector(left)
+        shape_vector_right = self._am_rank_one_shape_vector(right)
+        shape_left = _unit(shape_vector_left)
+        shape_right = _unit(shape_vector_right)
+        tensor_left = self._am_rank_one_tensor(left)
+        tensor_right = self._am_rank_one_tensor(right)
         twin_normal_left = self._twin_normal(left)
         twin_normal_right = self._twin_normal(right)
         mixed_twin_semantics = self._mixed_reference_current_twin_direction_semantics(left, right)
@@ -496,8 +547,12 @@ class PhysicalBranchMatcher:
             shape_direction_projective_deg=shape_projective,
             shape_direction_oriented_deg=shape_oriented,
             shape_magnitude_relative=_relative_scalar(
-                left.shape_vector_magnitude,
-                right.shape_vector_magnitude,
+                None
+                if shape_vector_left is None
+                else float(np.linalg.norm(shape_vector_left)),
+                None
+                if shape_vector_right is None
+                else float(np.linalg.norm(shape_vector_right)),
             ),
             rank_one_tensor_relative=_relative_tensor(tensor_left, tensor_right),
             twin_plane_angle_deg=twin_plane,
@@ -768,6 +823,16 @@ class PhysicalBranchMatcher:
                 "explicit branch-specific push-forward or a current-configuration "
                 "experimental direction."
             )
+        if (
+            "shape_vector" in declared_overlap
+            and residuals.rank_one_tensor_relative is None
+            and self._shape_vector_role(observation) is ShapeVectorRole.UNSPECIFIED
+        ):
+            unavailable["rank_one_tensor_relative"] = (
+                "Experimental shape-vector semantics are unspecified. The comparison "
+                "engine will not guess whether it is CT SMC d, a parent-identity "
+                "rank-one b, or a dilated-plane vector."
+            )
         return unavailable
 
     def experiment_residuals(
@@ -886,6 +951,9 @@ class PhysicalBranchMatcher:
         for family, left_theory, left_kinds, right_theory, right_kinds in comparisons:
             left_rows = self._rows(report, left_theory, left_kinds)
             right_rows = self._rows(report, right_theory, right_kinds)
+            if family is MatchFamily.AM_INTERFACE:
+                left_rows = [row for row in left_rows if row.exact is True]
+                right_rows = [row for row in right_rows if row.exact is True]
             if family is MatchFamily.MM_TWIN and right_theory is TheoryKind.PTMC:
                 right_rows = self._dedupe_ptmc_twins(right_rows)
             pair_matches, pair_unmatched = self.match_pair(
@@ -1041,7 +1109,7 @@ def double_shear_comparison_rows(report: Any) -> tuple[ComparisonRow, ...]:
                         f"f2={solution.second_parameter:.12g}, "
                         f"habit branch {int(habit.branch):+d}"
                     ),
-                    exact=True,
+                    exact=bool(abs(float(report.dilatational_factor) - 1.0) <= 1.0e-12),
                     rotation_matrix=tuple(
                         tuple(float(x) for x in row)
                         for row in np.asarray(habit.rotation, dtype=float)
@@ -1072,6 +1140,10 @@ def double_shear_comparison_rows(report: Any) -> tuple[ComparisonRow, ...]:
                         "composition": solution.composition.value,
                         "first_parameter": float(solution.first_parameter),
                         "second_parameter": float(solution.second_parameter),
+                        "dilatational_factor": float(report.dilatational_factor),
+                        "true_invariant_plane": bool(
+                            abs(float(report.dilatational_factor) - 1.0) <= 1.0e-12
+                        ),
                     },
                     provenance="Explicit two-LIS PTMC compatibility",
                     notes=(

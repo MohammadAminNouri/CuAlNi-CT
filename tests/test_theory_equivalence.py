@@ -62,7 +62,9 @@ def test_ct_am_ball_james_exact_branches_are_matched_one_to_one():
     assert len({item.right_row_id for item in matches}) == len(matches)
     assert max(item.residuals.habit_plane_angle_deg for item in matches) < 2e-5
     assert all(item.residuals.rank_one_tensor_relative is not None for item in matches)
+    assert max(item.residuals.rank_one_tensor_relative for item in matches) < 1e-8
     assert all(item.completeness is MatchCompleteness.FULL for item in matches)
+    assert all(item.all_required_components_within_tolerance is True for item in matches)
     assert all(
         item.within_tolerance.get("habit_plane_angle_deg") is True
         for item in matches
