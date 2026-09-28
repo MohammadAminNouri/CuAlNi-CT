@@ -9,10 +9,14 @@ description = "Transparent crystallographic tools for testing Correspondence The
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "numpy>=2.0",
-  "scipy>=1.13",
-  "sympy>=1.12",
-  "pandas>=2.0",
+  "numpy>=2.0,<3",
+  "scipy>=1.13,<2",
+  "sympy>=1.12,<2",
+  # Keep the supported pandas range on releases that publish wheels for every
+  # Python version in the CI matrix (3.11-3.13). This prevents resolver
+  # backtracking into old source-only pandas releases after a transient index
+  # failure, while still allowing both the maintained 2.3 line and pandas 3.0.
+  "pandas>=2.3.3,<3.1",
 ]
 
 [project.scripts]
@@ -25,7 +29,7 @@ cualni-project = "cualni_cryst.project_io:main"
 
 [project.optional-dependencies]
 app = ["streamlit>=1.40,<2"]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8,<10", "ruff>=0.6,<1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
