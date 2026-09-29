@@ -321,17 +321,26 @@ def evaluate_supercompatibility_state(
         if bool(row.metadata.get("cofactor_all_satisfied", False))
     ]
 
-    pair_results = _matched_pair_results(
-        project,
-        transformation_id,
-        report,
-        tolerance=tolerance,
-    )
-    # State-level set membership remains descriptive, while pair_results records
-    # whether the same physically matched M/M relation agrees or disagrees.
-    ct_super = bool(ct_satisfied_rows)
+    ct_am_exact = bool(report.ct_report.analysis.exact_compatible)
+    # Exact CT supercompatibility is mathematically gated by an exact CT A/M
+    # habit.  Absence of such a seed is NOT a failed supercompatibility test.
+    # In that state the calculation is not executed and approximate CT habits
+    # are never substituted.  The independently calculated cofactor quantities
+    # are retained descriptively.
+    if ct_am_exact:
+        pair_results = _matched_pair_results(
+            project,
+            transformation_id,
+            report,
+            tolerance=tolerance,
+        )
+        ct_super: bool | None = bool(ct_satisfied_rows)
+        classification = _classification(bool(ct_super), bool(cofactor_satisfied_rows))
+    else:
+        pair_results = ()
+        ct_super = None
+        classification = AtlasClass.NOT_EVALUABLE
     cofactor = bool(cofactor_satisfied_rows)
-    classification = _classification(ct_super, cofactor)
 
     cc1 = [
         abs(float(row.residuals["cc1_lambda2_minus_one"]))
@@ -352,23 +361,23 @@ def evaluate_supercompatibility_state(
     return AtlasStateResult(
         state_id=state_id or project.project_id,
         classification=classification,
-        ct_am_exact_compatible=bool(report.ct_report.analysis.exact_compatible),
+        ct_am_exact_compatible=ct_am_exact,
         ct_supercompatible=ct_super,
         cofactor_compatible=cofactor,
         ct_best_supercompatibility_residual=_finite_min(ct_residuals),
         cofactor_best_cc1_abs=_finite_min(cc1),
         cofactor_best_cc2_abs=_finite_min(cc2),
         cofactor_best_cc3_margin=_finite_max(cc3),
-        ct_supercompatible_branch_count=len(ct_satisfied_rows),
+        ct_supercompatible_branch_count=(len(ct_satisfied_rows) if ct_am_exact else 0),
         cofactor_compatible_branch_count=len(cofactor_satisfied_rows),
         matched_relation_count=len(pair_results),
-        pair_agreement_count=sum(
-            item.ct_supercompatible == item.cofactor_compatible
-            for item in pair_results
+        pair_agreement_count=(
+            sum(item.ct_supercompatible == item.cofactor_compatible for item in pair_results)
+            if ct_am_exact else 0
         ),
-        pair_disagreement_count=sum(
-            item.ct_supercompatible != item.cofactor_compatible
-            for item in pair_results
+        pair_disagreement_count=(
+            sum(item.ct_supercompatible != item.cofactor_compatible for item in pair_results)
+            if ct_am_exact else 0
         ),
         pair_results=pair_results,
         metadata={} if metadata is None else dict(metadata),
@@ -439,6 +448,7 @@ def evaluate_supercompatibility_atlas(
                 "CT/Mallard/Ball-James M/M equivalence remains the independent audit."
             ),
             "NOT_EVALUABLE states are retained rather than removed from the sweep.",
+            "Exact CT supercompatibility is evaluated only when an exact CT A/M seed exists; approximate nearest-degeneracy habits are never substituted.",
         ),
     )
 
@@ -610,50 +620,6 @@ _PARAMETER_NEUTRAL: dict[str, float] = {
 }
 
 
-def _registered_point_group_definition(phase: Any):
-    """Resolve a PhaseState point-group label without discarding setting metadata.
-
-    Modern ProjectState/JSON phases store canonical Hermann--Mauguin symbols
-    (for example ``2/m``).  Some truth-locked legacy/reference phases predate
-    that registry and include the conventional setting in the same display
-    string, for example ``2/m (unique b)``.
-
-    We accept that older form *only* when the parenthetical suffix exactly
-    matches the registry's conventional setting for the resolved base symbol.
-    This is intentionally stricter than blindly stripping parentheses: an
-    inconsistent or genuinely non-standard setting must continue to fail
-    loudly instead of being assigned the wrong crystal family.
-    """
-
-    raw = str(phase.point_group_symbol).strip()
-    try:
-        return resolve_point_group(raw)
-    except ValueError as original_error:
-        if not raw.endswith(")") or "(" not in raw:
-            raise
-
-        base, suffix = raw.rsplit("(", 1)
-        base = base.strip()
-        suffix = suffix[:-1].strip()
-        if not base or not suffix:
-            raise original_error
-
-        try:
-            definition = resolve_point_group(base)
-        except ValueError:
-            raise original_error
-
-        normalize = lambda text: " ".join(str(text).casefold().split())
-        if normalize(suffix) != normalize(definition.conventional_setting):
-            raise ValueError(
-                "Point-group label contains a setting annotation that does not "
-                "match the registered conventional setting: "
-                f"label={raw!r}, registered_setting={definition.conventional_setting!r}. "
-                "Refusing to infer a crystal family from an inconsistent setting."
-            ) from original_error
-        return definition
-
-
 def independent_product_lattice_parameters(
     project: Any,
     transformation_id: str,
@@ -667,7 +633,7 @@ def independent_product_lattice_parameters(
 
     transformation = project.transformation(transformation_id)
     phase = project.phase(transformation.product_phase_id)
-    family = _registered_point_group_definition(phase).crystal_family
+    family = resolve_point_group(phase.point_group_symbol).crystal_family
     if family == "cubic":
         return ("a_scale",)
     if family in {"tetragonal", "hexagonal", "trigonal"}:
@@ -735,7 +701,7 @@ def symmetry_preserving_product_grid(
 
     transformation = project.transformation(transformation_id)
     product_phase = project.phase(transformation.product_phase_id)
-    family = _registered_point_group_definition(product_phase).crystal_family
+    family = resolve_point_group(product_phase.point_group_symbol).crystal_family
     old = product_phase.lattice
     output: list[tuple[str, Any, dict[str, Any]]] = []
 

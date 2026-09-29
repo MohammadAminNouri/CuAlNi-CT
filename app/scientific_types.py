@@ -26,6 +26,16 @@ class Finding:
     evidence: tuple[Evidence, ...] = ()
     tone: str = "neutral"
     status: str = ""
+    # Reconstructive "How" contract.  Defaults keep older callers compatible.
+    theory: str = ""
+    equations: tuple[str, ...] = ()
+    symbols: tuple[tuple[str, str], ...] = ()
+    assumptions: tuple[str, ...] = ()
+    backend_mapping: tuple[str, ...] = ()
+    provenance: tuple[str, ...] = ()
+    verbal: str = ""
+    # Logical/gating evidence when a numerical table is not the right proof.
+    verification: tuple[str, ...] = ()
 
 
 def sci(value: Any, digits: int = 3) -> str:

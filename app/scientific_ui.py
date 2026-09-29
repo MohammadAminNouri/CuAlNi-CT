@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-"""Shared presentation primitives for the scientific workstation.
+"""Shared professor-facing presentation primitives.
 
-This module is intentionally presentation-only. It never evaluates a theory,
-changes a tolerance, or mutates a scientific object. Its job is to make each
-claim answer five questions in a stable order: what, why, how, evidence, scope.
+Rendering never changes scientific data.  Each Finding is displayed in the
+stable order Answer -> Why -> How -> Verify -> Physical meaning -> Limitation.
 """
 
 from typing import Any, Iterable, Mapping, Sequence
@@ -12,14 +11,14 @@ from typing import Any, Iterable, Mapping, Sequence
 import pandas as pd
 import streamlit as st
 
-
 from app.scientific_types import Evidence, Finding, sci
+
 
 def install_styles() -> None:
     st.markdown(
         """
 <style>
-.block-container {padding-top: .75rem; padding-bottom: 3.5rem; max-width: 1380px;}
+.block-container {padding-top:.75rem; padding-bottom:3.5rem; max-width:1380px;}
 [data-testid="stSidebarNav"] {display:none;}
 [data-testid="stMetricValue"] {font-size:1.18rem;}
 [data-testid="stMetricLabel"] {font-size:.78rem; opacity:.82;}
@@ -37,7 +36,6 @@ def install_styles() -> None:
 .sci-card-rationale {font-size:.88rem; opacity:.82; line-height:1.45; margin-top:.28rem;}
 .sci-status {font-size:.72rem; opacity:.7; margin-top:.3rem;}
 .sci-state {border:1px solid rgba(128,128,128,.22); border-radius:.55rem; padding:.46rem .65rem; margin:.25rem 0 .65rem 0; font-size:.86rem;}
-.sci-note {font-size:.84rem; opacity:.78;}
 div[data-testid="stExpander"] details summary p {font-weight:600;}
 </style>
 """,
@@ -51,7 +49,6 @@ def custom_sidebar_navigation(*, current: str) -> None:
         st.page_link("streamlit_app.py", label="Workbench", icon="🧭")
         st.page_link("pages/2_CT_Equivalence_Lab.py", label="Theory comparison", icon="🔬")
     except Exception:
-        # Older Streamlit versions still retain the normal multipage navigation.
         pass
     st.divider()
 
@@ -74,44 +71,104 @@ def state_strip(text: str) -> None:
 
 
 def _escape(text: str) -> str:
-    return (
-        str(text)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+
+def _display_value(value: Any) -> Any:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    if value is None:
+        return "not evaluable"
+    return value
+
+
+
+def validate_finding_contract(finding: Finding) -> tuple[str, ...]:
+    """Return professor-facing contract defects without mutating the finding."""
+    defects: list[str] = []
+    if not str(finding.conclusion).strip():
+        defects.append("missing Answer/conclusion")
+    if not str(finding.rationale).strip():
+        defects.append("missing Why/rationale")
+    if not (finding.evidence or finding.verification):
+        defects.append("missing Verify evidence")
+    if not (str(finding.theory).strip() or str(finding.how).strip()):
+        defects.append("missing How theory/construction")
+    if not (finding.backend_mapping or str(finding.how).strip()):
+        defects.append("missing backend mapping/implementation route")
+    if not str(finding.physical_meaning).strip():
+        defects.append("missing Physical meaning")
+    return tuple(defects)
 
 def render_finding(finding: Finding, *, details_label: str = "Why / how / verify") -> None:
+    defects = validate_finding_contract(finding)
+    if defects:
+        st.error("Scientific result suppressed because its presentation contract is incomplete: " + "; ".join(defects))
+        return
     tone = finding.tone if finding.tone in {"good", "warn", "bad", "neutral"} else "neutral"
     status_html = f'<div class="sci-status">{_escape(finding.status)}</div>' if finding.status else ""
     st.markdown(
-        (
-            f'<div class="sci-card {tone}">'
-            f'<div class="sci-card-title">{_escape(finding.title)}</div>'
-            f'<div class="sci-card-conclusion">{_escape(finding.conclusion)}</div>'
-            f'<div class="sci-card-rationale">{_escape(finding.rationale)}</div>'
-            f'{status_html}</div>'
-        ),
+        f'<div class="sci-card {tone}">'
+        f'<div class="sci-card-title">{_escape(finding.title)}</div>'
+        f'<div class="sci-card-conclusion">{_escape(finding.conclusion)}</div>'
+        f'<div class="sci-card-rationale">{_escape(finding.rationale)}</div>'
+        f'{status_html}</div>',
         unsafe_allow_html=True,
     )
     with st.expander(details_label, expanded=False):
-        why_tab, how_tab, verify_tab = st.tabs(["Why", "How", "Verify"])
+        why_tab, how_tab, verify_tab, physical_tab, limit_tab = st.tabs(
+            ["Why", "How", "Verify", "Physical meaning", "Limitation"]
+        )
         with why_tab:
             st.write(finding.rationale)
-            if finding.physical_meaning:
-                st.markdown("**Physical meaning**")
-                st.write(finding.physical_meaning)
-            if finding.limitation:
-                st.markdown("**What this does not claim**")
-                st.write(finding.limitation)
         with how_tab:
-            st.write(finding.how)
+            if finding.theory:
+                st.markdown("**Theory / construction**")
+                st.write(finding.theory)
+            if finding.equations:
+                st.markdown("**Governing equation / criterion**")
+                for equation in finding.equations:
+                    st.latex(equation)
+            if finding.symbols:
+                st.markdown("**Symbols**")
+                st.dataframe(
+                    pd.DataFrame(finding.symbols, columns=["symbol", "meaning"]),
+                    hide_index=True,
+                    use_container_width=True,
+                )
+            if finding.assumptions:
+                st.markdown("**Assumptions / frame**")
+                for item in finding.assumptions:
+                    st.write(f"• {item}")
+            if finding.backend_mapping:
+                st.markdown("**What the code evaluates**")
+                for item in finding.backend_mapping:
+                    st.write(f"• {item}")
+            if finding.provenance:
+                st.markdown("**Reference / provenance**")
+                for item in finding.provenance:
+                    st.write(f"• {item}")
+            if finding.verbal:
+                st.markdown("**20-second verbal version**")
+                st.write(finding.verbal)
+            if finding.how:
+                st.markdown("**Implementation note**")
+                st.write(finding.how)
         with verify_tab:
             if finding.evidence:
                 render_evidence(finding.evidence)
-            else:
-                st.caption("No additional numerical evidence is required for this statement.")
+            if finding.verification:
+                st.markdown("**Logical / gating audit**")
+                for item in finding.verification:
+                    st.write(f"• {item}")
+            if not finding.evidence and not finding.verification:
+                st.error("Verification contract missing; this result is not presented as a scientific conclusion.")
+        with physical_tab:
+            st.write(finding.physical_meaning or "No additional physical interpretation is claimed.")
+        with limit_tab:
+            st.write(finding.limitation or "No additional limitation was supplied by this result.")
 
 
 def render_evidence(rows: Sequence[Evidence] | Iterable[Evidence]) -> None:
@@ -119,7 +176,7 @@ def render_evidence(rows: Sequence[Evidence] | Iterable[Evidence]) -> None:
         {
             "quantity": row.quantity,
             "criterion": row.criterion,
-            "computed": row.value,
+            "computed": _display_value(row.value),
             "interpretation": row.interpretation,
         }
         for row in rows
@@ -135,13 +192,15 @@ def compact_metrics(items: Sequence[tuple[str, Any]], *, columns: int | None = N
         batch = items[start : start + n]
         cols = st.columns(len(batch))
         for col, (label, value) in zip(cols, batch, strict=True):
-            col.metric(label, value)
+            col.metric(label, _display_value(value))
 
 
 def format_dataframe_scientific(frame: pd.DataFrame, *, digits: int = 3) -> pd.DataFrame:
     output = frame.copy()
     for column in output.columns:
-        if pd.api.types.is_numeric_dtype(output[column]):
+        if pd.api.types.is_bool_dtype(output[column]):
+            output[column] = output[column].map(_display_value)
+        elif pd.api.types.is_numeric_dtype(output[column]):
             output[column] = output[column].map(lambda x: sci(x, digits) if pd.notna(x) else "—")
     return output
 
@@ -155,4 +214,4 @@ def status_word(value: bool | None, *, true: str = "satisfied", false: str = "no
         return true
     if value is False:
         return false
-    return "not evaluated"
+    return "not evaluable"
