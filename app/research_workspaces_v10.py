@@ -64,12 +64,16 @@ def _pretty_value(value: Any) -> Any:
         if abs(value) < 1.0e-4 or abs(value) >= 1.0e5:
             return f"{value:.6e}"
         return f"{value:.10g}"
-    if isinstance(value, (tuple, list)):
+        if isinstance(value, (tuple, list)):
         if not value:
             return "none"
+
         if all(not isinstance(item, (tuple, list, Mapping)) for item in value):
-            return "[" + ", ".join(_pretty_value(item) for item in value) + "]"
+            rendered = (_pretty_value(item) for item in value)
+            return "[" + ", ".join(str(item) for item in rendered) + "]"
+
         return value
+
     return value
 
 
