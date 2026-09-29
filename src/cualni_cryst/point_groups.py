@@ -260,7 +260,11 @@ _BY_CANONICAL = {definition.symbol: definition for definition in _DEFINITIONS}
 _BY_ALIAS: dict[str, PointGroupDefinition] = {}
 
 for definition in _DEFINITIONS:
-    candidates = (definition.symbol, *definition.aliases)
+    # Accept the registry's own explicit setting label, e.g.
+    # "2/m (unique b)", while still rejecting mismatched settings such as
+    # "2/m (unique c)".
+    setting_label = f"{definition.symbol} ({definition.conventional_setting})"
+    candidates = (definition.symbol, *definition.aliases, setting_label)
     for candidate in candidates:
         normalized = _normalize_symbol(candidate)
         existing = _BY_ALIAS.get(normalized)
