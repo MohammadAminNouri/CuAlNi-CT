@@ -3,8 +3,8 @@ from __future__ import annotations
 """Cross-page persistence for Streamlit widget drafts.
 
 Streamlit may delete widget-owned session keys when a widget disappears on a
-different page.  The workbench therefore mirrors scientific input controls into
-one detached ordinary session-state object.  Returning to a workspace restores
+different page. The workbench therefore mirrors scientific input controls into
+one detached ordinary session-state object. Returning to a workspace restores
 those values before any widget is instantiated.
 
 This module stores UI input only; calculated scientific outputs remain governed
@@ -53,7 +53,24 @@ _PREFIXES = (
     "research_",
 )
 
-# These are actions or file handles, not durable inputs.  Replaying them can
+# Streamlit owns the values of upload widgets. Assigning even ``None`` to a
+# file_uploader key through st.session_state before that widget is instantiated
+# raises StreamlitValueAssignmentNotAllowedError.
+#
+# Keep uploader state out of our cross-page mirror entirely. The suffix rule
+# protects future upload controls that follow the app's current naming
+# convention; the explicit set documents the upload widgets known today.
+_STREAMLIT_OWNED_EXACT_KEYS = {
+    "research_ebsd_pipeline_upload",
+    "workbench_v4_project_upload",
+    "ebsd_upload",
+}
+_STREAMLIT_OWNED_SUFFIXES = (
+    "_upload",
+    "_uploader",
+)
+
+# These are actions or file handles, not durable inputs. Replaying them can
 # trigger invalid Streamlit widget state or repeat an action unintentionally.
 _EPHEMERAL_PREFIXES = (
     "research_run",
@@ -76,74 +93,3 @@ _EPHEMERAL_PREFIXES = (
     "workbench_v6_calculate",
 )
 
-
-def _is_persistent_key(key: str) -> bool:
-    if key == MIRROR_KEY:
-        return False
-    if key in _EXACT_KEYS:
-        return True
-    if any(key.startswith(prefix) for prefix in _EPHEMERAL_PREFIXES):
-        return False
-    return any(key.startswith(prefix) for prefix in _PREFIXES)
-
-
-def _safe_copy(value: Any) -> Any:
-    """Copy ordinary control values while rejecting opaque uploaded/runtime objects."""
-
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    if isinstance(value, tuple):
-        return tuple(_safe_copy(item) for item in value)
-    if isinstance(value, list):
-        return [_safe_copy(item) for item in value]
-    if isinstance(value, dict):
-        return {str(k): _safe_copy(v) for k, v in value.items()}
-    # Streamlit selections can occasionally expose enum-like values.
-    enum_value = getattr(value, "value", None)
-    if isinstance(enum_value, (str, int, float, bool)):
-        return enum_value
-    raise TypeError(type(value).__name__)
-
-
-def restore_persistent_widget_state(state: MutableMapping[str, Any]) -> None:
-    """Restore mirrored controls before page widgets are instantiated."""
-
-    mirror = state.get(MIRROR_KEY)
-    if not isinstance(mirror, Mapping):
-        return
-    for key, value in mirror.items():
-        if not _is_persistent_key(str(key)):
-            continue
-        # Do not overwrite a key already supplied by the current page/session.
-        if key in state:
-            continue
-        try:
-            state[str(key)] = deepcopy(value)
-        except Exception:
-            continue
-
-
-def snapshot_persistent_widget_state(state: MutableMapping[str, Any]) -> None:
-    """Refresh the detached mirror after the page has rendered."""
-
-    previous = state.get(MIRROR_KEY)
-    mirror: dict[str, Any] = (
-        deepcopy(dict(previous)) if isinstance(previous, Mapping) else {}
-    )
-    for key in list(state.keys()):
-        name = str(key)
-        if not _is_persistent_key(name):
-            continue
-        try:
-            mirror[name] = _safe_copy(state[key])
-        except Exception:
-            # Runtime-only objects are deliberately not mirrored.
-            continue
-    state[MIRROR_KEY] = mirror
-
-
-def mirrored_values(state: Mapping[str, Any]) -> dict[str, Any]:
-    """Small test/audit helper."""
-
-    value = state.get(MIRROR_KEY)
-    return deepcopy(dict(value)) if isinstance(value, Mapping) else {}
