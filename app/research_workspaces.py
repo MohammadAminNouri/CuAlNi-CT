@@ -1090,11 +1090,19 @@ def _render_invariant_and_double(
                             }
                         )
                 with st.expander("Invariant-line OR ↔ CT/PTMC OR comparison"):
-                    st.dataframe(
-                        _scalar_table(comparisons),
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                    if comparisons:
+                        st.dataframe(
+                            _scalar_table(comparisons),
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                        available_theories = sorted({str(item["theory"]) for item in comparisons})
+                        if "cayron_ct" in available_theories and "ptmc" not in available_theories:
+                            st.info("Only Cayron CT OR predictions are available for this invariant-line comparison; PTMC produced no OR-bearing branch in the active unified run.")
+                        elif "ptmc" in available_theories and "cayron_ct" not in available_theories:
+                            st.info("Only PTMC OR predictions are available for this invariant-line comparison; no Cayron CT closing-gap OR is available in the active unified run.")
+                    else:
+                        st.info("No CT or PTMC OR-bearing branch is available for comparison with the invariant-line solution in the active unified run.")
 
     with double_tab:
         unified = _current_unified_report()
@@ -1222,11 +1230,12 @@ def _render_invariant_and_double(
                             "rank-one residual": habit.residual,
                         }
                     )
-            st.dataframe(_scalar_table(rows), use_container_width=True, hide_index=True)
+            if rows:
+                st.dataframe(_scalar_table(rows), use_container_width=True, hide_index=True)
             if report.continuum is not None:
                 st.info(report.continuum.note)
             elif not rows:
-                st.warning("No compatible root exists at the fixed second parameter.")
+                st.warning("Evaluated — no admissible double-shear root exists at the selected fixed second parameter.")
 
             ds_rows = list(double_shear_comparison_rows(report))
             ct_rows = [

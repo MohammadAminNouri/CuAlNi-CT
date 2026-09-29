@@ -1,3 +1,3 @@
-from app.research_workspaces_v6 import render_research_extension
+from app.research_workspaces_v10 import render_research_extension
 
 render_research_extension()

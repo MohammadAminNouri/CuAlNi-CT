@@ -23,6 +23,16 @@ _EXACT_KEYS = {
     "transformation_id",
     "transformation_label",
     "workbench_v4_workspace",
+    # Persistent scientific selections whose historical widget keys do not
+    # share the newer semantic prefixes.
+    "mart_vi",
+    "mart_vj",
+    "manual_load_system",
+    "map_object",
+    "map_source_phase",
+    "parallel_candidate",
+    "recon_observed_phase",
+    "v4_twin_system",
 }
 
 _PREFIXES = (
@@ -35,6 +45,9 @@ _PREFIXES = (
     "reconstruction_",
     "martensite_",
     "manual_ptmc_",
+    "manual_a_",
+    "manual_n_",
+    "sample_g_",
     "calpad_",
     "ebsd_",
     "research_",
@@ -58,6 +71,8 @@ _EPHEMERAL_PREFIXES = (
     "research_v6_atlas_run",
     "research_v6_pole_generate",
     "research_v6_pole_csv",
+    "research_v7_pole_generate",
+    "research_v7_pole_csv",
     "workbench_v6_calculate",
 )
 

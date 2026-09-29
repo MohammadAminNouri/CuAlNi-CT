@@ -14,6 +14,7 @@ import app.research_workspaces as rw
 import app.research_workspaces_v4 as v4
 import app.scientific_interpretation_v6 as interp
 from app.phase1_contracts import classify_scientific_error, orientation_provenance_label, pole_series_metadata
+from app.phase2_contracts import atlas_professor_audit_rows
 from app.research_contracts import (
     human_branch_label,
     minimum_projective_separation_deg,
@@ -223,14 +224,19 @@ def _render_atlas(project: Any, transformation_id: str, base_signature: str) -> 
         st.altair_chart((base + marker).properties(height=420), use_container_width=True)
         st.caption("Diamond = calculated current state; it remains explicit even when the sweep grid does not sample that exact point.")
 
-    with v4.audit_expander("Full atlas audit", expanded=False):
-        raw = []
-        for state in report.states:
-            item = state.to_dict()
-            raw.append(item)
-        st.json(raw)
+    with v4.audit_expander("Atlas audit — human-readable", expanded=False):
+        professor_rows = atlas_professor_audit_rows(report.states, axes.keys())
+        if professor_rows:
+            st.dataframe(
+                v4.format_dataframe_scientific(pd.DataFrame(professor_rows)),
+                hide_index=True,
+                use_container_width=True,
+            )
         for note in report.notes:
             st.caption(str(note))
+        with st.expander("Raw machine audit — developer / serialization", expanded=False):
+            st.caption("Raw booleans, nulls and enum tokens are preserved here only for machine audit and export; they are not professor-facing scientific statuses.")
+            st.json([state.to_dict() for state in report.states])
 
 
 def _pole_rows(
