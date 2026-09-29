@@ -14,7 +14,9 @@ by app.session_state signatures.
 from copy import deepcopy
 from typing import Any, Mapping, MutableMapping
 
+
 MIRROR_KEY = "_persistent_scientific_widget_draft_v1"
+
 
 _EXACT_KEYS = {
     "project_title",
@@ -23,8 +25,6 @@ _EXACT_KEYS = {
     "transformation_id",
     "transformation_label",
     "workbench_v4_workspace",
-    # Persistent scientific selections whose historical widget keys do not
-    # share the newer semantic prefixes.
     "mart_vi",
     "mart_vj",
     "manual_load_system",
@@ -34,6 +34,7 @@ _EXACT_KEYS = {
     "recon_observed_phase",
     "v4_twin_system",
 }
+
 
 _PREFIXES = (
     "parent_",
@@ -53,25 +54,28 @@ _PREFIXES = (
     "research_",
 )
 
-# Streamlit owns the values of upload widgets. Assigning even ``None`` to a
-# file_uploader key through st.session_state before that widget is instantiated
-# raises StreamlitValueAssignmentNotAllowedError.
+
+# File-upload widgets are owned by Streamlit.
+# Their session-state values must never be replayed manually.
 #
-# Keep uploader state out of our cross-page mirror entirely. The suffix rule
-# protects future upload controls that follow the app's current naming
-# convention; the explicit set documents the upload widgets known today.
+# In particular:
+#   research_ebsd_pipeline_upload
+# was causing StreamlitValueAssignmentNotAllowedError because the persistence
+# layer restored it before st.file_uploader() was instantiated.
 _STREAMLIT_OWNED_EXACT_KEYS = {
     "research_ebsd_pipeline_upload",
     "workbench_v4_project_upload",
     "ebsd_upload",
 }
+
+
 _STREAMLIT_OWNED_SUFFIXES = (
     "_upload",
     "_uploader",
 )
 
-# These are actions or file handles, not durable inputs. Replaying them can
-# trigger invalid Streamlit widget state or repeat an action unintentionally.
+
+# Actions, downloads and upload handles are not persistent scientific inputs.
 _EPHEMERAL_PREFIXES = (
     "research_run",
     "research_v4_run",
@@ -93,3 +97,135 @@ _EPHEMERAL_PREFIXES = (
     "workbench_v6_calculate",
 )
 
+
+def _is_streamlit_owned_key(key: str) -> bool:
+    """Return True for widget keys that must not be restored manually."""
+
+    if key in _STREAMLIT_OWNED_EXACT_KEYS:
+        return True
+
+    return key.endswith(_STREAMLIT_OWNED_SUFFIXES)
+
+
+def _is_persistent_key(key: str) -> bool:
+    if key == MIRROR_KEY:
+        return False
+
+    if _is_streamlit_owned_key(key):
+        return False
+
+    if key in _EXACT_KEYS:
+        return True
+
+    if any(key.startswith(prefix) for prefix in _EPHEMERAL_PREFIXES):
+        return False
+
+    return any(key.startswith(prefix) for prefix in _PREFIXES)
+
+
+def _safe_copy(value: Any) -> Any:
+    """Copy ordinary control values while rejecting opaque runtime objects."""
+
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, tuple):
+        return tuple(_safe_copy(item) for item in value)
+
+    if isinstance(value, list):
+        return [_safe_copy(item) for item in value]
+
+    if isinstance(value, dict):
+        return {
+            str(key): _safe_copy(item)
+            for key, item in value.items()
+        }
+
+    # Streamlit selections can occasionally expose enum-like values.
+    enum_value = getattr(value, "value", None)
+
+    if isinstance(enum_value, (str, int, float, bool)):
+        return enum_value
+
+    raise TypeError(type(value).__name__)
+
+
+def restore_persistent_widget_state(
+    state: MutableMapping[str, Any],
+) -> None:
+    """Restore mirrored controls before page widgets are instantiated."""
+
+    mirror = state.get(MIRROR_KEY)
+
+    if not isinstance(mirror, Mapping):
+        return
+
+    for key, value in mirror.items():
+        name = str(key)
+
+        # CRITICAL:
+        # Never restore uploader-owned widget values.
+        # This also protects sessions whose mirror was created by an older
+        # application build and still contains uploader=None.
+        if not _is_persistent_key(name):
+            continue
+
+        # Do not overwrite state already supplied in the current session.
+        if name in state:
+            continue
+
+        try:
+            state[name] = deepcopy(value)
+        except Exception:
+            continue
+
+
+def snapshot_persistent_widget_state(
+    state: MutableMapping[str, Any],
+) -> None:
+    """Refresh the detached mirror after the page has rendered."""
+
+    previous = state.get(MIRROR_KEY)
+
+    # Rebuild the mirror instead of blindly copying the previous one.
+    # This removes stale uploader entries left by older deployments.
+    mirror: dict[str, Any] = {}
+
+    if isinstance(previous, Mapping):
+        for key, value in previous.items():
+            name = str(key)
+
+            if not _is_persistent_key(name):
+                continue
+
+            try:
+                mirror[name] = deepcopy(value)
+            except Exception:
+                continue
+
+    for key in list(state.keys()):
+        name = str(key)
+
+        if not _is_persistent_key(name):
+            continue
+
+        try:
+            mirror[name] = _safe_copy(state[key])
+        except Exception:
+            # Runtime-only objects are deliberately not mirrored.
+            continue
+
+    state[MIRROR_KEY] = mirror
+
+
+def mirrored_values(
+    state: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return a copy of the detached persistent widget mirror."""
+
+    value = state.get(MIRROR_KEY)
+
+    if not isinstance(value, Mapping):
+        return {}
+
+    return deepcopy(dict(value))
