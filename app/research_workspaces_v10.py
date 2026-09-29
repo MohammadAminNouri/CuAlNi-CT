@@ -56,15 +56,18 @@ def _status_box(status: str, answer: str) -> None:
 def _pretty_value(value: Any) -> Any:
     if value is None:
         return "not available"
+
     if isinstance(value, bool):
         return "yes" if value else "no"
+
     if isinstance(value, float):
         if value == 0.0:
             return "0"
         if abs(value) < 1.0e-4 or abs(value) >= 1.0e5:
             return f"{value:.6e}"
         return f"{value:.10g}"
-        if isinstance(value, (tuple, list)):
+
+    if isinstance(value, (tuple, list)):
         if not value:
             return "none"
 
@@ -200,12 +203,18 @@ def _render_full_ct_audit(response: Any) -> None:
         )
 
 
-def _render_cayron_martensite_assessment(project: Any, transformation_id: str, base_signature: str) -> None:
+def _render_cayron_martensite_assessment(
+    project: Any,
+    transformation_id: str,
+    base_signature: str,
+) -> None:
     del project, transformation_id, base_signature  # presentation reads only the frozen calculated outputs
 
     response = st.session_state.get("current_response")
     if response is None:
-        st.info("A calculated transformation state is required before the Cayron martensitic assessment can be shown.")
+        st.info(
+            "A calculated transformation state is required before the Cayron martensitic assessment can be shown."
+        )
         return
 
     unified = rw._current_unified_report()
@@ -240,7 +249,6 @@ def _render_cayron_martensite_assessment(project: Any, transformation_id: str, b
             st.divider()
 
     _render_full_ct_audit(response)
-
 
 
 def _render_conclusions_v10(project: Any, transformation_id: str, base_signature: str) -> None:
