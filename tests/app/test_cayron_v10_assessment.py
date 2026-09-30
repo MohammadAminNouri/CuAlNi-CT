@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -171,7 +172,6 @@ def test_ct_assessment_without_unified_inventory_is_explicitly_incomplete_not_ne
     assert _step(assessment, "mm_twins").status == "not evaluated"
 
 
-
 def test_third_order_exact_cmc_is_not_forced_into_a_unique_habit_or_supercompatibility_seed():
     response = _Response(exact_am=True)
     response.result["ct_detail"]["degeneracy_order"] = 3
@@ -209,7 +209,20 @@ def test_v10_is_presentation_only_and_routes_research_page_through_v9():
         assert token not in renderer
 
     assert "v9.render_research_extension()" in renderer
-    assert "v4._render_conclusions = _render_conclusions_v10" in renderer
+
+    renderer_tree = ast.parse(renderer)
+    assert any(
+        isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Attribute)
+        and isinstance(node.targets[0].value, ast.Name)
+        and node.targets[0].value.id == "v4"
+        and node.targets[0].attr == "_render_conclusions"
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "_render_conclusions_v10"
+        for node in ast.walk(renderer_tree)
+    )
+
     assert "research_workspaces_v10" in page
     assert "CMC=C^T M_M C-M_A" in contract
     assert "SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}" in contract

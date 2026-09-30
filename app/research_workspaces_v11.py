@@ -2,13 +2,14 @@ from __future__ import annotations
 
 """Additive Cayron-geometry/navigation layer over the frozen V10 presentation.
 
-V11 deliberately patches only the V10 step renderer.  It does not alter the
+V11 deliberately patches only the V10 step renderer. It does not alter the
 calculation scope, session-state ownership, native theory solvers, matching,
 EBSD, atlas, pole-figure, PTMC, or export pathways.
 """
 
-from typing import Any
+from typing import Any, Mapping
 
+import pandas as pd
 import streamlit as st
 
 import app.research_workspaces as rw
@@ -33,7 +34,7 @@ _GUIDANCE: dict[str, dict[str, str]] = {
         "why": "Variant/operator topology comes from the calculated symmetries and correspondence. If a current calculation still produces no topology, that is a scientific result rather than a missing UI step.",
     },
     "mm_twins": {
-        "route": "Theory comparison → Conclusions → Calculation scope → Calculate / update; then open Native theory inventory and provenance. For one selected physical pair, use Workbench → Twins & PTMC → Analyze this variant pair",
+        "route": "Theory comparison → Conclusions → Calculation scope → Calculate / update; then inspect the native CT M/M twin systems shown below. For one selected physical pair, use Workbench → Twins & PTMC → Analyze this variant pair",
         "why": "The native CT M/M inventory is produced by the unified CT theory run. The Workbench pair analysis is a focused follow-up, not a substitute for the CT inventory.",
     },
     "am_exact": {
@@ -110,11 +111,190 @@ def _render_next_route(step: Any) -> None:
             )
 
 
+def _row_attr(row: Any, name: str, default: Any = None) -> Any:
+    if isinstance(row, Mapping):
+        return row.get(name, default)
+    return getattr(row, name, default)
+
+
+def _enum_text(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(getattr(value, "value", value))
+
+
+def _ct_mm_rows(unified: Any) -> tuple[Any, ...]:
+    if unified is None:
+        return ()
+    raw = unified.get("rows", ()) if isinstance(unified, Mapping) else getattr(unified, "rows", ())
+    selected: list[Any] = []
+    for row in tuple(raw or ()):
+        theory = _enum_text(_row_attr(row, "theory"))
+        kind = _enum_text(_row_attr(row, "prediction_kind", _row_attr(row, "kind")))
+        if theory == "cayron_ct" and kind == "ct_mm_twin":
+            selected.append(row)
+    return tuple(selected)
+
+
+def _metadata(row: Any) -> Mapping[str, Any]:
+    value = _row_attr(row, "metadata", {})
+    return value if isinstance(value, Mapping) else {}
+
+
+def _first_present(row: Any, metadata: Mapping[str, Any], names: tuple[str, ...]) -> Any:
+    for name in names:
+        value = _row_attr(row, name, None)
+        if value is not None:
+            return value
+        value = metadata.get(name)
+        if value is not None:
+            return value
+    return None
+
+
+def _find_metadata_by_tokens(metadata: Mapping[str, Any], token_sets: tuple[tuple[str, ...], ...]) -> Any:
+    for tokens in token_sets:
+        for key, value in metadata.items():
+            lowered = str(key).lower()
+            if all(token in lowered for token in tokens):
+                return value
+    return None
+
+
+def _projective_text(value: Any, *, plane: bool) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        values = [float(item) for item in value]
+    except Exception:
+        return str(value)
+    if len(values) != 3:
+        return str(value)
+    scale = max(abs(item) for item in values)
+    if scale <= 1.0e-15:
+        return "N/A"
+
+    reduced = [0.0 if abs(item / scale) <= 1.0e-12 else item / scale for item in values]
+    tokens: list[str] = []
+    for item in reduced:
+        nearest = round(item)
+        tokens.append(str(int(nearest)) if abs(item - nearest) <= 1.0e-10 else f"{item:.6g}")
+    left, right = ("(", ")") if plane else ("[", "]")
+    return left + " ".join(tokens) + right
+
+
+def _render_native_ct_mm_twin_table() -> None:
+    unified = rw._current_unified_report()
+    rows = _ct_mm_rows(unified)
+    if not rows:
+        st.info(
+            "No native CT M/M twin rows are available yet. "
+            "Run Theory comparison → Conclusions → Calculation scope → Calculate / update."
+        )
+        return
+
+    table_rows: list[dict[str, Any]] = []
+    for row in rows:
+        metadata = _metadata(row)
+
+        plane = _first_present(
+            row,
+            metadata,
+            (
+                "twin_plane_product_crystal",
+                "plane_product_crystal",
+                "product_plane_crystal",
+                "plane_m",
+                "twin_plane_m",
+            ),
+        )
+        if plane is None:
+            plane = _find_metadata_by_tokens(
+                metadata,
+                (
+                    ("plane", "product"),
+                    ("plane", "martensite"),
+                    ("plane", "_m"),
+                ),
+            )
+
+        direction = _first_present(
+            row,
+            metadata,
+            (
+                "twin_direction_product_crystal",
+                "direction_product_crystal",
+                "product_direction_crystal",
+                "direction_m",
+                "twin_direction_m",
+            ),
+        )
+        if direction is None:
+            direction = _find_metadata_by_tokens(
+                metadata,
+                (
+                    ("direction", "product"),
+                    ("direction", "martensite"),
+                    ("direction", "_m"),
+                ),
+            )
+
+        operator_index = _first_present(
+            row, metadata, ("operator_index", "ct_operator_index", "operator")
+        )
+        twin_index = _first_present(
+            row, metadata, ("twin_index", "ct_twin_index")
+        )
+        classification = _first_present(
+            row,
+            metadata,
+            ("twin_classification", "classification"),
+        )
+        construction_route = _first_present(
+            row,
+            metadata,
+            ("twin_kind", "construction_route", "route"),
+        )
+
+        table_rows.append(
+            {
+                "internal operator": operator_index if operator_index is not None else "N/A",
+                "twin": twin_index if twin_index is not None else "N/A",
+                "classification": classification if classification is not None else "N/A",
+                "route": construction_route if construction_route is not None else "N/A",
+                "product plane": _projective_text(plane, plane=True),
+                "product direction": _projective_text(direction, plane=False),
+                "shear s": _row_attr(row, "shear_magnitude", "N/A"),
+                "native branch": str(_row_attr(row, "branch_label", "")),
+            }
+        )
+
+    with st.expander(
+        "Native CT M/M twin systems — product plane, direction and shear",
+        expanded=True,
+    ):
+        st.caption(
+            "Read-only view of already-calculated Cayron CT rows. "
+            "The operator number is the app's internal ordering and is not assumed to equal Cayron's published Oᵢ numbering. "
+            "Plane and direction coefficients are only projectively rescaled for readability; no new low-index solution is invented."
+        )
+        st.dataframe(
+            pd.DataFrame(table_rows),
+            hide_index=True,
+            use_container_width=True,
+        )
+
+
 def _render_step_v11(step: Any) -> None:
     _original_render_step(step)
     _render_next_route(step)
 
-    if str(getattr(step, "step_id", "")) == "am_exact":
+    step_id = str(getattr(step, "step_id", ""))
+
+    if step_id == "mm_twins":
+        _render_native_ct_mm_twin_table()
+
+    if step_id == "am_exact":
         response = st.session_state.get("current_response")
         if response is not None:
             render_cayron_geometry(response, rw._current_unified_report())
