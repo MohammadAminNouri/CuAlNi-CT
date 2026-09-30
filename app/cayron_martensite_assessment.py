@@ -1,16 +1,27 @@
 from __future__ import annotations
 
-"""Pure presentation contract for a Cayron-CT martensitic assessment.
+"""Read-only, source-disciplined Cayron-CT martensitic assessment.
 
-This module intentionally contains no crystallographic solver.  It only reads
-an already calculated application response plus an already calculated unified
-CT report and turns those authoritative outputs into a question-first,
-professor-facing assessment.
+This module contains no crystallographic solver.  It only interprets an
+already-calculated application response and an already-calculated unified CT
+report.  CT, Ball--James, PTMC and experiment remain separate theories/data
+sources.
 
-No Ball--James or PTMC quantity is used to decide any Cayron-CT statement.
+Notation used by the app:
+    C := C_(M<-A), so u_M = C u_A.
+
+Cayron's 2026 paper denotes this SAME numerical correspondence matrix by
+C^(M->A), even though it acts on coordinates from A to M:
+    u_M = C_Cayron^(M->A) u_A.
+
+Therefore
+    C_app_(M<-A) = C_Cayron^(M->A)
+and Cayron's opposite correspondence is
+    C_Cayron^(A->M) = C_app_(M<-A)^(-1).
 """
 
 from dataclasses import dataclass
+import math
 from typing import Any, Mapping, Sequence
 
 
@@ -34,7 +45,6 @@ class CayronMartensiteAssessment:
     overall_status: str
     overall_reasoning: str
     steps: tuple[AssessmentStep, ...]
-
 
 
 def _mapping(value: Any) -> Mapping[str, Any]:
@@ -85,6 +95,20 @@ def _row_attr(row: Any, name: str, default: Any = None) -> Any:
     return getattr(row, name, default)
 
 
+def _row_residual(row: Any, name: str) -> float | None:
+    residuals = _row_attr(row, "residuals", {})
+    if not isinstance(residuals, Mapping):
+        return None
+    value = residuals.get(name)
+    if value is None:
+        return None
+    try:
+        number = abs(float(value))
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
 def _rows(unified: Any) -> tuple[Any, ...]:
     if unified is None:
         return ()
@@ -105,8 +129,7 @@ def _ct_rows(unified: Any, kind: str | None = None) -> tuple[Any, ...]:
 def _first_transformation(project: Mapping[str, Any]) -> Mapping[str, Any]:
     transformations = project.get("transformations", ())
     if isinstance(transformations, Sequence) and transformations:
-        item = transformations[0]
-        return _mapping(item)
+        return _mapping(transformations[0])
     return {}
 
 
@@ -127,6 +150,20 @@ def _compact_vector(value: Any) -> Any:
         return value
 
 
+def _algebraic_tolerance(project: Mapping[str, Any]) -> float:
+    policy = _mapping(project.get("numerical_policy"))
+    for key in ("algebraic", "algebraic_tolerance"):
+        if key not in policy:
+            continue
+        try:
+            value = float(policy[key])
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and value > 0.0:
+            return value
+    return 1.0e-10
+
+
 def build_cayron_martensite_assessment(
     response: Any,
     unified: Any | None,
@@ -134,11 +171,7 @@ def build_cayron_martensite_assessment(
     closing_gap_requested: bool,
     supercompatibility_requested: bool,
 ) -> CayronMartensiteAssessment:
-    """Build a CT-only martensitic assessment from already-computed outputs.
-
-    The function is deliberately read-only.  It never invokes CT, group theory,
-    twinning, orientation or compatibility solvers.
-    """
+    """Build a CT-only assessment from already-computed outputs."""
 
     result = _result_from_response(response)
     project = _project_from_response(response)
@@ -147,419 +180,786 @@ def build_cayron_martensite_assessment(
     metric = _mapping(result.get("metric"))
     ct = _mapping(result.get("ct_detail"))
 
-    topology_variants = int(topology.get("n_variants", summary.get("variant_count", 0)) or 0)
+    topology_variants = int(
+        topology.get("n_variants", summary.get("variant_count", 0)) or 0
+    )
     stretch_variants = int(summary.get("variant_count", topology_variants) or 0)
-    operators = int(topology.get("n_operators", summary.get("operator_count", 0)) or 0)
+    operators = int(
+        topology.get("n_operators", summary.get("operator_count", 0)) or 0
+    )
     subgroup_order = topology.get("subgroup_order")
     parent_group_order = topology.get("parent_group_order")
     product_group_order = topology.get("product_group_order")
 
-    exact_am = bool(ct.get("exact_compatible", summary.get("ct_exact_compatible", False)))
-    degeneracy_order = int(ct.get("degeneracy_order", summary.get("degeneracy_order", 0)) or 0)
+    exact_am = bool(
+        ct.get("exact_compatible", summary.get("ct_exact_compatible", False))
+    )
+    degeneracy_order = int(
+        ct.get("degeneracy_order", summary.get("degeneracy_order", 0)) or 0
+    )
     ct_reason = str(ct.get("reason", summary.get("ct_reason", "")) or "")
     eta = ct.get("eta_eigenvalues")
     mu = ct.get("generalized_mu")
     inertia = ct.get("inertia")
     nearest_index = ct.get("nearest_zero_index")
     nearest_residual = ct.get("nearest_zero_residual")
-    exact_planes = tuple(ct.get("exact_habit_planes_parent_covectors", ()) or ())
+    exact_planes = tuple(
+        ct.get("exact_habit_planes_parent_covectors", ()) or ()
+    )
     approx = _mapping(ct.get("approximate_diagnostic"))
-    approx_planes = tuple(approx.get("candidate_planes_parent_covectors", ()) or ())
+    approx_planes = tuple(
+        approx.get("candidate_planes_parent_covectors", ()) or ()
+    )
     approx_admissible = bool(approx.get("admissible_signature", False))
 
     mm_rows = _ct_rows(unified, "ct_mm_twin")
     habit_rows = _ct_rows(unified, "ct_am_habit")
-    exact_habit_rows = tuple(row for row in habit_rows if _row_exact(row) is True)
-    diagnostic_habit_rows = tuple(row for row in habit_rows if _row_exact(row) is False)
+    exact_habit_rows = tuple(
+        row for row in habit_rows if _row_exact(row) is True
+    )
+    diagnostic_habit_rows = tuple(
+        row for row in habit_rows if _row_exact(row) is False
+    )
     closing_rows = _ct_rows(unified, "ct_closing_gap_or")
     super_rows = _ct_rows(unified, "ct_supercompatibility")
 
     correspondence = _correspondence_matrix(project)
+    tolerance = _algebraic_tolerance(project)
 
     steps: list[AssessmentStep] = []
 
+    # 1 ------------------------------------------------------------------
     steps.append(
         AssessmentStep(
             step_id="state",
-            question="1. Can Cayron CT accept the supplied parent/product lattices and correspondence as a crystallographic transformation state?",
+            question=(
+                "1. What lattice correspondence is being supplied to CT, "
+                "and is the resulting crystallographic state valid?"
+            ),
             answer=(
-                "Yes. The active state passed project/metric/correspondence validation and produced a CT calculation."
+                "The active parent/product metrics and correspondence passed "
+                "the application's state validation and produced a CT result."
                 if result
                 else "No active calculated CT state is available."
             ),
             status="validated" if result else "not evaluated",
             formulae=(
                 r"u_M=C_{M\leftarrow A}u_A",
+                r"C_{M\leftarrow A}^{\mathrm{app}}"
+                r"\equiv C_{\mathrm{Cayron}}^{M\to A}",
+                r"C_{\mathrm{Cayron}}^{A\to M}"
+                r"=(C_{M\leftarrow A}^{\mathrm{app}})^{-1}",
                 r"p_M=C_{M\leftarrow A}^{-T}p_A",
-                r"C\neq R",
             ),
             reasoning=(
-                "CT starts from two crystallographic metrics and an explicit lattice correspondence. "
-                "A successful calculated state means those inputs survived the application's domain checks; "
-                "the correspondence is never relabelled as an orientation relationship."
+                "The app stores the correspondence by its coordinate action: "
+                "parent direct coordinates enter and product direct coordinates leave. "
+                "Cayron uses the superscript M→A for that same numerical matrix. "
+                "This notation crosswalk is explicit so the correspondence cannot be "
+                "mistaken for its inverse, for an orientation matrix, or for a distortion."
             ),
             physical_meaning=(
-                "The proposed parent→product lattice mapping is a valid object on which CT can operate. "
-                "This is the starting point for a martensitic crystallographic description, not proof that a specimen transformed martensitically."
+                "The supplied metrics and correspondence define a valid crystallographic "
+                "state on which correspondence theory can operate. That is an input/state "
+                "statement, not experimental proof of a martensitic transformation."
             ),
-            limitation="Crystallographic admissibility alone does not establish transformation mechanism, kinetics, reversibility or shape-memory behavior.",
+            limitation=(
+                "A valid crystallographic state does not establish transformation "
+                "mechanism, kinetics, reversibility or shape-memory functionality."
+            ),
             evidence=(
                 ("Exact correspondence C(M←A)", correspondence),
-                ("Parent metric available", "yes" if metric.get("parent_metric") is not None else "no"),
-                ("Product metric available", "yes" if metric.get("product_metric") is not None else "no"),
+                (
+                    "Parent metric available",
+                    "yes" if metric.get("parent_metric") is not None else "no",
+                ),
+                (
+                    "Product metric available",
+                    "yes" if metric.get("product_metric") is not None else "no",
+                ),
             ),
         )
     )
 
+    # 2 ------------------------------------------------------------------
     topology_ok = topology_variants > 0 and operators > 0
     steps.append(
         AssessmentStep(
             step_id="topology",
-            question="2. Does the correspondence generate a discrete symmetry-related martensitic variant/operator topology?",
+            question=(
+                "2. How many correspondence variants and intercorrespondence "
+                "operator classes does this exact state generate?"
+            ),
             answer=(
-                f"Yes. The exact CT correspondence topology contains {topology_variants} variant(s) and {operators} correspondence-operator class(es); the metric stretch layer exposes {stretch_variants} distinct stretch variant(s)."
+                f"The exact correspondence topology contains {topology_variants} "
+                f"variant(s) and {operators} double-coset operator class(es); "
+                f"the metric stretch layer exposes {stretch_variants} stretch variant(s)."
                 if topology_ok
-                else "No discrete CT variant/operator topology was produced for the active state."
+                else "No discrete CT correspondence topology was produced."
             ),
             status="reached" if topology_ok else "not reached",
             formulae=(
-                r"H=G_A\cap C^{-1}G_M C",
-                r"N_{variants}=|G_A|/|H|",
+                r"H_C^A=G_A\cap C^{-1}G_MC",
+                r"N_{\mathrm{corr.\,variants}}=\frac{|G_A|}{|H_C^A|}",
+                r"\mathrm{variants}:~G_A/H_C^A",
+                r"\mathrm{operators}:~H_C^A\backslash G_A/H_C^A",
             ),
             reasoning=(
-                "The common subgroup H contains the parent symmetries preserved by the correspondence into the product symmetry. "
-                "The exact coset/groupoid construction then generates distinct variants and correspondence operators."
+                "Correspondence variants are left cosets; intercorrespondence operators "
+                "are double cosets. Their counts answer different group-theoretic questions. "
+                "The operator count is therefore determined by the current symmetry groups, "
+                "subgroup embedding and correspondence; it is not a universal constant. "
+                "For the published B2→B19′ NiTi correspondence the validated benchmark "
+                "has 12 correspondence variants and 7 operator classes, but another valid "
+                "correspondence can legitimately give a different double-coset count."
             ),
             physical_meaning=(
-                "A non-trivial discrete family of symmetry-related product states is the CT crystallographic structure expected for a parent→martensite variant system."
+                "This is the discrete symmetry structure from which CT organizes "
+                "product variants and the relations between them."
             ),
-            limitation="A variant topology is crystallographic evidence; it does not by itself prove that all variants occur experimentally.",
+            limitation=(
+                "A calculated variant/operator topology does not imply that every "
+                "variant or operator is experimentally populated."
+            ),
             evidence=(
                 ("Parent point-group order", parent_group_order),
                 ("Product point-group order", product_group_order),
-                ("Common subgroup order", subgroup_order),
+                ("Correspondence subgroup order", subgroup_order),
                 ("CT correspondence variants", topology_variants),
+                ("CT double-coset operator classes", operators),
                 ("Metric stretch variants", stretch_variants),
-                ("Operator classes", operators),
             ),
         )
     )
 
+    # 3 ------------------------------------------------------------------
     if unified is None:
-        mm_answer = "Not yet evaluated in the current CT theory run. Calculate/update the theory comparison to expose CT M/M constructions."
+        mm_answer = (
+            "The unified CT branch inventory has not yet been calculated for "
+            "the current theory-comparison request."
+        )
         mm_status = "not evaluated"
     elif mm_rows:
-        mm_answer = f"Yes. The CT-native inventory contains {len(mm_rows)} martensite/martensite twin branch row(s)."
+        mm_answer = (
+            f"The current CT inventory contains {len(mm_rows)} native M/M "
+            "twin branch row(s)."
+        )
         mm_status = "reached"
     else:
-        mm_answer = "No CT martensite/martensite twin branch was produced in the current CT inventory."
+        mm_answer = (
+            "The unified CT inventory was evaluated, but it produced no native "
+            "M/M twin branch for this state."
+        )
         mm_status = "not reached"
+
     steps.append(
         AssessmentStep(
             step_id="mm_twins",
-            question="3. Can CT relate product variants to one another through its martensite/martensite twin constructions?",
+            question=(
+                "3. Which martensite/martensite transformation-twin "
+                "geometries are actually reachable from the parent symmetries?"
+            ),
             answer=mm_answer,
             status=mm_status,
             formulae=(
-                r"C_{int}=C\,G\,C^{-1}",
-                r"G^2=I,\quad (\det G,\operatorname{tr}G)=(-1,+1)\;\text{for Type I}",
-                r"G^2=I,\quad (\det G,\operatorname{tr}G)=(+1,-1)\;\text{for Type II}",
-                r"s_I^2=\operatorname{tr}(C_{int}^T M_M C_{int}M_M^{-1})-3",
-                r"s_{II}^2=\operatorname{tr}(C_{int}M_M^{-1}C_{int}^TM_M)-3",
+                r"C_{\mathrm{int}}=C\,G_A\,C^{-1}",
+                r"G_A^2=I,\quad(\det G_A,\operatorname{tr}G_A)=(-1,+1)"
+                r"\quad\mathrm{Type~I}",
+                r"p_M=C^{-T}p_A,\qquad "
+                r"n_M=\frac{M_M^{-1}p_M}{\sqrt{p_M^TM_M^{-1}p_M}}",
+                r"s_I^2=\operatorname{tr}"
+                r"(C_{\mathrm{int}}^TM_MC_{\mathrm{int}}M_M^{-1})-3",
+                r"a_M=-(C_{\mathrm{int}}+I)n_M",
+                r"G_A^2=I,\quad(\det G_A,\operatorname{tr}G_A)=(+1,-1)"
+                r"\quad\mathrm{Type~II}",
+                r"a_M=C\,a_A",
+                r"s_{II}^2=\operatorname{tr}"
+                r"(C_{\mathrm{int}}M_M^{-1}C_{\mathrm{int}}^TM_M)-3",
             ),
             reasoning=(
-                "The CT twin engine follows Cayron Type-I Eqs. (17)–(20) and Type-II Eqs. (21)–(24): it starts from exact order-two parent symmetries, builds the intercorrespondence, "
-                "and obtains the plane, direction and shear quantities in the real product metric."
+                "CT starts from exact order-two parent symmetries. A parent reflection "
+                "generates a Type-I construction whose generic element is the rational "
+                "twin plane; a parent 180° rotation generates a Type-II construction "
+                "whose generic element is the rational twin direction. The complementary "
+                "twin element and shear magnitude depend on the product metric. "
+                "No paper equation number is needed: the complete relations used by the "
+                "assessment are written explicitly above."
             ),
             physical_meaning=(
-                "Reachable CT M/M relations show that the product states are not merely unrelated lattice mappings: CT can connect variants by transformation-twin geometry."
+                "A reachable CT M/M branch gives an actual transformation-twin geometry "
+                "(plane, direction and shear), rather than merely saying that two product "
+                "variants exist."
             ),
             limitation=(
-                "Native generator/sign rows are not automatically the number of unique physical twin systems; geometric deduplication and experimental occurrence remain separate questions."
+                "Native generator/sign rows are not automatically the number of unique "
+                "physical twin systems. Projective/sign equivalence and experimental "
+                "occurrence are separate issues."
             ),
             evidence=(
                 ("Native CT M/M rows", len(mm_rows) if unified is not None else None),
-                ("Example native labels", tuple(str(_row_attr(row, "branch_label", "")) for row in mm_rows[:4])),
+                (
+                    "Example native labels",
+                    tuple(
+                        str(_row_attr(row, "branch_label", ""))
+                        for row in mm_rows[:4]
+                    ),
+                ),
             ),
         )
     )
 
-    am_status = "reached" if exact_am else "not reached"
+    # 4 ------------------------------------------------------------------
     am_answer = (
-        f"Yes. Exact CT A/M compatibility is reached with degeneracy order {degeneracy_order}."
+        f"Exact single-variant A/M compatibility is reached with CMC "
+        f"degeneracy order {degeneracy_order}."
         if exact_am
-        else f"No. Exact CT A/M compatibility is not reached. {ct_reason or 'No exact CMC degeneracy was found.'}"
+        else (
+            "Exact single-variant A/M compatibility is not reached. "
+            + (ct_reason or "No exact CMC degeneracy was found.")
+        )
     )
     steps.append(
         AssessmentStep(
             step_id="am_exact",
-            question="4. Can one martensite variant meet the parent exactly according to Cayron's CMC criterion?",
+            question=(
+                "4. Does one martensite variant satisfy exact "
+                "austenite/martensite metric compatibility?"
+            ),
             answer=am_answer,
-            status=am_status,
+            status="reached" if exact_am else "not reached",
             formulae=(
                 r"CMC=C^T M_M C-M_A",
-                r"(C^T M_M C)v_i=\mu_i M_Av_i",
-                r"\eta_i=\mu_i-1",
+                r"u_A^TCMC\,u_A=0",
+                r"(C^TM_MC)v_i=\mu_iM_Av_i,\qquad\eta_i=\mu_i-1",
+                r"\widehat{CMC}=M_A^{-1/2}CMC\,M_A^{-1/2}",
+                r"\mathrm{first~order}:~\eta_i=0,\quad\eta_j\eta_k<0",
+                r"\mathrm{second~order}:~\eta_i=\eta_j=0",
+                r"\mathrm{third~order}:~\eta_1=\eta_2=\eta_3=0",
             ),
             reasoning=(
-                "The dimensional CMC is Cayron 2026 Eq. (32). CT requires an exact CMC degeneracy with the correct remaining-sign structure. "
-                "The generalized eigenproblem is an exactly equivalent metric-native evaluation of the normalized CMC spectrum."
+                "Cayron's dimensional CMC is the difference between the product metric "
+                "pulled back by correspondence and the parent metric. Cayron denotes the "
+                "eigenvalues of the dimensional CMC in an orthonormal eigenbasis by q_i. "
+                "The app evaluates the same degeneracy/inertia question with the "
+                "generalized problem above. The η_i are eigenvalues of a metric-normalized "
+                "congruent CMC, not numerically the same quantities as Cayron's dimensional "
+                "q_i in general. Congruence preserves rank and inertia, so the zero "
+                "multiplicity and sign structure used to classify exact CMC degeneracy are "
+                "equivalent."
             ),
             physical_meaning=(
-                "If reached, CT can construct an exact single-variant parent/martensite interface for the supplied lattice state. "
-                "If not reached, the state can still possess a martensitic variant/twin topology; it is simply outside exact A/M compatibility."
+                "First-order degeneracy gives two exact A/M habit planes; second-order "
+                "degeneracy gives one; third-order degeneracy means complete metric match "
+                "under the correspondence."
             ),
-            limitation="Failure of exact A/M compatibility is not, by itself, evidence that the product is not martensite.",
+            limitation=(
+                "Failure of exact A/M compatibility does not imply that the product is "
+                "not martensite and does not invalidate the CT variant/twin topology."
+            ),
             evidence=(
-                ("η spectrum", eta),
+                ("Normalized generalized η spectrum", eta),
                 ("Generalized μ spectrum", mu),
-                ("CMC inertia (−,0,+)", inertia),
+                ("CMC inertia (negative, zero, positive)", inertia),
                 ("Degeneracy order", degeneracy_order),
                 ("Backend reason", ct_reason),
             ),
         )
     )
 
+    # 5 ------------------------------------------------------------------
     if exact_am:
-        near_answer = "The exact compatibility condition is already reached; no approximate replacement is needed."
+        near_answer = (
+            "Exact CMC compatibility is already reached; an approximate "
+            "distance-to-degeneracy diagnostic is not needed to establish the interface."
+        )
         near_status = "exact reached"
     elif nearest_residual is not None:
         near_answer = (
-            f"The nearest CT degeneracy residual is {float(nearest_residual):.10g}. "
-            + ("A diagnostic plane construction is algebraically admissible." if approx_admissible else "The nearest-zero state does not have the sign structure required for a diagnostic habit-plane construction.")
+            f"The app's normalized CMC degeneracy residual is "
+            f"{float(nearest_residual):.10g}. "
+            + (
+                "The normalized sign structure also permits a diagnostic plane construction."
+                if approx_admissible
+                else "The normalized sign structure does not permit a diagnostic habit-plane construction."
+            )
         )
         near_status = "diagnostic only"
     else:
-        near_answer = "No nearest-degeneracy diagnostic is available in the active result."
+        near_answer = "No normalized degeneracy diagnostic is available."
         near_status = "not available"
+
     steps.append(
         AssessmentStep(
             step_id="nearest",
-            question="5. If exact A/M compatibility is absent, how close is this lattice state to the CT degeneracy condition?",
+            question=(
+                "5. If exact A/M compatibility is absent, how close is the "
+                "current normalized CMC state to losing one eigenvalue?"
+            ),
             answer=near_answer,
             status=near_status,
-            formulae=(r"r_{CT}=\min_i|\eta_i|",),
+            formulae=(r"r_{\mathrm{app}}=\min_i|\eta_i|",),
             reasoning=(
-                "The nearest generalized CMC eigenvalue is used only as a distance-to-degeneracy diagnostic. "
-                "For diagnostic plane generation it may be projected to zero, while the original nonzero residual remains reported."
+                "This is an app-defined, dimensionless diagnostic based on the normalized "
+                "generalized CMC spectrum. It reports how close one normalized eigenvalue "
+                "is to zero while retaining the original sign information. It is not "
+                "Cayron's lattice-parameter distance to the C1/C2/C3 equality/inequality "
+                "boundaries, and it is not substituted for an exact zero."
             ),
-            physical_meaning="This measures closeness to exact CT A/M compatibility; it does not convert a near-compatible state into an exact one.",
-            limitation="The diagnostic residual is not a probability of martensite and is not interchangeable with |λ₂−1| from another theory.",
+            physical_meaning=(
+                "It is useful for numerical proximity and parameter exploration; it is "
+                "not an exact compatibility condition."
+            ),
+            limitation=(
+                "The residual is not a probability, energy, hysteresis measure or "
+                "experimental confidence, and it must not be compared numerically with "
+                "|λ₂−1| as though they were the same native scalar."
+            ),
             evidence=(
                 ("Nearest η index", nearest_index),
-                ("Nearest-degeneracy residual", nearest_residual),
-                ("Diagnostic signature admissible", "yes" if approx_admissible else "no"),
+                ("App normalized CMC degeneracy residual", nearest_residual),
+                (
+                    "Diagnostic sign structure admissible",
+                    "yes" if approx_admissible else "no",
+                ),
                 ("Diagnostic candidate plane count", len(approx_planes)),
             ),
         )
     )
 
+    # 6 ------------------------------------------------------------------
     if exact_planes:
-        hp_answer = f"Yes. CT reaches {len(exact_planes)} exact A/M habit-plane covector branch(es)."
+        hp_answer = (
+            f"CT reaches {len(exact_planes)} exact A/M habit-plane "
+            "covector branch(es)."
+        )
         hp_status = "reached"
     elif exact_am and degeneracy_order == 3:
         hp_answer = (
-            "Exact third-order CMC compatibility is reached, but no unique habit-plane branch is defined: "
-            "the pulled-back product metric coincides with the parent metric under the correspondence."
+            "Third-order CMC compatibility is exact, but no unique habit plane exists "
+            "because the pulled-back product metric matches the parent metric completely."
         )
         hp_status = "not uniquely defined"
     elif exact_am:
-        hp_answer = "Exact CT A/M compatibility is reached, but the active result exposes no explicit habit-plane branch; inspect the numerical audit before making an interface claim."
+        hp_answer = (
+            "Exact CMC compatibility is reached, but the active result exposes no "
+            "explicit habit-plane branch; no interface direction is invented."
+        )
         hp_status = "not available"
     else:
-        hp_answer = "No exact CT A/M habit plane is reachable because the exact CMC compatibility condition is absent for this state."
+        hp_answer = (
+            "No exact A/M habit plane is claimed because exact CMC degeneracy is absent."
+        )
         hp_status = "not reached"
+
     steps.append(
         AssessmentStep(
             step_id="habit",
-            question="6. Can CT reach an exact parent/martensite habit plane for this state?",
+            question=(
+                "6. When exact CMC degeneracy exists, which exact A/M "
+                "habit plane or planes follow from it?"
+            ),
             answer=hp_answer,
             status=hp_status,
             formulae=(
-                r"p_A=M_A\left(\sqrt{\eta_+}\,v_+\pm\sqrt{-\eta_-}\,v_-\right)\quad\text{(first-order exact degeneracy)}",
+                r"q_jX_j^2+q_kX_k^2=0,\qquad q_jq_k<0"
+                r"\quad\mathrm{(first~order)}",
+                r"m_d^\pm\propto"
+                r"\sqrt{q_j}\,e_j^\ast\pm\sqrt{-q_k}\,e_k^\ast",
+                r"m_A^\pm=P^{-T}m_d^\pm",
+                r"m_A^\pm\propto M_A"
+                r"\left(\sqrt{\eta_+}v_+\pm\sqrt{-\eta_-}v_-\right)"
+                r"\quad\mathrm{(app~metric\ form)}",
             ),
             reasoning=(
-                "Habit-plane construction is downstream of exact CMC degeneracy. "
-                "Approximate nearest-degeneracy planes, when available, remain explicitly diagnostic and are never promoted to exact branches."
+                "For first-order CMC degeneracy the quadratic cone factorizes into two "
+                "linear plane factors. Cayron obtains the two plane covectors in the "
+                "orthonormal CMC eigenbasis and transforms them back to the parent "
+                "crystallographic basis. The final line is the equivalent metric-native "
+                "construction used with the app's M_A-orthonormal generalized eigenvectors. "
+                "The A/M habit-plane symbol is m_A; p_A is reserved for an M/M twin plane."
             ),
-            physical_meaning="An exact CT habit plane is the crystallographic plane on which a single martensite variant can meet the parent under the CT metric condition.",
-            limitation="A predicted crystallographic habit plane still requires experimental validation against observed interfaces/traces.",
+            physical_meaning=(
+                "Each m_A is an exact parent-crystal reciprocal covector defining a "
+                "single-variant invariant-plane interface."
+            ),
+            limitation=(
+                "Diagnostic planes from a nonzero normalized residual remain approximate "
+                "and cannot be promoted to exact A/M branches."
+            ),
             evidence=(
-                ("Exact CT habit planes", tuple(_compact_vector(item) for item in exact_planes)),
-                ("Approximate diagnostic planes", tuple(_compact_vector(item) for item in approx_planes)),
+                (
+                    "Exact CT habit planes m_A",
+                    tuple(_compact_vector(item) for item in exact_planes),
+                ),
+                (
+                    "Approximate diagnostic planes",
+                    tuple(_compact_vector(item) for item in approx_planes),
+                ),
             ),
         )
     )
 
-    exact_shear_rows = tuple(row for row in exact_habit_rows if _row_attr(row, "shape_vector_parent_crystal") is not None)
+    # 7 ------------------------------------------------------------------
+    exact_shear_rows = tuple(
+        row
+        for row in exact_habit_rows
+        if _row_attr(row, "shape_vector_parent_crystal") is not None
+    )
     if exact_planes and exact_shear_rows:
-        shear_answer = f"Yes. Exact CT A/M shear/displacement data are exposed for {len(exact_shear_rows)} exact habit branch(es)."
+        shear_answer = (
+            f"Exact CT A/M displacement/shear data are exposed for "
+            f"{len(exact_shear_rows)} exact habit branch(es)."
+        )
         shear_status = "reached"
     elif exact_planes:
-        shear_answer = "The exact habit plane exists, but the current unified CT view has not exposed the corresponding native d-vector row yet."
+        shear_answer = (
+            "An exact habit plane exists, but the current unified inventory has not "
+            "exposed its native d_A row; no d-vector is fabricated."
+        )
         shear_status = "not evaluated"
     else:
-        shear_answer = "Not exactly. Without an exact CT A/M habit seed, an exact A/M d-vector is not claimed."
+        shear_answer = (
+            "Without an exact A/M habit-plane seed, an exact CT d_A vector is not claimed."
+        )
         shear_status = "not reachable exactly"
+
     steps.append(
         AssessmentStep(
             step_id="smc",
-            question="7. Can CT construct the native parent/martensite shear associated with an exact habit plane?",
+            question=(
+                "7. What A/M IPS displacement/shear vector follows from each "
+                "exact habit plane?"
+            ),
             answer=shear_answer,
             status=shear_status,
             formulae=(
+                r"m_M=C^{-T}m_A",
                 r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}",
                 r"d_A=SMC\,m_A",
+                r"\|m_A\|_\ast^2=m_A^TM_A^{-1}m_A=1",
             ),
             reasoning=(
-                "Cayron's SMC is the dimensional construction of Eq. (41), computed directly from the two metrics and the correspondence. "
-                "The physically interpreted CT IPS displacement/shear d_A is attached to an eligible habit-plane covector m_A."
+                "The SMC construction uses the parent and product metrics plus the same "
+                "correspondence C. For a physically interpreted magnitude, the habit-plane "
+                "covector must use the reciprocal-metric unit normalization. The resulting "
+                "d_A is Cayron's A/M IPS displacement/shear vector and is kept distinct "
+                "from a Ball–James shape vector."
             ),
-            physical_meaning="This is Cayron's native d-vector construction for the A/M interface; it is not relabelled as a shape vector from another theory.",
-            limitation="A diagnostic near-degeneracy d-vector, if exposed, remains approximate and cannot seed exact CT supercompatibility.",
+            physical_meaning=(
+                "Together, m_A and d_A define the CT single-variant invariant-plane "
+                "shear/displacement construction used downstream in the A/M/M test."
+            ),
+            limitation=(
+                "A d-vector generated from an approximate diagnostic plane is still "
+                "approximate and cannot seed exact supercompatibility."
+            ),
             evidence=(
-                ("SMC matrix available", "yes" if metric.get("smc_dimensional") is not None else "no"),
-                ("Exact CT A/M rows with d", len(exact_shear_rows)),
-                ("Approximate CT A/M diagnostic rows", len(diagnostic_habit_rows)),
+                (
+                    "SMC matrix available",
+                    "yes" if metric.get("smc_dimensional") is not None else "no",
+                ),
+                ("Exact CT A/M rows with d_A", len(exact_shear_rows)),
+                (
+                    "Approximate CT A/M diagnostic rows",
+                    len(diagnostic_habit_rows),
+                ),
             ),
         )
     )
 
-    if not closing_gap_requested:
-        or_answer = "Not requested in the current CT run. Enable CT closing-gap ORs to evaluate this construction."
+    # 8 ------------------------------------------------------------------
+    if unified is None:
+        if closing_gap_requested:
+            or_answer = (
+                "Closing-gap ORs are requested, but the unified theory run has not yet "
+                "been calculated for this request."
+            )
+        else:
+            or_answer = (
+                "Closing-gap ORs are not requested and no unified theory inventory is active."
+            )
+        or_status = "not evaluated" if closing_gap_requested else "not requested"
+    elif not closing_gap_requested:
+        or_answer = "Closing-gap ORs were not requested in this CT run."
         or_status = "not requested"
     elif closing_rows:
-        or_answer = f"Yes. CT reaches {len(closing_rows)} closing-gap orientation candidate row(s) from its twin parallelism constraints."
+        or_answer = (
+            f"CT generated {len(closing_rows)} closing-gap orientation candidate "
+            "row(s) from twin-element parallelism constraints."
+        )
         or_status = "reached"
     else:
-        or_answer = "Closing-gap ORs were requested, but no CT closing-gap orientation candidate was produced for the current state."
+        or_answer = (
+            "Closing-gap ORs were requested and evaluated, but no candidate was "
+            "produced for the current state."
+        )
         or_status = "not reached"
+
     steps.append(
         AssessmentStep(
             step_id="closing_gap",
-            question="8. Can CT reach parent/martensite orientation relationships through its closing-gap construction?",
+            question=(
+                "8. Which parent/product orientation candidates are generated "
+                "by CT's closing-gap twin parallelisms?"
+            ),
             answer=or_answer,
             status=or_status,
             formulae=(
-                r"K_{1,A}\parallel K_{1,M},\qquad \eta_{1,A}\parallel\eta_{1,M}\quad\text{(Type I)}",
-                r"\eta_{2,A}\parallel\eta_{2,M},\qquad K_{2,A}\parallel K_{2,M}\quad\text{(Type II)}",
+                r"\mathrm{Type~I}:~~p_A\parallel p_M,\qquad a_A\parallel a_M",
+                r"\mathrm{Type~II}:~~a_A\parallel a_M,\qquad jp_A\parallel jp_M",
+                r"a_A=C^{-1}a_M\quad\mathrm{(Type~I~direction~pullback)}",
             ),
             reasoning=(
-                "The CT orientation adapter constructs proper rotations satisfying the native twin plane/direction parallelisms. "
-                "A unique natural OR is never inferred from metrics+correspondence alone."
+                "A closing-gap OR is obtained by enforcing the corresponding twin-plane "
+                "and twin-direction parallelisms in physical space. Cayron's T is a passive "
+                "crystallographic coordinate-transformation representation of the OR. "
+                "A proper Cartesian rotation R is another representation of the same "
+                "physical relative orientation only after the crystal bases/conventions "
+                "are accounted for. T and R_F from a polar decomposition are therefore "
+                "not silently identified."
             ),
-            physical_meaning="Closing-gap candidates show which parent/product orientations CT can geometrically reach while closing the twin-element mismatch.",
-            limitation="Multiple candidates are retained. None is called the preferred/natural OR unless an external natural-OR hypothesis is explicitly supplied.",
+            physical_meaning=(
+                "These candidates are the relative orientations compatible with the "
+                "chosen CT twin construction; they are not automatically a unique "
+                "experimental 'natural OR'."
+            ),
+            limitation=(
+                "Multiple closing-gap candidates may exist. A preferred/natural OR "
+                "requires an explicit external hypothesis or experimental comparison."
+            ),
             evidence=(
                 ("Closing-gap requested", "yes" if closing_gap_requested else "no"),
+                (
+                    "Unified CT inventory available",
+                    "yes" if unified is not None else "no",
+                ),
                 ("CT closing-gap candidate rows", len(closing_rows)),
-                ("Example native labels", tuple(str(_row_attr(row, "branch_label", "")) for row in closing_rows[:4])),
+                (
+                    "Example native labels",
+                    tuple(
+                        str(_row_attr(row, "branch_label", ""))
+                        for row in closing_rows[:4]
+                    ),
+                ),
             ),
         )
     )
 
+    # 9 ------------------------------------------------------------------
     exact_super_seed = bool(exact_am and exact_planes)
+    residuals = tuple(
+        value
+        for value in (
+            _row_residual(row, "ct_supercompatibility_dimensionless")
+            for row in super_rows
+        )
+        if value is not None
+    )
+    satisfied = sum(value <= tolerance for value in residuals)
+
     if not exact_super_seed:
         if exact_am and degeneracy_order == 3:
-            super_answer = "Not evaluable as a unique A/M/M branch condition: third-order CMC compatibility does not provide a unique exact A/M habit-plane seed."
+            super_answer = (
+                "The state is third-order CMC compatible, but a unique exact A/M "
+                "habit-plane seed is not defined, so a branchwise A/M/M shear–shear "
+                "test is not posed."
+            )
         else:
-            super_answer = "Not evaluable. CT supercompatibility requires an exact CT A/M habit/shear seed, which this state does not provide."
+            super_answer = (
+                "The exact A/M habit/shear prerequisite is absent, so exact CT "
+                "A/M/M supercompatibility is not evaluable."
+            )
         super_status = "not evaluable"
+    elif unified is None:
+        super_answer = (
+            "An exact A/M seed exists, but the unified theory inventory has not "
+            "yet been calculated for the current request."
+        )
+        super_status = "not evaluated"
     elif not supercompatibility_requested:
-        super_answer = "Not requested in the current CT run. Enable CT supercompatibility to evaluate the exact A/M/M condition."
+        super_answer = (
+            "An exact A/M seed exists, but CT supercompatibility was not requested."
+        )
         super_status = "not requested"
-    elif super_rows:
-        satisfied = sum(1 for row in super_rows if _row_exact(row) is True)
-        if satisfied:
-            super_answer = f"Yes for {satisfied} branch row(s): the CT supercompatibility residual satisfies the exact tolerance."
-            super_status = "reached"
-        else:
-            super_answer = f"Evaluated on {len(super_rows)} branch row(s), but no branch satisfies the exact CT supercompatibility condition."
-            super_status = "not reached"
-    else:
-        super_answer = "The exact A/M seed exists and supercompatibility was requested, but no eligible CT A/M/M branch row was produced."
+    elif not super_rows:
+        super_answer = (
+            "CT supercompatibility was requested, but no eligible A/M/M branch row "
+            "was produced."
+        )
         super_status = "not reached"
+    elif residuals and satisfied:
+        super_answer = (
+            f"{satisfied}/{len(residuals)} evaluated A/M/M residual(s) satisfy "
+            f"the exact algebraic tolerance ({tolerance:.3e})."
+        )
+        super_status = "reached"
+    elif residuals:
+        best = min(residuals)
+        super_answer = (
+            f"0/{len(residuals)} evaluated A/M/M residual(s) satisfy the exact "
+            f"algebraic tolerance. Best ε = {best:.10g}; tolerance = {tolerance:.3e}."
+        )
+        super_status = "not reached"
+    else:
+        super_answer = (
+            "A/M/M rows exist, but no native dimensionless shear–shear residual "
+            "is exposed; the assessment will not infer pass/fail from row.exact."
+        )
+        super_status = "not available"
+
     steps.append(
         AssessmentStep(
             step_id="supercompatibility",
-            question="9. Can CT reach its A/M/M supercompatibility condition for this state?",
+            question=(
+                "9. Do any exact A/M habit/shear branches and M/M twin branches "
+                "satisfy Cayron's shear–shear supercompatibility condition?"
+            ),
             answer=super_answer,
             status=super_status,
-            formulae=(r"2(m_A^T n)d_A=a",),
-            reasoning=(
-                "The CT shear/shear condition is downstream of an exact A/M habit/shear seed and an eligible M/M twin. "
-                "The application deliberately refuses to substitute the approximate nearest-degeneracy construction."
+            formulae=(
+                r"2(m_A^Tn)d_A=a",
+                r"\varepsilon="
+                r"\frac{\left\|2(m_A^Tn)d_A-a\right\|}{s}",
+                r"\varepsilon=0\quad\Longleftrightarrow\quad"
+                r"\mathrm{exact~shear/shear~compatibility}",
+                r"\|m_A\|_\ast=1,\qquad\|n\|_{M_A}=1,\qquad\|a\|_{M_A}=s",
             ),
-            physical_meaning="When satisfied, the A/M and M/M shear constructions meet the additional CT supercompatibility condition.",
-            limitation="Not evaluable is scientifically different from failed: absence of an exact A/M seed prevents the question from being posed exactly.",
+            reasoning=(
+                "The exact CT A/M habit plane and its d_A vector are combined with an "
+                "eligible CT M/M twin. The final condition is tested through the native "
+                "dimensionless shear–shear incompatibility ε. Crucially, the unified "
+                "row.exact flag is not used as the supercompatibility verdict; only the "
+                "actual residual is compared with the project's algebraic tolerance. "
+                "The metric normalization of m_A, n and a is part of the definition."
+            ),
+            physical_meaning=(
+                "ε=0 means the exact single-variant A/M IPS shear and the M/M twin shear "
+                "are mutually compatible in Cayron's A/M/M construction. A nonzero ε "
+                "quantifies incompatibility for that branch."
+            ),
+            limitation=(
+                "Exact CT shear–shear supercompatibility is distinct from merely having "
+                "an exact A/M habit plane, from merely having an M/M twin, and from the "
+                "Ball–James/cofactor criteria."
+            ),
             evidence=(
                 ("Exact CT A/M habit seed", "yes" if exact_super_seed else "no"),
-                ("Supercompatibility requested", "yes" if supercompatibility_requested else "no"),
+                (
+                    "Supercompatibility requested",
+                    "yes" if supercompatibility_requested else "no",
+                ),
+                (
+                    "Unified CT inventory available",
+                    "yes" if unified is not None else "no",
+                ),
                 ("CT supercompatibility rows", len(super_rows)),
             ),
         )
     )
 
-    if unified is None:
+    # 10 -----------------------------------------------------------------
+    if not result:
+        overall_status = "CT martensitic construction not established"
+        overall_answer = "No active calculated CT state is available."
+        overall_reasoning = (
+            "Without a calculated state, no CT crystallographic conclusion is made."
+        )
+    elif unified is None:
         overall_status = "incomplete CT inventory"
         overall_answer = (
-            "CT already constructs a valid parent→product state and a discrete variant/operator topology, "
-            "but the CT M/M and closing-gap inventory has not yet been calculated in this theory workspace."
+            "The base CT state and its correspondence topology are available, but the "
+            "unified CT branch inventory has not yet been calculated for the current "
+            "theory-comparison request."
         )
         overall_reasoning = (
-            "The app can already answer the A/M CMC question from the calculated transformation state, but it should not claim a complete CT martensitic microstructure assessment until the CT-native branch inventory is available."
+            "The base state can answer metric/CMS compatibility questions, but M/M "
+            "twins and optional closing-gap/supercompatibility branches must not be "
+            "described as evaluated until a unified theory run actually exists."
         )
     elif topology_ok and mm_rows:
         overall_status = "CT-consistent martensitic crystallography"
         compatibility_clause = (
-            "Exact parent/martensite compatibility is also reached."
+            "Exact single-variant A/M compatibility is also reached."
             if exact_am
-            else "Exact parent/martensite compatibility is not reached for the supplied lattice parameters."
+            else "Exact single-variant A/M compatibility is not reached for this metric state."
         )
         overall_answer = (
-            "Yes at the crystallographic-theory level: CT constructs a symmetry-related parent→product variant system and reaches CT-native martensite/martensite relations. "
+            "At the CT crystallographic-theory level, the state has a discrete "
+            "correspondence-variant topology and CT-native M/M twin relations. "
             + compatibility_clause
         )
         overall_reasoning = (
-            "The positive statement is intentionally limited to crystallographic consistency within Cayron CT. "
-            "A missing exact A/M degeneracy changes interface compatibility, not the existence of the CT variant/twin construction."
+            "The positive statement is limited to the structures actually produced by CT. "
+            "Exact A/M interface compatibility, closing-gap orientation candidates and "
+            "A/M/M supercompatibility are separate downstream questions and are reported "
+            "with their own statuses."
         )
     elif topology_ok:
         overall_status = "partial CT martensitic construction"
         overall_answer = (
-            "CT constructs a discrete parent→product variant/operator topology, but the current CT inventory does not reach an M/M twin branch. "
-            "The app therefore does not claim a complete twinned martensitic microstructure from CT alone."
+            "The correspondence produces a discrete CT variant/operator topology, but "
+            "the evaluated unified CT inventory contains no native M/M twin row."
         )
         overall_reasoning = (
-            "Variant topology and exact A/M compatibility answer different questions. The absence of an M/M row in the current CT inventory is reported directly rather than hidden by an overall score."
+            "A correspondence topology and an M/M twin construction are different claims; "
+            "the latter is not inferred merely from the former."
         )
     else:
         overall_status = "CT martensitic construction not established"
-        overall_answer = "The active result does not establish the discrete CT variant/operator construction needed for a CT martensitic crystallographic description."
-        overall_reasoning = "The app does not infer martensite from an alloy name or from a single residual; it reports only the structures actually produced by the CT calculation."
+        overall_answer = (
+            "The active result does not establish the discrete CT correspondence "
+            "topology required for this martensitic crystallographic construction."
+        )
+        overall_reasoning = (
+            "The assessment does not infer martensite from an alloy name or from a "
+            "single compatibility residual."
+        )
 
     overall_reasoning += (
-        " CT alone cannot experimentally prove that a specimen transformed by a martensitic mechanism, and it cannot prove shape-memory functionality; "
-        "those require experimental/thermomechanical evidence in addition to crystallography."
+        " CT alone is not experimental proof of transformation mechanism, phase identity, "
+        "reversibility, hysteresis, fatigue performance or shape-memory functionality."
     )
 
     steps.append(
         AssessmentStep(
             step_id="overall",
-            question="10. So, does Cayron CT support a martensitic crystallographic description of the supplied state?",
+            question=(
+                "10. What can CT conclude about this crystallographic state, "
+                "and what still requires experiment?"
+            ),
             answer=overall_answer,
             status=overall_status,
             formulae=(),
             reasoning=overall_reasoning,
             physical_meaning=(
-                "This final statement separates three issues that must not be conflated: CT martensitic crystallography, exact interface compatibility, and experimentally demonstrated SMA functionality."
+                "The final statement keeps four levels separate: correspondence topology, "
+                "M/M twinning, exact A/M interface compatibility, and full A/M/M "
+                "supercompatibility. Experimental martensite/SMA functionality is a fifth, "
+                "independent evidential level."
             ),
-            limitation="The conclusion is theory-level crystallographic evidence, not an experimental phase-identification or functional-material verdict.",
+            limitation=(
+                "This is a theory-level crystallographic assessment, not an experimental "
+                "phase-identification or functional-material verdict."
+            ),
             evidence=(
-                ("Variant/operator topology", "reached" if topology_ok else "not reached"),
-                ("CT M/M construction", "reached" if mm_rows else ("not evaluated" if unified is None else "not reached")),
-                ("Exact CT A/M compatibility", "reached" if exact_am else "not reached"),
+                (
+                    "Variant/operator topology",
+                    "reached" if topology_ok else "not reached",
+                ),
+                (
+                    "CT M/M construction",
+                    (
+                        "reached"
+                        if mm_rows
+                        else ("not evaluated" if unified is None else "not reached")
+                    ),
+                ),
+                (
+                    "Exact CT A/M compatibility",
+                    "reached" if exact_am else "not reached",
+                ),
                 ("Exact CT A/M habit plane", hp_status),
+                ("CT closing-gap ORs", or_status),
                 ("CT supercompatibility", super_status),
             ),
         )
