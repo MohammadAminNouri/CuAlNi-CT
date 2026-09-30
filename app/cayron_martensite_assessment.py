@@ -370,20 +370,30 @@ def build_cayron_martensite_assessment(
                 r"s_I^2=\operatorname{tr}"
                 r"(C_{\mathrm{int}}^TM_MC_{\mathrm{int}}M_M^{-1})-3",
                 r"a_M=-(C_{\mathrm{int}}+I)n_M",
+                r"\mathrm{Type~I~twin~system}:\quad(p_M,a_M)",
                 r"G_A^2=I,\quad(\det G_A,\operatorname{tr}G_A)=(+1,-1)"
                 r"\quad\mathrm{Type~II}",
-                r"a_M=C\,a_A",
+                r"a_M=C\,a_A,\qquad p_M=M_Ma_M",
+                r"C_{\mathrm{int}}^{\ast}=C_{\mathrm{int}}^{-T}"
+                r"=M_MC_{\mathrm{int}}M_M^{-1}",
                 r"s_{II}^2=\operatorname{tr}"
                 r"(C_{\mathrm{int}}M_M^{-1}C_{\mathrm{int}}^TM_M)-3",
+                r"jp_M=-(C_{\mathrm{int}}^{\ast}-I)p_M",
+                r"\mathrm{Type~II~twin~system}:\quad(jp_M,a_M)",
             ),
             reasoning=(
                 "CT starts from exact order-two parent symmetries. A parent reflection "
-                "generates a Type-I construction whose generic element is the rational "
-                "twin plane; a parent 180° rotation generates a Type-II construction "
-                "whose generic element is the rational twin direction. The complementary "
-                "twin element and shear magnitude depend on the product metric. "
-                "No paper equation number is needed: the complete relations used by the "
-                "assessment are written explicitly above."
+                "generates a Type-I construction whose rational twin plane is obtained "
+                "directly by reciprocal correspondence; the product metric then supplies "
+                "the unit normal, shear magnitude and complementary shear direction. "
+                "A parent 180° rotation generates a Type-II construction whose rational "
+                "twin direction is obtained by direct correspondence. Its metric-dual "
+                "covector p_M=M_Ma_M is acted on by the reciprocal intercorrespondence "
+                "operator C_int* = C_int^(-T) to obtain the generally irrational junction "
+                "plane jp_M. Thus the full Type-I system is (p_M,a_M) and the full "
+                "Type-II system is (jp_M,a_M). The complete relations needed for the "
+                "interpretation are written explicitly here rather than referenced only "
+                "by paper equation numbers."
             ),
             physical_meaning=(
                 "A reachable CT M/M branch gives an actual transformation-twin geometry "
@@ -469,14 +479,33 @@ def build_cayron_martensite_assessment(
     # 5 ------------------------------------------------------------------
     if exact_am:
         near_answer = (
-            "Exact CMC compatibility is already reached; an approximate "
-            "distance-to-degeneracy diagnostic is not needed to establish the interface."
+            f"Yes. The current CMC is exactly degenerate at order {degeneracy_order}; "
+            "no approximate distance-to-degeneracy diagnostic is needed."
         )
         near_status = "exact reached"
+        near_formulae: tuple[str, ...] = ()
+        near_reasoning = (
+            "Exact compatibility has already been established by the CMC zero-eigenvalue "
+            "multiplicity and inertia classification. Reporting an approximate nearest-zero "
+            "distance here would add no scientific information and could incorrectly make an "
+            "exact state look approximate."
+        )
+        near_physical_meaning = (
+            "The state lies on an exact CMC compatibility manifold for the active numerical "
+            "policy; the appropriate exact habit-plane construction is handled in the next step."
+        )
+        near_limitation = (
+            "Exact algebraic compatibility remains a theory-level crystallographic statement; "
+            "it is not experimental evidence of transformation kinetics or functionality."
+        )
+        near_evidence: tuple[tuple[str, Any], ...] = (
+            ("CMC degeneracy order", degeneracy_order),
+            ("CMC inertia (negative, zero, positive)", inertia),
+        )
     elif nearest_residual is not None:
         near_answer = (
-            f"The app's normalized CMC degeneracy residual is "
-            f"{float(nearest_residual):.10g}. "
+            f"No exact CMC degeneracy is present. The app's normalized CMC "
+            f"degeneracy residual is {float(nearest_residual):.10g}. "
             + (
                 "The normalized sign structure also permits a diagnostic plane construction."
                 if approx_admissible
@@ -484,45 +513,58 @@ def build_cayron_martensite_assessment(
             )
         )
         near_status = "diagnostic only"
+        near_formulae = (r"r_{\mathrm{app}}=\min_i|\eta_i|",)
+        near_reasoning = (
+            "This is an app-defined, dimensionless diagnostic based on the normalized "
+            "generalized CMC spectrum. It reports how close one normalized eigenvalue "
+            "is to zero while retaining the original sign information. It is not "
+            "Cayron's lattice-parameter distance to the C1/C2/C3 equality/inequality "
+            "boundaries, and it is never substituted for an exact zero."
+        )
+        near_physical_meaning = (
+            "It is useful for numerical proximity and parameter exploration; it is not "
+            "an exact compatibility condition."
+        )
+        near_limitation = (
+            "The residual is not a probability, energy, hysteresis measure or experimental "
+            "confidence, and it must not be compared numerically with |λ₂−1| as though the "
+            "two theories used the same native scalar."
+        )
+        near_evidence = (
+            ("Nearest η index", nearest_index),
+            ("App normalized CMC degeneracy residual", nearest_residual),
+            (
+                "Diagnostic sign structure admissible",
+                "yes" if approx_admissible else "no",
+            ),
+            ("Diagnostic candidate plane count", len(approx_planes)),
+        )
     else:
-        near_answer = "No normalized degeneracy diagnostic is available."
+        near_answer = "No exact CMC degeneracy and no normalized proximity diagnostic are available."
         near_status = "not available"
+        near_formulae = ()
+        near_reasoning = (
+            "The assessment does not manufacture a distance measure when the backend has not "
+            "exposed the normalized spectral diagnostic."
+        )
+        near_physical_meaning = "No proximity statement is made."
+        near_limitation = "Absence of a diagnostic value is not itself a compatibility verdict."
+        near_evidence = ()
 
     steps.append(
         AssessmentStep(
             step_id="nearest",
             question=(
-                "5. If exact A/M compatibility is absent, how close is the "
-                "current normalized CMC state to losing one eigenvalue?"
+                "5. Is the current state exactly CMC-degenerate, and if not, what is its "
+                "normalized distance from degeneracy?"
             ),
             answer=near_answer,
             status=near_status,
-            formulae=(r"r_{\mathrm{app}}=\min_i|\eta_i|",),
-            reasoning=(
-                "This is an app-defined, dimensionless diagnostic based on the normalized "
-                "generalized CMC spectrum. It reports how close one normalized eigenvalue "
-                "is to zero while retaining the original sign information. It is not "
-                "Cayron's lattice-parameter distance to the C1/C2/C3 equality/inequality "
-                "boundaries, and it is not substituted for an exact zero."
-            ),
-            physical_meaning=(
-                "It is useful for numerical proximity and parameter exploration; it is "
-                "not an exact compatibility condition."
-            ),
-            limitation=(
-                "The residual is not a probability, energy, hysteresis measure or "
-                "experimental confidence, and it must not be compared numerically with "
-                "|λ₂−1| as though they were the same native scalar."
-            ),
-            evidence=(
-                ("Nearest η index", nearest_index),
-                ("App normalized CMC degeneracy residual", nearest_residual),
-                (
-                    "Diagnostic sign structure admissible",
-                    "yes" if approx_admissible else "no",
-                ),
-                ("Diagnostic candidate plane count", len(approx_planes)),
-            ),
+            formulae=near_formulae,
+            reasoning=near_reasoning,
+            physical_meaning=near_physical_meaning,
+            limitation=near_limitation,
+            evidence=near_evidence,
         )
     )
 
@@ -551,51 +593,95 @@ def build_cayron_martensite_assessment(
         )
         hp_status = "not reached"
 
+    if exact_am and degeneracy_order == 1:
+        habit_formulae = (
+            r"q_-X_-^2+q_+X_+^2=0,\qquad q_-<0<q_+",
+            r"m_d^\pm\propto"
+            r"\sqrt{q_+}\,e_+^\ast\pm\sqrt{-q_-}\,e_-^\ast",
+            r"m_A^\pm=P^{-T}m_d^\pm",
+            r"m_A^\pm\propto M_A"
+            r"\left(\sqrt{\eta_+}v_+\pm\sqrt{-\eta_-}v_-\right)",
+        )
+        habit_reasoning = (
+            "First-order degeneracy has exactly one zero CMC eigenvalue and two nonzero "
+            "eigenvalues of opposite sign. The quadratic compatibility cone therefore "
+            "factorizes into two linear factors, producing two projectively distinct exact "
+            "habit-plane covectors. The final expression is the app's metric-native form "
+            "for M_A-orthonormal generalized eigenvectors."
+        )
+    elif exact_am and degeneracy_order == 2:
+        habit_formulae = (
+            r"\eta_i=\eta_j=0,\qquad\eta_k\neq0",
+            r"u_A^TCMC\,u_A="
+            r"\eta_k\left(v_k^TM_Au_A\right)^2=0",
+            r"v_k^TM_Au_A=0",
+            r"m_A\propto M_Av_k",
+        )
+        habit_reasoning = (
+            "Second-order degeneracy has two zero normalized generalized CMC eigenvalues "
+            "and one nonzero eigenvalue. In an M_A-orthonormal generalized eigenbasis, the "
+            "quadratic compatibility condition therefore contains only the square of the "
+            "coordinate along the nonzero-eigenvalue direction. The double plane collapses "
+            "to one unique projective plane. Its reciprocal covector is m_A ∝ M_A v_k. "
+            "This is the correct construction for Cayron's D1/D2 second-order cases; the "
+            "first-order ± two-plane formula is deliberately not displayed here."
+        )
+    elif exact_am and degeneracy_order == 3:
+        habit_formulae = (
+            r"CMC=0",
+            r"u_A^TCMC\,u_A=0\quad\mathrm{for~every}\ u_A",
+        )
+        habit_reasoning = (
+            "Third-order degeneracy means the pulled-back product metric and parent metric "
+            "coincide completely. Every direction satisfies the metric equality, so CT does "
+            "not select a unique habit plane from CMC degeneracy alone."
+        )
+    else:
+        habit_formulae = ()
+        habit_reasoning = (
+            "An exact habit-plane factorization is only performed after exact CMC degeneracy "
+            "has been established. Approximate diagnostic planes are kept separate and are "
+            "never promoted to exact A/M solutions."
+        )
+
+    habit_evidence: tuple[tuple[str, Any], ...] = (
+        (
+            "Exact CT habit planes m_A",
+            tuple(_compact_vector(item) for item in exact_planes),
+        ),
+    )
+    if not exact_am and approx_planes:
+        habit_evidence += (
+            (
+                "Approximate diagnostic planes (not exact)",
+                tuple(_compact_vector(item) for item in approx_planes),
+            ),
+        )
+
     steps.append(
         AssessmentStep(
             step_id="habit",
             question=(
-                "6. When exact CMC degeneracy exists, which exact A/M "
-                "habit plane or planes follow from it?"
+                "6. Given the detected CMC degeneracy order, what exact A/M habit-plane "
+                "geometry follows from that specific order?"
             ),
             answer=hp_answer,
             status=hp_status,
-            formulae=(
-                r"q_jX_j^2+q_kX_k^2=0,\qquad q_jq_k<0"
-                r"\quad\mathrm{(first~order)}",
-                r"m_d^\pm\propto"
-                r"\sqrt{q_j}\,e_j^\ast\pm\sqrt{-q_k}\,e_k^\ast",
-                r"m_A^\pm=P^{-T}m_d^\pm",
-                r"m_A^\pm\propto M_A"
-                r"\left(\sqrt{\eta_+}v_+\pm\sqrt{-\eta_-}v_-\right)"
-                r"\quad\mathrm{(app~metric\ form)}",
-            ),
+            formulae=habit_formulae,
             reasoning=(
-                "For first-order CMC degeneracy the quadratic cone factorizes into two "
-                "linear plane factors. Cayron obtains the two plane covectors in the "
-                "orthonormal CMC eigenbasis and transforms them back to the parent "
-                "crystallographic basis. The final line is the equivalent metric-native "
-                "construction used with the app's M_A-orthonormal generalized eigenvectors. "
-                "The A/M habit-plane symbol is m_A; p_A is reserved for an M/M twin plane."
+                habit_reasoning
+                + " The A/M habit-plane symbol is m_A; p_A is reserved for an M/M twin plane."
             ),
             physical_meaning=(
-                "Each m_A is an exact parent-crystal reciprocal covector defining a "
-                "single-variant invariant-plane interface."
+                "Each reported m_A is an exact parent-crystal reciprocal covector defining "
+                "a single-variant invariant-plane interface. Plane covectors are projective: "
+                "m_A and -m_A describe the same physical plane."
             ),
             limitation=(
                 "Diagnostic planes from a nonzero normalized residual remain approximate "
                 "and cannot be promoted to exact A/M branches."
             ),
-            evidence=(
-                (
-                    "Exact CT habit planes m_A",
-                    tuple(_compact_vector(item) for item in exact_planes),
-                ),
-                (
-                    "Approximate diagnostic planes",
-                    tuple(_compact_vector(item) for item in approx_planes),
-                ),
-            ),
+            evidence=habit_evidence,
         )
     )
 

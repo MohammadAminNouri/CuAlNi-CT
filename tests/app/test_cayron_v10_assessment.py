@@ -181,6 +181,66 @@ def test_habit_uses_m_not_p_for_am_interface():
     assert "p_A is reserved for an M/M twin plane" in habit.reasoning
 
 
+def test_second_order_habit_uses_unique_plane_formula_not_first_order_two_plane_formula():
+    response = _Response(exact_am=True)
+    response.result["ct_detail"]["degeneracy_order"] = 2
+    response.result["summary"]["degeneracy_order"] = 2
+    response.result["ct_detail"]["reason"] = (
+        "second-order degeneracy: unique compatible habit plane"
+    )
+    response.result["ct_detail"]["eta_eigenvalues"] = [-0.262461, 0.0, 0.0]
+    response.result["ct_detail"]["generalized_mu"] = [0.737539, 1.0, 1.0]
+    response.result["ct_detail"]["inertia"] = [1, 2, 0]
+    response.result["ct_detail"]["exact_habit_planes_parent_covectors"] = [
+        [1.0, -1.0, -2.290016]
+    ]
+
+    assessment = build_cayron_martensite_assessment(
+        response,
+        _Unified(rows=()),
+        closing_gap_requested=False,
+        supercompatibility_requested=False,
+    )
+    habit = _step(assessment, "habit")
+    joined = "\n".join(habit.formulae)
+
+    assert habit.status == "reached"
+    assert r"\eta_i=\eta_j=0" in joined
+    assert r"m_A\propto M_Av_k" in joined
+    assert r"m_A^\pm" not in joined
+    assert r"q_-X_-^2+q_+X_+^2" not in joined
+    assert "double plane collapses to one unique projective plane" in habit.reasoning
+
+
+def test_exact_cmc_state_does_not_display_approximate_distance_formula():
+    assessment = build_cayron_martensite_assessment(
+        _Response(exact_am=True),
+        _Unified(rows=()),
+        closing_gap_requested=False,
+        supercompatibility_requested=False,
+    )
+    step = _step(assessment, "nearest")
+    assert step.status == "exact reached"
+    assert step.formulae == ()
+    assert "exactly CMC-degenerate" in step.question
+    assert "could incorrectly make an exact state look approximate" in step.reasoning
+
+
+def test_mm_type_ii_display_contains_complete_plane_direction_and_shear_construction():
+    assessment = build_cayron_martensite_assessment(
+        _Response(exact_am=False),
+        _Unified(rows=(_Row(_EnumLike("ct_mm_twin"), "CT twin II"),)),
+        closing_gap_requested=False,
+        supercompatibility_requested=False,
+    )
+    step = _step(assessment, "mm_twins")
+    joined = "\n".join(step.formulae)
+    assert r"a_M=C\,a_A,\qquad p_M=M_Ma_M" in joined
+    assert r"C_{\mathrm{int}}^{\ast}=C_{\mathrm{int}}^{-T}" in joined
+    assert r"jp_M=-(C_{\mathrm{int}}^{\ast}-I)p_M" in joined
+    assert r"\mathrm{Type~II~twin~system}:\quad(jp_M,a_M)" in joined
+
+
 def test_exact_supercompatibility_is_decided_from_native_residual_not_row_exact():
     assessment = build_cayron_martensite_assessment(
         _Response(exact_am=True),
@@ -315,6 +375,8 @@ def test_assessment_contains_explicit_equations_and_no_paper_equation_number_dep
     assert r"C_{\mathrm{int}}=C\,G_A\,C^{-1}" in contract
     assert r"p_M=C^{-T}p_A" in contract
     assert r"a_M=C\,a_A" in contract
+    assert r"p_M=M_Ma_M" in contract
+    assert r"jp_M=-(C_{\mathrm{int}}^{\ast}-I)p_M" in contract
 
     # No prose dependency on paper equation numbers.
     for token in (
@@ -352,3 +414,15 @@ def test_v10_notation_guide_distinguishes_T_from_polar_R():
     assert "C_(M←A) [app]" in renderer
     assert "Same numerical matrix as Cayron C^(M→A)" in renderer
     assert "T/R(M←A)" not in renderer
+
+
+def test_v6_compatibility_audit_suppresses_approximate_planes_for_exact_ct_states():
+    root = Path(__file__).resolve().parents[2]
+    renderer = (root / "app" / "streamlit_workstation_v6.py").read_text(
+        encoding="utf-8"
+    )
+    assert "def _show_approximate_ct_planes" in renderer
+    assert 'bool(ct.get("exact_compatible", False))' in renderer
+    assert 'if _show_approximate_ct_planes(ct):' in renderer
+    assert 'columns=["m₁", "m₂", "m₃"]' in renderer
+    assert "m_A and −m_A represent the same physical plane" in renderer

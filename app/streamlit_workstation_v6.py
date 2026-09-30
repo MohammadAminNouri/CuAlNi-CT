@@ -240,6 +240,22 @@ def _render_setup(title: str, length_unit: str, project_id: str) -> None:
         st.caption("Calculated and editable states are separate. Navigation does not recreate this draft from defaults.")
 
 
+def _show_approximate_ct_planes(ct: object) -> bool:
+    """Return True only when a genuinely non-exact CT diagnostic should be shown.
+
+    Exact CMC states can still carry a backend diagnostic payload for audit/provenance.
+    That payload must not be rendered as an approximate competing solution when exact
+    compatibility has already been established.
+    """
+
+    if not isinstance(ct, dict) or bool(ct.get("exact_compatible", False)):
+        return False
+    approx = ct.get("approximate_diagnostic", {})
+    return isinstance(approx, dict) and bool(
+        approx.get("candidate_planes_parent_covectors")
+    )
+
+
 def _safe_transformation_audit(response: object) -> None:
     """Professor-facing audit without raw booleans or approximate/exact conflation."""
 
@@ -279,18 +295,38 @@ def _safe_transformation_audit(response: object) -> None:
         use_container_width=True,
     )
     st.caption("These residuals answer related compatibility questions but are native quantities of different formulations; they are not equated numerically.")
+
     exact_planes = ct.get("exact_habit_planes_parent_covectors", [])
     approx = ct.get("approximate_diagnostic", {})
-    st.markdown("#### CT A/M planes")
+    st.markdown("#### Exact CT A/M habit-plane covectors m_A")
     if exact_planes:
-        st.dataframe(pd.DataFrame(exact_planes, columns=["p₁", "p₂", "p₃"]), hide_index=True, use_container_width=True)
+        st.dataframe(
+            pd.DataFrame(exact_planes, columns=["m₁", "m₂", "m₃"]),
+            hide_index=True,
+            use_container_width=True,
+        )
+        st.caption(
+            "Habit-plane covectors are projective: m_A and −m_A represent the same physical plane."
+        )
     else:
         st.write("Exact CT A/M habit planes: none.")
-    if approx.get("candidate_planes_parent_covectors"):
+
+    if _show_approximate_ct_planes(ct):
         with st.expander("Approximate CT diagnostic planes — not exact A/M solutions", expanded=False):
-            st.warning("Nearest-degeneracy diagnostic only. These planes are never used as exact supercompatibility seeds.")
+            st.warning(
+                "Nearest-degeneracy diagnostic only. These planes are never used as exact "
+                "A/M solutions or as exact supercompatibility seeds."
+            )
             st.write("Diagnostic residual:", v4.sci(approx.get("residual"), 6))
-            st.dataframe(pd.DataFrame(approx["candidate_planes_parent_covectors"], columns=["p₁", "p₂", "p₃"]), hide_index=True, use_container_width=True)
+            st.dataframe(
+                pd.DataFrame(
+                    approx["candidate_planes_parent_covectors"],
+                    columns=["m₁ (diag)", "m₂ (diag)", "m₃ (diag)"],
+                ),
+                hide_index=True,
+                use_container_width=True,
+            )
+
     with st.expander("Raw matrices / solver audit", expanded=False):
         metric = result["metric"]
         for name, key in (
