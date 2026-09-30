@@ -7,6 +7,8 @@ calculation scope, session-state ownership, native theory solvers, matching,
 EBSD, atlas, pole-figure, PTMC, or export pathways.
 """
 
+from dataclasses import replace
+import math
 from typing import Any, Mapping
 
 import pandas as pd
@@ -91,7 +93,29 @@ def _render_next_route(step: Any) -> None:
     if item is None:
         return
 
-    status = str(getattr(step, "status", ""))
+    status = str(getattr(step, "status", "")).strip().lower()
+
+    # A failed supercompatibility residual is not a missing prerequisite:
+    # the exact A/M seed existed and the A/M/M condition was actually tested.
+    if step_id == "supercompatibility" and status == "not reached":
+        with st.expander("Where to inspect this failed exact condition", expanded=False):
+            st.markdown(
+                "**Route:** Theory comparison → Conclusions → CT supercompatibility "
+                "and Numerical evidence / provenance for this step"
+            )
+            st.write(
+                "The exact A/M habit/shear seed exists and CT supercompatibility "
+                "was evaluated. 'Not reached' here means every available "
+                "shear–shear residual remains above the project's algebraic "
+                "tolerance; no prerequisite is missing."
+            )
+            st.caption(
+                "Changing pages or widening a display tolerance does not turn this "
+                "state into an exact supercompatible state. A different lattice "
+                "state or physical branch is required."
+            )
+        return
+
     definitive_negative = (
         step_id in {"am_exact", "habit", "smc", "supercompatibility"}
         and status in {"not reached", "not reachable exactly", "not evaluable"}
@@ -123,17 +147,126 @@ def _enum_text(value: Any) -> str:
     return str(getattr(value, "value", value))
 
 
-def _ct_mm_rows(unified: Any) -> tuple[Any, ...]:
+def _ct_rows(unified: Any, kind: str) -> tuple[Any, ...]:
     if unified is None:
         return ()
-    raw = unified.get("rows", ()) if isinstance(unified, Mapping) else getattr(unified, "rows", ())
+    raw = (
+        unified.get("rows", ())
+        if isinstance(unified, Mapping)
+        else getattr(unified, "rows", ())
+    )
     selected: list[Any] = []
     for row in tuple(raw or ()):
         theory = _enum_text(_row_attr(row, "theory"))
-        kind = _enum_text(_row_attr(row, "prediction_kind", _row_attr(row, "kind")))
-        if theory == "cayron_ct" and kind == "ct_mm_twin":
+        row_kind = _enum_text(
+            _row_attr(row, "prediction_kind", _row_attr(row, "kind"))
+        )
+        if theory == "cayron_ct" and row_kind == kind:
             selected.append(row)
     return tuple(selected)
+
+
+def _ct_mm_rows(unified: Any) -> tuple[Any, ...]:
+    return _ct_rows(unified, "ct_mm_twin")
+
+
+def _ct_super_rows(unified: Any) -> tuple[Any, ...]:
+    return _ct_rows(unified, "ct_supercompatibility")
+
+
+def _current_algebraic_tolerance() -> float:
+    """Read the active project's numerical policy without changing it."""
+
+    default = 1.0e-10
+    response = st.session_state.get("current_response")
+    if response is None:
+        return default
+
+    if isinstance(response, Mapping):
+        project = response.get("project_payload", response.get("project", {}))
+    else:
+        project = getattr(response, "project_payload", {})
+
+    if not isinstance(project, Mapping):
+        return default
+
+    policy = project.get("numerical_policy", {})
+    if not isinstance(policy, Mapping):
+        return default
+
+    try:
+        value = float(policy.get("algebraic", default))
+    except (TypeError, ValueError):
+        return default
+    return value if math.isfinite(value) and value > 0.0 else default
+
+
+def _supercompatibility_residuals(rows: tuple[Any, ...]) -> tuple[float, ...]:
+    """Return the native CT shear–shear residuals exposed by unified rows."""
+
+    values: list[float] = []
+    for row in rows:
+        residual_map = _row_attr(row, "residuals", {})
+        if not isinstance(residual_map, Mapping):
+            continue
+        raw = residual_map.get("ct_supercompatibility_dimensionless")
+        if raw is None:
+            continue
+        try:
+            value = abs(float(raw))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    return tuple(values)
+
+
+def _correct_supercompatibility_step(step: Any) -> Any:
+    """Fix only the V10/V11 presentation classification for CT A/M/M.
+
+    Unified ``row.exact`` records the provenance/exactness of the native branch.
+    It is NOT the pass/fail flag for the final shear–shear equation.  The
+    authoritative Conclusions panel already classifies supercompatibility from
+    ``ct_supercompatibility_dimensionless`` against the algebraic tolerance.
+    Mirror that exact rule here so Question 9 cannot contradict Conclusions.
+    """
+
+    if str(getattr(step, "step_id", "")) != "supercompatibility":
+        return step
+
+    rows = _ct_super_rows(rw._current_unified_report())
+    residuals = _supercompatibility_residuals(rows)
+    if not residuals:
+        return step
+
+    tolerance = _current_algebraic_tolerance()
+    satisfied = sum(value <= tolerance for value in residuals)
+    best = min(residuals)
+
+    if satisfied:
+        status = "reached"
+        answer = (
+            f"Yes. {satisfied}/{len(residuals)} evaluated A/M/M branch "
+            "combination(s) satisfy the CT shear–shear residual within the "
+            f"algebraic tolerance ({tolerance:.3e})."
+        )
+    else:
+        status = "not reached"
+        answer = (
+            f"No. 0/{len(residuals)} evaluated A/M/M branch combinations "
+            "satisfy the exact CT shear–shear condition. "
+            f"Best |shear–shear residual| = {best:.10g}, versus algebraic "
+            f"tolerance {tolerance:.3e}."
+        )
+
+    evidence = tuple(getattr(step, "evidence", ()) or ())
+    evidence += (
+        ("Evaluated CT A/M/M residuals", len(residuals)),
+        ("Within algebraic tolerance", satisfied),
+        ("Best |shear–shear residual|", best),
+        ("Project algebraic tolerance", tolerance),
+    )
+    return replace(step, status=status, answer=answer, evidence=evidence)
 
 
 def _metadata(row: Any) -> Mapping[str, Any]:
@@ -141,7 +274,9 @@ def _metadata(row: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
-def _first_present(row: Any, metadata: Mapping[str, Any], names: tuple[str, ...]) -> Any:
+def _first_present(
+    row: Any, metadata: Mapping[str, Any], names: tuple[str, ...]
+) -> Any:
     for name in names:
         value = _row_attr(row, name, None)
         if value is not None:
@@ -152,7 +287,9 @@ def _first_present(row: Any, metadata: Mapping[str, Any], names: tuple[str, ...]
     return None
 
 
-def _find_metadata_by_tokens(metadata: Mapping[str, Any], token_sets: tuple[tuple[str, ...], ...]) -> Any:
+def _find_metadata_by_tokens(
+    metadata: Mapping[str, Any], token_sets: tuple[tuple[str, ...], ...]
+) -> Any:
     for tokens in token_sets:
         for key, value in metadata.items():
             lowered = str(key).lower()
@@ -174,11 +311,18 @@ def _projective_text(value: Any, *, plane: bool) -> str:
     if scale <= 1.0e-15:
         return "N/A"
 
-    reduced = [0.0 if abs(item / scale) <= 1.0e-12 else item / scale for item in values]
+    reduced = [
+        0.0 if abs(item / scale) <= 1.0e-12 else item / scale
+        for item in values
+    ]
     tokens: list[str] = []
     for item in reduced:
         nearest = round(item)
-        tokens.append(str(int(nearest)) if abs(item - nearest) <= 1.0e-10 else f"{item:.6g}")
+        tokens.append(
+            str(int(nearest))
+            if abs(item - nearest) <= 1.0e-10
+            else f"{item:.6g}"
+        )
     left, right = ("(", ")") if plane else ("[", "]")
     return left + " ".join(tokens) + right
 
@@ -258,10 +402,18 @@ def _render_native_ct_mm_twin_table() -> None:
 
         table_rows.append(
             {
-                "internal operator": operator_index if operator_index is not None else "N/A",
+                "internal operator": (
+                    operator_index if operator_index is not None else "N/A"
+                ),
                 "twin": twin_index if twin_index is not None else "N/A",
-                "classification": classification if classification is not None else "N/A",
-                "route": construction_route if construction_route is not None else "N/A",
+                "classification": (
+                    classification if classification is not None else "N/A"
+                ),
+                "route": (
+                    construction_route
+                    if construction_route is not None
+                    else "N/A"
+                ),
                 "product plane": _projective_text(plane, plane=True),
                 "product direction": _projective_text(direction, plane=False),
                 "shear s": _row_attr(row, "shear_magnitude", "N/A"),
@@ -286,6 +438,8 @@ def _render_native_ct_mm_twin_table() -> None:
 
 
 def _render_step_v11(step: Any) -> None:
+    step = _correct_supercompatibility_step(step)
+
     _original_render_step(step)
     _render_next_route(step)
 
