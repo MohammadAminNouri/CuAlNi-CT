@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import copy
 import math
+from dataclasses import replace
 
 import numpy as np
 import pandas as pd
 import streamlit as st
 
 import app.scientific_interpretation_v6 as interp
+from app.scientific_types import Evidence
 from app.phase1_contracts import (
     axis_angle_display,
     classify_scientific_error,
@@ -32,12 +34,69 @@ from app.state_persistence import (
 )
 
 
-# Patch only interpretation/presentation hooks.  Scientific solvers remain frozen.
+# Patch only interpretation/presentation hooks. Scientific solvers remain frozen.
 v4.transformation_findings = interp.transformation_findings
-v4.topology_finding = interp.topology_finding
 v4.orientation_finding = interp.orientation_finding
 v4.martensite_pair_finding = interp.martensite_pair_finding
 v4.ebsd_audit_finding = interp.ebsd_audit_finding
+
+
+def _topology_finding_phase3(result: object):
+    """Keep correspondence topology distinct from the metric stretch orbit.
+
+    In generic states these counts can coincide. In fully degenerate states such
+    as Cayron's third-order E limit, many correspondence variants may collapse
+    to a single distinct stretch U. Presentation must never call the topological
+    coset count a stretch-variant count.
+    """
+
+    finding = interp.topology_finding(result)
+    topology = result["topology"]
+    summary = result["summary"]
+    corr_variants = int(topology["n_variants"])
+    operators = int(topology["n_operators"])
+    stretch_variants = int(summary["variant_count"])
+
+    if corr_variants == stretch_variants:
+        conclusion = (
+            f"The state has {corr_variants} correspondence/topological variant(s), "
+            f"{stretch_variants} distinct metric stretch variant(s), and "
+            f"{operators} operator class(es)."
+        )
+    else:
+        conclusion = (
+            f"The correspondence topology contains {corr_variants} variant(s) and "
+            f"{operators} operator class(es), while the metric stretch orbit contains "
+            f"only {stretch_variants} distinct U variant(s)."
+        )
+
+    rationale = (
+        "Correspondence variants are coset/topology objects, whereas stretch variants "
+        "are distinct matrices in the parent-symmetry orbit of U. Symmetry-distinct "
+        "correspondence states can collapse onto the same U when the metric state is "
+        "degenerate; the two counts are therefore reported separately rather than "
+        "silently identified."
+    )
+    evidence = (
+        Evidence("Correspondence/topological variants", "coset count", corr_variants, "discrete CT topology"),
+        Evidence("Distinct metric stretch variants", "unique U matrices", stretch_variants, "metric stretch orbit"),
+        Evidence("Operator classes", "double-coset count", operators, "intercorrespondence topology"),
+    )
+    return replace(
+        finding,
+        conclusion=conclusion,
+        rationale=rationale,
+        evidence=evidence,
+        verification=(
+            f"correspondence variants = {corr_variants}",
+            f"distinct metric U variants = {stretch_variants}",
+            f"operator classes = {operators}",
+            "no correspondence-variant count is relabelled as a stretch-variant count",
+        ),
+    )
+
+
+v4.topology_finding = _topology_finding_phase3
 
 
 # Preserve the verified renderers and harden only their professor-facing semantics.

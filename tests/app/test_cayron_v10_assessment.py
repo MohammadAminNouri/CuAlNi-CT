@@ -388,7 +388,7 @@ def test_assessment_contains_explicit_equations_and_no_paper_equation_number_dep
     ):
         assert token not in contract
 
-    assert "research_workspaces_v11" in page
+    assert "research_workspaces_v12" in page
 
     renderer_tree = ast.parse(renderer)
     assert any(
@@ -426,3 +426,69 @@ def test_v6_compatibility_audit_suppresses_approximate_planes_for_exact_ct_state
     assert 'if _show_approximate_ct_planes(ct):' in renderer
     assert 'columns=["m₁", "m₂", "m₃"]' in renderer
     assert "m_A and −m_A represent the same physical plane" in renderer
+
+
+def test_third_order_smc_is_exact_zero_limit_not_missing_shear():
+    response = _Response(exact_am=True)
+    response.result["ct_detail"]["degeneracy_order"] = 3
+    response.result["summary"]["degeneracy_order"] = 3
+    response.result["ct_detail"]["reason"] = (
+        "third-order degeneracy: pulled-back martensite metric equals parent metric"
+    )
+    response.result["ct_detail"]["exact_habit_planes_parent_covectors"] = []
+    response.result["metric"]["smc_dimensional"] = [
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+    ]
+
+    assessment = build_cayron_martensite_assessment(
+        response,
+        _Unified(rows=()),
+        closing_gap_requested=False,
+        supercompatibility_requested=False,
+    )
+    smc = _step(assessment, "smc")
+    assert smc.status == "exact trivial limit"
+    assert "SMC = 0" in smc.answer
+    assert "d_A = 0" in smc.answer
+    formulas = "\n".join(smc.formulae)
+    assert r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}=0" in formulas
+    assert r"d_A=SMC\,m_A=0" in formulas
+
+
+def test_third_order_zero_mm_rows_are_evaluated_not_reported_missing():
+    response = _Response(exact_am=True)
+    response.result["ct_detail"]["degeneracy_order"] = 3
+    response.result["summary"]["degeneracy_order"] = 3
+    response.result["ct_detail"]["exact_habit_planes_parent_covectors"] = []
+
+    assessment = build_cayron_martensite_assessment(
+        response,
+        _Unified(rows=()),
+        closing_gap_requested=False,
+        supercompatibility_requested=False,
+    )
+    twins = _step(assessment, "mm_twins")
+    assert twins.status == "evaluated zero branches"
+    assert "evaluated" in twins.answer
+    assert "zero nontrivial" in twins.answer
+    assert "not a missing calculation" in twins.answer
+
+
+def test_degenerate_limit_presentation_layers_do_not_conflate_branch_counts_with_existence():
+    root = Path(__file__).resolve().parents[2]
+    workstation = (root / "app" / "streamlit_workstation_v6.py").read_text(encoding="utf-8")
+    v12 = (root / "app" / "research_workspaces_v12.py").read_text(encoding="utf-8")
+    page = (root / "app" / "pages" / "2_CT_Equivalence_Lab.py").read_text(encoding="utf-8")
+
+    assert "_topology_finding_phase3" in workstation
+    assert "correspondence/topological variant" in workstation
+    assert "distinct metric stretch variant" in workstation
+
+    assert "Branch count is therefore not used as an existence flag" in v12
+    assert "U = I" in v12
+    assert "evaluated zero-result" in v12
+    assert "Rerunning unchanged inputs" in v12
+    assert "missing prerequisite" in v12
+    assert "research_workspaces_v12" in page

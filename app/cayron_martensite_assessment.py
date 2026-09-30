@@ -346,11 +346,20 @@ def build_cayron_martensite_assessment(
         )
         mm_status = "reached"
     else:
-        mm_answer = (
-            "The unified CT inventory was evaluated, but it produced no native "
-            "M/M twin branch for this state."
-        )
-        mm_status = "not reached"
+        if exact_am and degeneracy_order == 3:
+            mm_answer = (
+                "The unified CT inventory was evaluated and produced zero nontrivial "
+                "M/M twin branches. For this third-order metric-degeneracy state, the "
+                "distinct stretch orbit has collapsed to the identity-stretch limit; "
+                "zero M/M rows is therefore an evaluated result, not a missing calculation."
+            )
+            mm_status = "evaluated zero branches"
+        else:
+            mm_answer = (
+                "The unified CT inventory was evaluated, but it produced no native "
+                "M/M twin branch for this state."
+            )
+            mm_status = "not reached"
 
     steps.append(
         AssessmentStep(
@@ -691,65 +700,145 @@ def build_cayron_martensite_assessment(
         for row in exact_habit_rows
         if _row_attr(row, "shape_vector_parent_crystal") is not None
     )
-    if exact_planes and exact_shear_rows:
+    if exact_am and degeneracy_order == 3:
+        shear_answer = (
+            "Third-order CMC degeneracy is the exact trivial IPS limit: C^T M_M C = M_A, "
+            "so SMC = 0 and therefore d_A = 0 for every normalized plane covector m_A. "
+            "No unique nonzero A/M shear branch is selected."
+        )
+        shear_status = "exact trivial limit"
+        shear_formulae = (
+            r"C^TM_MC=M_A",
+            r"C^{-1}M_M^{-1}C^{-T}=M_A^{-1}",
+            r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}=0",
+            r"d_A=SMC\,m_A=0\qquad\text{for every normalized }m_A",
+        )
+        shear_reasoning = (
+            "Third-order CMC degeneracy means the pulled-back product metric equals the "
+            "parent metric exactly. Inverting that equality gives the same equality for "
+            "the reciprocal metrics, hence the SMC matrix vanishes identically. The "
+            "Cayron displacement/shear vector is therefore the zero vector for every "
+            "normalized m_A. This is not a missing calculation and not a nonzero shear "
+            "that failed to be enumerated; it is the fully degenerate zero-strain limit."
+        )
+        shear_physical_meaning = (
+            "The metric state is already perfectly matched without a nonzero invariant-plane "
+            "shear. Every plane is metrically admissible, d_A is identically zero, and CT "
+            "does not select a unique nontrivial A/M IPS branch."
+        )
+        shear_limitation = (
+            "Because no unique nonzero A/M shear branch exists, a branchwise A/M/M "
+            "supercompatibility test is not posed for this third-order limit."
+        )
+        shear_evidence = (
+            ("CMC degeneracy order", degeneracy_order),
+            ("SMC matrix available", "yes" if metric.get("smc_dimensional") is not None else "no"),
+            ("Exact nonzero CT A/M d_A rows", len(exact_shear_rows)),
+            ("Third-order implication", "SMC = 0 and d_A = 0 for every normalized m_A"),
+        )
+    elif exact_planes and exact_shear_rows:
         shear_answer = (
             f"Exact CT A/M displacement/shear data are exposed for "
             f"{len(exact_shear_rows)} exact habit branch(es)."
         )
         shear_status = "reached"
+        shear_formulae = (
+            r"m_M=C^{-T}m_A",
+            r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}",
+            r"d_A=SMC\,m_A",
+            r"\|m_A\|_\ast^2=m_A^TM_A^{-1}m_A=1",
+        )
+        shear_reasoning = (
+            "The SMC construction uses the parent and product metrics plus the same "
+            "correspondence C. For a physically interpreted magnitude, the habit-plane "
+            "covector must use the reciprocal-metric unit normalization. The resulting "
+            "d_A is Cayron's A/M IPS displacement/shear vector and is kept distinct "
+            "from a Ball–James shape vector."
+        )
+        shear_physical_meaning = (
+            "Together, m_A and d_A define the CT single-variant invariant-plane "
+            "shear/displacement construction used downstream in the A/M/M test."
+        )
+        shear_limitation = (
+            "A d-vector generated from an approximate diagnostic plane is still "
+            "approximate and cannot seed exact supercompatibility."
+        )
+        shear_evidence = (
+            ("SMC matrix available", "yes" if metric.get("smc_dimensional") is not None else "no"),
+            ("Exact CT A/M rows with d_A", len(exact_shear_rows)),
+            ("Approximate CT A/M diagnostic rows", len(diagnostic_habit_rows)),
+        )
     elif exact_planes:
         shear_answer = (
             "An exact habit plane exists, but the current unified inventory has not "
             "exposed its native d_A row; no d-vector is fabricated."
         )
         shear_status = "not evaluated"
+        shear_formulae = (
+            r"m_M=C^{-T}m_A",
+            r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}",
+            r"d_A=SMC\,m_A",
+            r"\|m_A\|_\ast^2=m_A^TM_A^{-1}m_A=1",
+        )
+        shear_reasoning = (
+            "The exact habit geometry exists, but the already-computed unified inventory "
+            "does not expose the corresponding native d_A row. The presentation therefore "
+            "does not manufacture a shear vector."
+        )
+        shear_physical_meaning = (
+            "The exact interface geometry is known, while its native CT displacement/shear "
+            "row remains unavailable in the current inventory."
+        )
+        shear_limitation = (
+            "A missing native d_A row must not be replaced by an approximate or inferred "
+            "vector in an exact A/M/M compatibility test."
+        )
+        shear_evidence = (
+            ("SMC matrix available", "yes" if metric.get("smc_dimensional") is not None else "no"),
+            ("Exact CT A/M rows with d_A", len(exact_shear_rows)),
+        )
     else:
         shear_answer = (
             "Without an exact A/M habit-plane seed, an exact CT d_A vector is not claimed."
         )
         shear_status = "not reachable exactly"
+        shear_formulae = (
+            r"m_M=C^{-T}m_A",
+            r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}",
+            r"d_A=SMC\,m_A",
+            r"\|m_A\|_\ast^2=m_A^TM_A^{-1}m_A=1",
+        )
+        shear_reasoning = (
+            "The SMC construction is exact only after an exact A/M habit-plane seed exists. "
+            "Approximate nearest-degeneracy planes are not promoted to exact d_A branches."
+        )
+        shear_physical_meaning = (
+            "No exact nontrivial A/M IPS displacement/shear branch is established for the current state."
+        )
+        shear_limitation = (
+            "A d-vector generated from an approximate diagnostic plane is still approximate "
+            "and cannot seed exact supercompatibility."
+        )
+        shear_evidence = (
+            ("SMC matrix available", "yes" if metric.get("smc_dimensional") is not None else "no"),
+            ("Exact CT A/M rows with d_A", len(exact_shear_rows)),
+            ("Approximate CT A/M diagnostic rows", len(diagnostic_habit_rows)),
+        )
 
     steps.append(
         AssessmentStep(
             step_id="smc",
             question=(
-                "7. What A/M IPS displacement/shear vector follows from each "
-                "exact habit plane?"
+                "7. What A/M IPS displacement/shear vector follows from the exact "
+                "CMC compatibility state?"
             ),
             answer=shear_answer,
             status=shear_status,
-            formulae=(
-                r"m_M=C^{-T}m_A",
-                r"SMC=M_A^{-1}-C^{-1}M_M^{-1}C^{-T}",
-                r"d_A=SMC\,m_A",
-                r"\|m_A\|_\ast^2=m_A^TM_A^{-1}m_A=1",
-            ),
-            reasoning=(
-                "The SMC construction uses the parent and product metrics plus the same "
-                "correspondence C. For a physically interpreted magnitude, the habit-plane "
-                "covector must use the reciprocal-metric unit normalization. The resulting "
-                "d_A is Cayron's A/M IPS displacement/shear vector and is kept distinct "
-                "from a Ball–James shape vector."
-            ),
-            physical_meaning=(
-                "Together, m_A and d_A define the CT single-variant invariant-plane "
-                "shear/displacement construction used downstream in the A/M/M test."
-            ),
-            limitation=(
-                "A d-vector generated from an approximate diagnostic plane is still "
-                "approximate and cannot seed exact supercompatibility."
-            ),
-            evidence=(
-                (
-                    "SMC matrix available",
-                    "yes" if metric.get("smc_dimensional") is not None else "no",
-                ),
-                ("Exact CT A/M rows with d_A", len(exact_shear_rows)),
-                (
-                    "Approximate CT A/M diagnostic rows",
-                    len(diagnostic_habit_rows),
-                ),
-            ),
+            formulae=shear_formulae,
+            reasoning=shear_reasoning,
+            physical_meaning=shear_physical_meaning,
+            limitation=shear_limitation,
+            evidence=shear_evidence,
         )
     )
 
@@ -982,14 +1071,27 @@ def build_cayron_martensite_assessment(
         )
     elif topology_ok:
         overall_status = "partial CT martensitic construction"
-        overall_answer = (
-            "The correspondence produces a discrete CT variant/operator topology, but "
-            "the evaluated unified CT inventory contains no native M/M twin row."
-        )
-        overall_reasoning = (
-            "A correspondence topology and an M/M twin construction are different claims; "
-            "the latter is not inferred merely from the former."
-        )
+        if exact_am and degeneracy_order == 3:
+            overall_answer = (
+                "The state has a discrete CT correspondence topology and exact third-order "
+                "A/M metric compatibility. The unified CT inventory was evaluated and contains "
+                "no nontrivial M/M twin row in this identity-stretch limit."
+            )
+            overall_reasoning = (
+                "Third-order CMC degeneracy collapses the distinct metric stretch orbit to "
+                "U = I and gives SMC = 0. Zero native M/M rows in the evaluated inventory "
+                "must therefore be reported as an evaluated zero-branch result, not as an "
+                "unrun calculation or a failed prerequisite."
+            )
+        else:
+            overall_answer = (
+                "The correspondence produces a discrete CT variant/operator topology, but "
+                "the evaluated unified CT inventory contains no native M/M twin row."
+            )
+            overall_reasoning = (
+                "A correspondence topology and an M/M twin construction are different claims; "
+                "the latter is not inferred merely from the former."
+            )
     else:
         overall_status = "CT martensitic construction not established"
         overall_answer = (

@@ -14,6 +14,6 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.research_workspaces_v11 import render_research_extension
+from app.research_workspaces_v12 import render_research_extension
 
 render_research_extension()
