@@ -309,12 +309,63 @@ def correspondence_editor(
     ),
     key_prefix: str = "C",
 ) -> tuple[tuple[str, str, str], tuple[str, str, str], tuple[str, str, str]]:
+    """Collect a correspondence matrix without changing the backend contract.
+
+    The backend always receives the canonical app convention
+
+        u_M = C_(M<-A) u_A.
+
+    Cayron's paper writes the same numerical matrix as C^(M->A) while still
+    using u_M = C^(M->A) u_A.  The selector below therefore changes notation
+    only; it does NOT invert or transpose the matrix entries.
+    """
+
     st.markdown("### Lattice correspondence")
+
+    # Always show our actual solver contract first.
+    st.caption("Canonical solver convention")
     st.latex(r"C_{M\leftarrow A}:\;u_M=C_{M\leftarrow A}u_A")
+
+    notation = st.radio(
+        "Input notation",
+        options=("app", "cayron"),
+        index=0,
+        horizontal=True,
+        key=f"{key_prefix}_notation",
+        format_func=lambda value: (
+            "App notation  C_(M←A)"
+            if value == "app"
+            else "Cayron paper notation  C^(M→A)"
+        ),
+        help=(
+            "Both choices describe the same numerical correspondence matrix "
+            "u_M = C u_A. The backend contract never changes."
+        ),
+    )
+
+    if notation == "cayron":
+        st.caption("Cayron paper notation")
+        st.latex(
+            r"C_{\mathrm{Cayron}}^{M\to A}:\;"
+            r"u_M=C_{\mathrm{Cayron}}^{M\to A}u_A"
+        )
+        st.info(
+            "Cayron's C^(M→A) is the same numerical matrix that the app stores "
+            "as C_(M←A). The UI normalizes only the notation before calculation; "
+            "the matrix entries are NOT inverted or transposed. "
+            "Do not paste Cayron's inverse C^(A→M) in this mode."
+        )
+    else:
+        st.caption(
+            "Enter the canonical app matrix directly: parent/austenite "
+            "coordinates in, product/martensite coordinates out."
+        )
+
     st.caption(
         "Enter the correspondence explicitly. Integers, decimals and exact fractions "
         "such as 1/3 are accepted. Plane covectors use the inverse transpose."
     )
+
     rows: list[tuple[str, str, str]] = []
     for i in range(3):
         cols = st.columns(3)
@@ -330,6 +381,15 @@ def correspondence_editor(
                     )
                 )
         rows.append(tuple(row))  # type: ignore[arg-type]
+
+    if notation == "cayron":
+        st.caption(
+            "Canonical matrix sent to the solver: "
+            "C_(M←A) = C_Cayron^(M→A) — same numerical entries."
+        )
+
+    # CRITICAL: return exactly the same object shape and numerical entries as
+    # before.  This keeps every existing backend/solver path untouched.
     return tuple(rows)  # type: ignore[return-value]
 
 
