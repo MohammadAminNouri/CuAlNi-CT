@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-"""CT Equivalence Lab page entry point.
-
-Streamlit can execute a page module with ``app/pages`` as the script location.
-Ensure the repository root is importable before resolving the ``app`` package.
-This changes only page import bootstrapping; no scientific backend is touched.
-"""
+# CT Equivalence Lab page entry point.
+# Streamlit may execute a page module with app/pages as the script location,
+# so ensure the repository root is importable before resolving the app package.
+# This is import bootstrapping only; no scientific backend is changed.
 
 from pathlib import Path
 import sys
