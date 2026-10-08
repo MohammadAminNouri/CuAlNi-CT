@@ -41,16 +41,12 @@ def test_streamlit_ui_is_linear_and_user_triggered():
     assert "previous calculation is hidden" in text
 
 
-def test_tree_renders_book_style_twin_and_habit_quantities_without_tables_of_answers():
+def test_tree_renders_book_style_twin_and_habit_quantities_without_answers():
     text = (PRODUCTION / "tree_renderer.py").read_text(encoding="utf-8")
     for token in (
-        "physical twin plane `K₁`",
-        "physical shear line `η₁`",
-        "shear `s",
-        "Austenite–martensite habit-plane result",
-        "habit_plane_parent_crystal",
-        "shape_vector_parent_crystal",
-        "other_variant_volume_fraction",
+        "a · parent Cartesian", "n̂ · parent Cartesian", "K₁", "η₁",
+        "other_variant_volume_fraction", "shape_vector_parent_cartesian",
+        "habit_normal_parent_cartesian", "st.plotly_chart(",
     ):
         assert token in text
 

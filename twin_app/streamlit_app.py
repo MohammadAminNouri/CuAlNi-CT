@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Standalone Streamlit front end for the calculated twin-family tree."""
+"""Interactive, low-clutter Streamlit entry point for the twin family workbench."""
 
 import hashlib
 import json
@@ -19,7 +19,6 @@ import streamlit as st
 
 from app.application import CalculationRequest, TransformationInput
 from app.errors import ApplicationError
-
 from twin_app.input_ui import (
     render_correspondence_input,
     render_phase_input,
@@ -29,38 +28,32 @@ from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
 
 
-APP_TITLE = "Twin crystallography workbench"
+APP_TITLE = "Twin-family tree"
+
+# Example INPUTS only; none of Bhattacharya's twin/habit ANSWERS appear in
+# production code. The same calculation works for any valid custom input.
+NITI_PARENT = (3.015, 3.015, 3.015, 90., 90., 90.)
+NITI_PRODUCT = (2.889, 4.120, 4.622, 90., 96.8, 90.)
+NITI_CORRESPONDENCE = (
+    ("0", "0", "1"),
+    ("1/2", "1/2", "0"),
+    ("-1/2", "1/2", "0"),
+)
 
 
 def _style() -> None:
-    st.markdown(
-        """
-        <style>
-        html { scroll-behavior: auto !important; }
-        *, *::before, *::after {
-            animation-duration: 0s !important;
-            animation-delay: 0s !important;
-            transition-duration: 0s !important;
-        }
-        .block-container {
-            max-width: 900px;
-            padding-top: 1.7rem;
-            padding-bottom: 4rem;
-        }
-        h1, h2, h3, h4, h5 { line-height: 1.3; }
-        p, li { line-height: 1.6; }
-        code { font-size: 0.95em; }
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 0.55rem;
-        }
-        div[data-testid="stMetric"] {
-            padding: 0.15rem 0;
-        }
-        button { font-weight: 600 !important; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""<style>
+    html { scroll-behavior: auto !important; }
+    *, *::before, *::after {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition-duration: 0s !important;
+    }
+    .block-container { max-width: 1200px; padding-top: 1.2rem; padding-bottom: 3.5rem; }
+    p, li { line-height: 1.5; }
+    h1, h2, h3 { line-height: 1.25; }
+    button { font-weight: 600 !important; }
+    </style>""", unsafe_allow_html=True)
 
 
 def _fingerprint(value: Any) -> str:
@@ -76,132 +69,116 @@ def _basis_payload(basis_result: Any) -> object:
 
 
 def main() -> None:
-    st.set_page_config(
-        page_title=APP_TITLE,
-        page_icon=None,
-        layout="centered",
-        initial_sidebar_state="collapsed",
-    )
+    st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="collapsed")
     _style()
-
     st.title(APP_TITLE)
-    st.markdown(
-        "Enter one parent → product transformation. Editing the fields updates only the "
-        "input and point-group preview; it does **not** run the twin-family or habit-plane solver."
-    )
-    st.markdown(
-        "**How this page works**  \n"
-        "1. Define parent A and product M.  \n"
-        "2. Enter the correspondence and, only if needed, the weak-plane node basis.  \n"
-        "3. Press **Calculate twin family and habit planes** once.  \n"
-        "4. Read the result vertically: **Root → family → pair → twin branch → habit plane**."
-    )
+    st.caption("Choose inputs → Calculate → select any twin couple in the tree → see its book-style results below.")
 
-    st.markdown("## 1 · Transformation input")
-    length_unit = st.selectbox(
-        "Lattice-length unit",
-        ("angstrom", "nanometer", "picometer", "micrometer", "meter"),
-        index=0,
-        help="Unit metadata are explicit; values are not silently rescaled.",
+    state = st.radio(
+        "Starting crystallographic state",
+        ("NiTi book example · inputs only", "Custom transformation"),
+        horizontal=True,
+        help="NiTi loads published lattice/correspondence inputs, NOT twin/habit answers.",
+        key="tree_input_state",
     )
-
+    niti = state.startswith("NiTi")
+    prefix = "niti" if niti else "custom"
     try:
-        parent_ui = render_phase_input(
-            prefix="parent",
-            heading="Parent phase A",
-            role="parent",
-            length_unit=length_unit,
-            default_family="cubic",
-            default_point_group="m-3m",
-            defaults=(1.0, 1.0, 1.0, 90.0, 90.0, 90.0),
-        )
-        st.divider()
-        product_ui = render_phase_input(
-            prefix="product",
-            heading="Product phase M",
-            role="product",
-            length_unit=length_unit,
-            default_family="monoclinic",
-            default_point_group="2/m",
-            defaults=(1.0, 1.0, 1.0, 90.0, 90.0, 90.0),
-        )
-        st.divider()
-        correspondence_ui = render_correspondence_input()
-        weak_basis_ui = render_weak_basis_input()
+        with st.expander("Crystal inputs and point groups", expanded=not niti):
+            length_unit = st.selectbox(
+                "Lattice-length unit", ("angstrom", "nanometer", "picometer", "micrometer", "meter"),
+                key=f"{prefix}_length_unit",
+            )
+            parent_ui = render_phase_input(
+                prefix=f"{prefix}_parent",
+                heading="Parent A",
+                role="parent",
+                length_unit=length_unit,
+                default_family="cubic",
+                default_point_group="m-3m",
+                defaults=NITI_PARENT if niti else (1., 1., 1., 90., 90., 90.),
+            )
+            product_ui = render_phase_input(
+                prefix=f"{prefix}_product",
+                heading="Product M",
+                role="product",
+                length_unit=length_unit,
+                default_family="monoclinic",
+                default_point_group="2/m",
+                defaults=NITI_PRODUCT if niti else (1., 1., 1., 90., 90., 90.),
+            )
+            correspondence_ui = render_correspondence_input(
+                prefix=f"{prefix}_correspondence",
+                default_rows=NITI_CORRESPONDENCE if niti else (
+                    ("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1")
+                ),
+            )
+            weak_basis_ui = render_weak_basis_input()
 
         transformation = TransformationInput.from_rows(
-            "A_to_M",
-            parent_ui.phase.phase_id,
-            product_ui.phase.phase_id,
+            "A_to_M", parent_ui.phase.phase_id, product_ui.phase.phase_id,
             correspondence_ui.canonical_rows,
-            label="User-defined parent-to-product transformation",
+            label="User-defined lattice correspondence",
         )
         request = CalculationRequest(
             project_id="twin_family_workbench",
-            title="Twin family workbench state",
-            parent=parent_ui.phase,
-            product=product_ui.phase,
+            title="Twin-family tree input",
+            parent=parent_ui.phase, product=product_ui.phase,
             transformation=transformation,
-            notes="Standalone twin-family calculation; runtime outputs are input-derived.",
+            notes="Calculated from crystallographic input only.",
         )
         project_payload = request.to_project_payload()
-    except ApplicationError as exc:
-        st.info("Complete or correct the transformation input before calculation.")
-        with st.expander("Input detail", expanded=False):
-            st.code(str(exc), language="text")
-        return
-    except (ValueError, ArithmeticError, AssertionError) as exc:
-        st.info("Complete or correct the transformation input before calculation.")
-        with st.expander("Input detail", expanded=False):
-            st.code(f"{type(exc).__name__}: {exc}", language="text")
+    except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
+        st.error("Check the crystal inputs before calculating.")
+        with st.expander("Input error details", expanded=False):
+            st.code(f"{type(exc).__name__}: {exc}")
         return
 
-    state_signature = _fingerprint(
-        {
-            "project": project_payload,
-            "weak_basis": _basis_payload(weak_basis_ui),
-        }
+    st.caption(
+        f"Current groups: **{parent_ui.phase.point_group}** "
+        f"({parent_ui.inventory.expected_order} operations) → "
+        f"**{product_ui.phase.point_group}** "
+        f"({product_ui.inventory.expected_order} operations). "
+        "Open ‘Crystal inputs and point groups’ to inspect exact axes, planes and matrices."
     )
-    stored_signature = st.session_state.get("twin_family_result_signature")
-    stale = stored_signature is not None and stored_signature != state_signature
-    if stale:
-        st.info("Inputs changed. The previous calculation is hidden until you calculate this state.")
+    signature = _fingerprint({
+        "project": project_payload, "weak_basis": _basis_payload(weak_basis_ui),
+    })
+    previous = st.session_state.get("twin_family_result_signature")
+    if previous is not None and previous != signature:
+        st.info("Inputs changed: the previous calculation is hidden. Press Calculate again.")
 
     calculate = st.button(
         "Calculate twin family and habit planes",
-        type="secondary",
-        use_container_width=True,
+        type="primary", use_container_width=True,
     )
     if calculate:
         st.session_state.pop("twin_family_report", None)
         st.session_state.pop("twin_family_result_signature", None)
         try:
-            report = build_twin_family_report(
-                project_payload,
-                transformation.transformation_id,
-                product_node_basis=weak_basis_ui.basis,
-            )
+            with st.spinner("Calculating symmetry families, rank-one twins and exact habit planes…"):
+                report = build_twin_family_report(
+                    project_payload,
+                    transformation.transformation_id,
+                    product_node_basis=weak_basis_ui.basis,
+                )
         except ApplicationError as exc:
             st.error(str(exc))
-            detail = getattr(exc, "detail", None)
-            if detail:
-                with st.expander("Technical detail", expanded=False):
-                    st.code(str(detail), language="text")
         except (ValueError, ArithmeticError, AssertionError) as exc:
             st.error(str(exc))
-            with st.expander("Technical detail", expanded=False):
-                st.code(f"{type(exc).__name__}: {exc}", language="text")
-        except Exception as exc:  # defensive UI boundary; never hides the traceback permanently
-            st.error("The calculation did not complete. No partial scientific result is displayed.")
-            with st.expander("Technical detail", expanded=False):
-                st.code("".join(traceback.format_exception(exc)), language="text")
+        except Exception as exc:
+            st.error("No partial result was displayed because the calculation failed.")
+            with st.expander("Technical error", expanded=False):
+                st.code("".join(traceback.format_exception(exc)))
         else:
             st.session_state["twin_family_report"] = report
-            st.session_state["twin_family_result_signature"] = state_signature
+            st.session_state["twin_family_result_signature"] = signature
 
     report = st.session_state.get("twin_family_report")
-    if report is not None and st.session_state.get("twin_family_result_signature") == state_signature:
+    if report is not None and st.session_state.get("twin_family_result_signature") == signature:
         render_report(report)
+    else:
+        st.caption("The twin couples and A/M habit solutions will appear after calculation. No literature answers are inserted.")
 
 
 if __name__ == "__main__":

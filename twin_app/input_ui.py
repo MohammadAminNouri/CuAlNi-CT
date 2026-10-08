@@ -83,59 +83,96 @@ def _number(label: str, value: float, *, key: str, angle: bool = False) -> float
 
 
 def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool) -> None:
-    preferred_order = {
-        "identity": 0,
-        "inversion": 1,
-        "mirror reflection": 2,
-        "proper 2-fold rotation": 3,
-        "proper 3-fold rotation": 4,
-        "proper 4-fold rotation": 5,
-        "proper 6-fold rotation": 6,
-    }
-    ordered_counts = sorted(
-        inventory.counts,
-        key=lambda item: (preferred_order.get(item[0], 99), item[0]),
-    )
-    count_text = " · ".join(f"{count} {name}" for name, count in ordered_counts)
-    st.caption(
-        f"{inventory.symbol} · {inventory.crystal_family} crystal system · "
-        f"{inventory.conventional_setting} · {inventory.expected_order} exact operations"
-    )
-    st.caption(count_text)
-    role_text = (
-        "For the parent phase, mirror operations can generate Type-I descriptions and "
-        "proper 2-fold rotations can generate Type-II descriptions. Higher-order rotations "
-        "remain only candidates until the complete operator class is audited."
-        if parent
-        else
-        "Product-phase operations enter correspondence equivalence and variant counting. "
-        "They are not automatically relabelled as parent twin generators."
-    )
-    st.caption(role_text)
+    """Compact but *specific* composition of the actual selected finite group.
 
-    with st.expander("Show every exact operation in this point group", expanded=False):
-        st.markdown(
-            "Rotation axes are **direct** crystal directions `[uvw]`. Mirror-plane entries "
-            "are **reciprocal covectors** `(hkl)`. These are not the same kind of object."
-        )
-        for item in inventory.operations:
-            if item.kind == "mirror reflection" and item.axis_or_plane is not None:
-                element = f"mirror-plane covector (hkl): {item.axis_or_plane}"
-            elif "rotation" in item.kind and item.axis_or_plane is not None:
-                element = f"rotation axis [uvw]: {item.axis_or_plane}"
-            else:
-                element = "axis / mirror-plane covector: not applicable"
-            st.markdown(
-                f"**G{item.index} · {item.kind} · order {item.order} · det {item.determinant:+d}**  \n"
-                f"{element}  \n"
-                f"Role: {item.twin_role}"
-            )
-            st.code(
-                "\n".join("[ " + "  ".join(row) + " ]" for row in item.matrix),
-                language="text",
-            )
+    Counts and axes/planes come from exact metric-validated operations. A
+    geometric candidate is NEVER presented as a predicted physical twin.
+    """
+    counts = dict(inventory.counts)
+    short = {
+        "identity": "Identity",
+        "inversion": "Inversion",
+        "mirror reflection": "Mirror",
+        "proper 2-fold rotation": "180° rotation",
+        "proper 3-fold rotation": "120° rotation",
+        "proper 4-fold rotation": "90° rotation",
+        "proper 6-fold rotation": "60° rotation",
+    }
+    display = " · ".join(
+        f"{count} {short.get(name, name)}"
+        for name, count in inventory.counts
+        if count > 0
+    )
+    st.markdown(
+        f"**{inventory.symbol}** · {inventory.crystal_family.capitalize()} · "
+        f"**{inventory.expected_order} operations**"
+    )
+    st.caption(f"Conventional setting: {inventory.conventional_setting}")
+    st.caption(display)
+    st.caption(
+        "Parent symmetry generates candidate twin routes; product symmetry identifies equivalent "
+        "correspondences." if parent else
+        "Product symmetry identifies equivalent correspondences; it does not itself "
+        "assign Type I, Type II or Compound."
+    )
+
+    with st.expander("Point-group contents: operations, axes and planes", expanded=False):
         st.caption(
-            f"Maximum metric-preservation residual for this entered cell: "
+            "Every row is derived from the selected exact group. "
+            "A mirror is a plane, while a rotation is about an axis. "
+            "No single operation proves a physical twin."
+        )
+        rows = []
+        for kind, count in inventory.counts:
+            members = [op for op in inventory.operations if op.kind == kind]
+            items = []
+            for op in members:
+                if op.axis_or_plane is None:
+                    continue
+                notation = ("(" + ",".join(map(str, op.axis_or_plane)) + ")") if kind == "mirror reflection" else (
+                    "[" + ",".join(map(str, op.axis_or_plane)) + "]"
+                )
+                if notation not in items:
+                    items.append(notation)
+            rows.append({
+                "Symmetry element": short.get(kind, kind),
+                "Count": count,
+                "Axis [uvw] / plane (hkl)": ", ".join(items[:9]) + (
+                    f" · +{len(items)-9} more" if len(items)>9 else ""
+                ) if items else "—",
+            })
+        st.table(rows)
+        st.markdown(
+            "**What these elements mean**"
+            "\n- **Identity**: no change of coordinates."
+            "\n- **Inversion**: maps (x,y,z) to (−x,−y,−z)."
+            "\n- **Mirror**: reflection in a plane (hkl)."
+            "\n- **Proper n-fold rotation**: turns 360°/n about [uvw]."
+        )
+        st.caption(
+            "rotation axis [uvw] is a direct-space direction; "
+            "mirror-plane covector (hkl) is reciprocal-space. "
+            "These are not the same kind of object."
+        )
+        options = tuple(range(len(inventory.operations)))
+        operation_id = st.selectbox(
+            "Inspect one exact symmetry operation",
+            options,
+            format_func=lambda i: (
+                f"G{inventory.operations[i].index} · "
+                f"{inventory.operations[i].kind} · order {inventory.operations[i].order}"
+            ),
+            key=f"inspect_group_{'parent' if parent else 'product'}_{inventory.symbol}",
+        )
+        op = inventory.operations[operation_id]
+        if op.kind == "mirror reflection" and op.axis_or_plane is not None:
+            st.markdown(f"**mirror-plane covector (hkl)**: `{op.axis_or_plane}`")
+        elif "rotation" in op.kind and op.axis_or_plane is not None:
+            st.markdown(f"**rotation axis [uvw]**: `{op.axis_or_plane}`")
+        st.caption(op.twin_role)
+        st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
+        st.caption(
+            f"Metric-preservation residual (maximum over group): "
             f"{inventory.metric_preservation_maximum_residual:.3e}"
         )
 
@@ -250,6 +287,7 @@ def render_phase_input(
 
 def render_correspondence_input(
     *,
+    prefix: str = "correspondence",
     default_rows: Sequence[Sequence[str]] = (
         ("1", "0", "0"),
         ("0", "1", "0"),
@@ -281,7 +319,7 @@ def render_correspondence_input(
                     st.text_input(
                         f"C{i + 1}{j + 1}",
                         value=str(default_rows[i][j]),
-                        key=f"correspondence_{direction}_{i}_{j}",
+                        key=f"{prefix}_{direction}_{i}_{j}",
                         label_visibility="collapsed",
                     )
                 )
