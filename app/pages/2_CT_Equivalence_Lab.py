@@ -4,6 +4,11 @@ from __future__ import annotations
 # Streamlit may execute a page module with app/pages as the script location,
 # so ensure the repository root is importable before resolving the app package.
 # This is import bootstrapping only; no scientific backend is changed.
+#
+# Additive presentation lineage retained by the live V12 head:
+# research_workspaces_v10 -> research_workspaces_v11 -> research_workspaces_v12
+# The live import is intentionally only the current head; earlier layers are
+# reached transitively through their render_research_extension() delegation.
 
 from pathlib import Path
 import sys

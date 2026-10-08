@@ -1,0 +1,83 @@
+{
+  "benchmark_id": "otsuka_ren_2005_niti_typeii_habit_v1",
+  "schema_version": 1,
+  "kind": "published_niti_typeii_physical_habit_validation",
+  "source": {
+    "citation": "K. Otsuka and X. Ren, Physical metallurgy of Ti-Ni-based shape memory alloys, Progress in Materials Science 50 (2005) 511-678, Table 7.",
+    "doi": "10.1016/j.pmatsci.2004.10.001",
+    "fraction_citation": "Y.M. Jin and G.J. Weng, A direct method for the crystallography of martensitic transformation and its application to TiNi and AuCd, Acta Materialia 50 (2002) 2967-2987, Table 5.",
+    "fraction_doi": "10.1016/S1359-6454(02)00123-4",
+    "input_provenance": "The canonical B2/B19' lattice state and correspondence are identical to bhattacharya_niti_twin_habit_v1.",
+    "output_semantics": "The physical habit oracle stores a unit habit normal, a unit direction of shape strain, and a separate shape-strain magnitude. The physical rank-one vector b is reconstructed as magnitude times unit direction; a unit direction is never stored or compared as b."
+  },
+  "blind_protocol": "Only crystallographic input is supplied to twin_app. Published family, fraction and physical habit quantities are read after calculation.",
+  "input": {
+    "parent": {
+      "point_group": "m-3m",
+      "a": 3.015,
+      "b": 3.015,
+      "c": 3.015,
+      "alpha": 90.0,
+      "beta": 90.0,
+      "gamma": 90.0
+    },
+    "product": {
+      "point_group": "2/m",
+      "a": 2.889,
+      "b": 4.12,
+      "c": 4.622,
+      "alpha": 90.0,
+      "beta": 96.8,
+      "gamma": 90.0
+    },
+    "C_M_from_A": [
+      [
+        "0",
+        "0",
+        "1"
+      ],
+      [
+        "1/2",
+        "1/2",
+        "0"
+      ],
+      [
+        "-1/2",
+        "1/2",
+        "0"
+      ]
+    ]
+  },
+  "expected": {
+    "classification": "Type II",
+    "twin_shear": 0.2804,
+    "twin_shear_abs_tol": 0.0006,
+    "lambda": 0.27102,
+    "lambda_abs_tol": 0.003,
+    "habit_normal_parent_cartesian": [
+      -0.88888,
+      0.21523,
+      0.40443
+    ],
+    "shape_direction_parent_cartesian": [
+      0.43448,
+      0.75743,
+      0.48737
+    ],
+    "shape_magnitude": 0.13078,
+    "shape_magnitude_abs_tol": 0.002,
+    "outer_product_relative_tol": 0.04
+  },
+  "notes": [
+    "Direction and magnitude are deliberately separate fields.",
+    "The test forms b = shape_magnitude * normalize(shape_direction_parent_cartesian).",
+    "One common proper cubic symmetry operation is allowed when comparing b tensor m.",
+    "Published values are validation oracles only and are never runtime answers."
+  ],
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "d9eda9604583115ca7707b89391a0287549de1270005a605eb569171dddc1bd1",
+    "expected_sha256": "ebfd0b19384749d9bb7b1b298dabcf385dbd1aa1181c6126ed6de0ae42124864",
+    "mutation_policy": "immutable_v1; source/convention correction requires a new benchmark id/version"
+  }
+}
