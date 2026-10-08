@@ -1,0 +1,128 @@
+{
+  "benchmark_id": "bhattacharya_cualni_orthorhombic_habit_v1",
+  "schema_version": 1,
+  "kind": "published_non_niti_full_twin_to_habit_crosscheck",
+  "source": {
+    "citation": "K. Bhattacharya, Microstructure of Martensite: Why it Forms and How it Gives Rise to the Shape-Memory Effect, unpublished Caltech notes (1999), Secs. 4.1 and 7.1.2, Eqs. (7.22)-(7.23).",
+    "url_note": "Caltech ME260 notes; the worked CuAlNi example reports alpha=1.0619, beta=0.9178, gamma=1.0231 and the Type-I/Type-II habit solutions.",
+    "input_note": "The product cell below is reconstructed from the notes' rounded stretch ratios alpha=sqrt(2)a/a0, beta=b/a0, gamma=sqrt(2)c/a0. The exact rational CuAlNi cubic-to-orthorhombic correspondence is the same standard branch used by the repository's independent Chen-2000 blind state."
+  },
+  "blind_protocol": "Only the parent/product metrics, crystallographic point groups and exact correspondence are supplied to twin_app. The published lambda, b and m values are read only after the full family->pair->twin->habit calculation finishes.",
+  "input": {
+    "reported_stretch_ratios": {
+      "alpha": 1.0619,
+      "beta": 0.9178,
+      "gamma": 1.0231
+    },
+    "parent": {
+      "point_group": "m-3m",
+      "a": 5.836,
+      "b": 5.836,
+      "c": 5.836,
+      "alpha": 90.0,
+      "beta": 90.0,
+      "gamma": 90.0
+    },
+    "product": {
+      "point_group": "mmm",
+      "a": 4.382116368337481,
+      "b": 5.3562808,
+      "c": 4.222001371547299,
+      "alpha": 90.0,
+      "beta": 90.0,
+      "gamma": 90.0
+    },
+    "C_M_from_A": [
+      [
+        "0",
+        "1",
+        "1"
+      ],
+      [
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "0",
+        "1",
+        "-1"
+      ]
+    ]
+  },
+  "expected": {
+    "topology_variant_count": 6,
+    "operator_count": 3,
+    "habit_modes": [
+      {
+        "classification": "Type I",
+        "lambda": 0.2906,
+        "lambda_abs_tol": 0.001,
+        "branches": [
+          {
+            "b": [
+              0.06565,
+              0.06573,
+              0.02379
+            ],
+            "m": [
+              0.6355,
+              -0.7484,
+              0.1897
+            ]
+          },
+          {
+            "b": [
+              0.05763,
+              -0.07473,
+              0.017
+            ],
+            "m": [
+              0.7154,
+              0.6497,
+              0.2572
+            ]
+          }
+        ]
+      },
+      {
+        "classification": "Type II",
+        "lambda": 0.3011,
+        "lambda_abs_tol": 0.001,
+        "branches": [
+          {
+            "b": [
+              0.05599,
+              -0.07068,
+              0.02359
+            ],
+            "m": [
+              0.7306,
+              0.6679,
+              0.142
+            ]
+          },
+          {
+            "b": [
+              0.06531,
+              0.06538,
+              0.01211
+            ],
+            "m": [
+              0.635,
+              -0.7275,
+              0.2599
+            ]
+          }
+        ]
+      }
+    ],
+    "outer_product_relative_tol": 0.02
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "a27ba9c16024217b18919ec239eaa41684131db78377e7a003a30990bc4d98d9",
+    "expected_sha256": "ab2193bcd84de9cb967f9c9a6c70a9a0bb0cd9329f42466d4d952c989aeaf7a1",
+    "mutation_policy": "immutable_v1; source/convention correction requires a new benchmark version"
+  }
+}

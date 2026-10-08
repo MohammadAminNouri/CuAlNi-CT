@@ -1,0 +1,258 @@
+{
+  "benchmark_id": "bhattacharya_niti_twin_habit_v1",
+  "schema_version": 1,
+  "kind": "published_niti_twin_and_habit_validation",
+  "source": {
+    "citation": "K. Bhattacharya, Microstructure of Martensite: Why It Forms and How It Gives Rise to the Shape-Memory Effect, Oxford University Press, Tables 5.1 and 7.3.",
+    "scope": "Twin modes/elements and austenite-martensite interfaces for the cubic-to-monoclinic-I NiTi example shown in the cited tables."
+  },
+  "input": {
+    "parent": {
+      "point_group": "m-3m",
+      "a": 3.015,
+      "b": 3.015,
+      "c": 3.015,
+      "alpha": 90.0,
+      "beta": 90.0,
+      "gamma": 90.0
+    },
+    "product": {
+      "point_group": "2/m",
+      "a": 2.889,
+      "b": 4.12,
+      "c": 4.622,
+      "alpha": 90.0,
+      "beta": 96.8,
+      "gamma": 90.0
+    },
+    "C_M_from_A": [
+      [
+        "0",
+        "0",
+        "1"
+      ],
+      [
+        "1/2",
+        "1/2",
+        "0"
+      ],
+      [
+        "-1/2",
+        "1/2",
+        "0"
+      ]
+    ]
+  },
+  "expected": {
+    "twin_shear_families": [
+      {
+        "classification": "Compound",
+        "shear": 0.2385,
+        "abs_tol": 0.0006
+      },
+      {
+        "classification": "Type I",
+        "shear": 0.2804,
+        "abs_tol": 0.0006
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.2804,
+        "abs_tol": 0.0006
+      },
+      {
+        "classification": "Type I",
+        "shear": 0.3096,
+        "abs_tol": 0.0008
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.309637,
+        "abs_tol": 0.0008
+      },
+      {
+        "classification": "Type I",
+        "shear": 0.1423,
+        "abs_tol": 0.0006
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.1423,
+        "abs_tol": 0.0006
+      }
+    ],
+    "habit_fraction_targets": [
+      {
+        "classification": "Type I",
+        "shear": 0.2804,
+        "lambda": 0.29202,
+        "lambda_abs_tol": 0.003
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.2804,
+        "lambda": 0.27102,
+        "lambda_abs_tol": 0.003
+      },
+      {
+        "classification": "Type I",
+        "shear": 0.3096,
+        "lambda": 0.32006,
+        "lambda_abs_tol": 0.003
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.309637,
+        "lambda": 0.32326,
+        "lambda_abs_tol": 0.003
+      }
+    ],
+    "no_exact_interface_shears": [
+      {
+        "shear": 0.2385,
+        "abs_tol": 0.0006
+      },
+      {
+        "shear": 0.1423,
+        "abs_tol": 0.0006
+      }
+    ],
+    "habit_outer_products": [
+      {
+        "classification": "Type I",
+        "shear": 0.2804,
+        "lambda": 0.29202,
+        "branches": [
+          {
+            "b": [
+              0.12104,
+              -0.03967,
+              -0.02564
+            ],
+            "m": [
+              -0.34641,
+              -0.43329,
+              -0.83202
+            ]
+          },
+          {
+            "b": [
+              0.0527,
+              0.0535,
+              0.10603
+            ],
+            "m": [
+              -0.90871,
+              0.33331,
+              0.25129
+            ]
+          }
+        ]
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.2804,
+        "lambda": 0.27102,
+        "branches": [
+          {
+            "b": [
+              0.05682,
+              0.06374,
+              0.09906
+            ],
+            "m": [
+              -0.88888,
+              0.40443,
+              0.21524
+            ]
+          },
+          {
+            "b": [
+              0.91387,
+              -0.37102,
+              -0.1649
+            ],
+            "m": [
+              -0.37619,
+              -0.51359,
+              -0.77118
+            ]
+          }
+        ]
+      },
+      {
+        "classification": "Type I",
+        "shear": 0.3096,
+        "lambda": 0.32006,
+        "branches": [
+          {
+            "b": [
+              0.03503,
+              0.0934,
+              0.04333
+            ],
+            "m": [
+              -0.81382,
+              -0.00089,
+              0.58112
+            ]
+          },
+          {
+            "b": [
+              0.09013,
+              0.00518,
+              -0.060648
+            ],
+            "m": [
+              -0.27789,
+              -0.85894,
+              -0.43012
+            ]
+          }
+        ]
+      },
+      {
+        "classification": "Type II",
+        "shear": 0.309637,
+        "lambda": 0.32326,
+        "branches": [
+          {
+            "b": [
+              0.09992,
+              0.00097,
+              -0.04845
+            ],
+            "m": [
+              -0.20117,
+              -0.9099,
+              -0.36278
+            ]
+          },
+          {
+            "b": [
+              0.02782,
+              0.10077,
+              0.03747
+            ],
+            "m": [
+              -0.88874,
+              0.04177,
+              0.4565
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "notes": [
+    "Published values are test oracles only. They are not imported by the production twin_app package.",
+    "The source table states that vector comparisons are made up to cubic symmetry.",
+    "Rounded source values justify the declared tolerances."
+  ],
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "d9eda9604583115ca7707b89391a0287549de1270005a605eb569171dddc1bd1",
+    "expected_sha256": "1c39e7a9f906f026e849355404e12abf648f935d53b558272846d16f53c173d9",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}

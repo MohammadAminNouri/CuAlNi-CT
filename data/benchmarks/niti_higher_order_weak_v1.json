@@ -1,0 +1,80 @@
+{
+  "benchmark_id": "niti_higher_order_weak_v1",
+  "schema_version": 1,
+  "kind": "published_higher_order_weak_twin_validation",
+  "input": {
+    "parent": {
+      "point_group": "m-3m",
+      "a": 3.015
+    },
+    "product": {
+      "point_group": "2/m",
+      "a": 2.889,
+      "b": 4.12,
+      "c": 4.622,
+      "beta": 96.8
+    },
+    "C_M_from_A": [
+      [
+        "0",
+        "0",
+        "1"
+      ],
+      [
+        "1/2",
+        "1/2",
+        "0"
+      ],
+      [
+        "-1/2",
+        "1/2",
+        "0"
+      ]
+    ],
+    "product_node_basis": "primitive_conventional",
+    "max_plane_index": 4
+  },
+  "expected": {
+    "parent_rotation_order": 4,
+    "parent_axis": [
+      0,
+      1,
+      0
+    ],
+    "product_axis": [
+      0,
+      1,
+      1
+    ],
+    "plane1": [
+      1,
+      -3,
+      3
+    ],
+    "plane2": [
+      3,
+      1,
+      -1
+    ],
+    "generalized_twin_index": 2,
+    "generalized_shear": 0.2911,
+    "generalized_shear_abs_tol": 0.0005,
+    "generalized_strain": 0.2912,
+    "generalized_strain_abs_tol": 0.0005
+  },
+  "notes": [
+    "The production application does not read this file.",
+    "Expected values are revealed only after the input-driven weak-plane search is complete."
+  ],
+  "source": {
+    "citation": "C. Cayron, The Correspondence Theory and Its Application to NiTi Shape Memory Alloys, Crystals 12 (2022) 130.",
+    "doi": "10.3390/cryst12020130",
+    "scope": "Higher-order NiTi weak twin: [011]B19prime axis, (1 -3 3)||(3 1 -1) weak-plane pair, q_g=2, generalized shear/strain values."
+  },
+  "lock": {
+    "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
+    "input_sha256": "086fedc141173fcfee9a31279cbba94fad3c67c704c73da21ace4cb670a0bddb",
+    "expected_sha256": "84a6e573255d4a1a92591abef5241fd0ee1652394676c320b737d183c32d1a7d",
+    "mutation_policy": "immutable_v1; source correction requires a new benchmark id/version"
+  }
+}
