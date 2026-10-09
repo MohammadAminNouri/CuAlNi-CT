@@ -32,6 +32,8 @@ from cualni_cryst.weak_operator_engine import (
 )
 from cualni_cryst.weak_twins import BravaisNodeBasis
 
+from .scientific_certifier import certify_ptmc_twinning
+
 from .scientific_models import (
     ClassicalTwinSystem,
     CorrespondenceVariantRecord,
@@ -400,6 +402,43 @@ def _system_has_type_ii_generator_match(
     return False
 
 
+def _system_has_type_i_mirror_provenance_match(
+    system: ClassicalTwinSystem,
+    bj_branch: MartensiteTwinBranch,
+    parent_group: Sequence[sp.Matrix],
+) -> bool:
+    """Independent centrosymmetric Type-I provenance (Mallard I ↔ mirror -Q).
+
+    A proper parent twofold Q has eigenvalues (+1,-1,-1); its negative -Q
+    is the reflection in the plane normal to Q's axis. Only if this exact
+    reflection is present in the CT Type-I representations of the *same*
+    operator family may it serve as independent Type-I provenance. This
+    avoids comparing physical K1 in the base variant's product frame with
+    a different symmetry-equivalent product variant's coordinate frame.
+
+    This is unavailable for noncentrosymmetric parent phases where -Q is not
+    necessarily a crystallographic symmetry; the original direct geometry
+    cross-lock is retained for those cases.
+    """
+    mirror_keys: set[tuple[Any, ...]] = set()
+    for match in bj_branch.mallard_matches:
+        if str(match.kind).strip().upper() != "I":
+            continue
+        index = int(match.parent_symmetry_index)
+        if index < 0 or index >= len(parent_group):
+            continue
+        Q = sp.Matrix(parent_group[index])
+        if Q.det() != 1 or sp.trace(Q) != -1 or Q * Q != sp.eye(3):
+            continue
+        mirror_keys.add(matrix_key(-Q))
+    if not mirror_keys:
+        return False
+    return any(
+        rep.route == "I" and matrix_key(sp.Matrix(rep.generator_parent_symmetry)) in mirror_keys
+        for rep in system.representations
+    )
+
+
 def _pair_classification(
     bj_branch: MartensiteTwinBranch | None,
     classical_systems: Sequence[ClassicalTwinSystem],
@@ -474,10 +513,23 @@ def _pair_classification(
                 pair_direction_product,
                 product_metric,
             )
-            if geometry is not None and max(geometry) <= geometry_tolerance_deg:
-                type_i_candidates.append(
-                    (system, float(shear_residual), float(geometry[0]), float(geometry[1]))
+            geometric_lock = geometry is not None and max(geometry) <= geometry_tolerance_deg
+            # Exact -Q mirror provenance is a second scientifically valid
+            # route when the product reference frames differ by parent symmetry.
+            # It still requires a matching BJ Mallard Type-I branch AND shear.
+            mirror_lock = (
+                bj_branch is not None
+                and _system_has_type_i_mirror_provenance_match(
+                    system, bj_branch, parent_group
                 )
+            )
+            if geometric_lock or mirror_lock:
+                type_i_candidates.append((
+                    system,
+                    float(shear_residual),
+                    float(geometry[0]) if geometric_lock else None,
+                    float(geometry[1]) if geometric_lock else None,
+                ))
 
         if (
             bj_branch is not None
@@ -486,7 +538,12 @@ def _pair_classification(
         ):
             type_ii_candidates.append((system, float(shear_residual)))
 
-    type_i_candidates.sort(key=lambda item: (item[1], item[2], item[3], item[0].system_id))
+    type_i_candidates.sort(key=lambda item: (
+        item[1],
+        item[2] if item[2] is not None else float("inf"),
+        item[3] if item[3] is not None else float("inf"),
+        item[0].system_id,
+    ))
     type_ii_candidates.sort(key=lambda item: (item[1], item[0].system_id))
 
     if proposed == "Type I" and type_i_candidates:
@@ -494,7 +551,7 @@ def _pair_classification(
         return (
             "Type I",
             ("I",),
-            "cross-locked: independent rank-one and discrete symmetry routes agree by K1/eta1 geometry + shear",
+            "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
             tuple(item[0].system_id for item in type_i_candidates),
             best[2],
             best[3],
@@ -525,7 +582,7 @@ def _pair_classification(
         return (
             "Compound",
             ("I", "II"),
-            "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear and independent Type-II exact parent twofold provenance + shear",
+            "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
             matched_ids,
             best_i[2],
             best_i[3],
@@ -554,7 +611,7 @@ def _pair_classification(
     elif proposed == "Compound":
         missing = []
         if not type_i_candidates:
-            missing.append("Type-I K1/eta1 geometry")
+            missing.append("Type-I K1/eta1 geometry or exact (-Q) mirror provenance")
         if not type_ii_candidates:
             missing.append("Type-II exact twofold provenance")
         reason = "independent route proposed Compound, but " + " and ".join(missing) + " did not cross-lock"
@@ -833,6 +890,10 @@ def build_twin_family_report(
         dilatational_factor=1.0
     )
     bj = BallJamesAdapter(project, transformation_id).analyze()
+
+    # Independent, source-free numerical certification before pairing/output.
+    # Any violated tensor identity aborts; no invalid result reaches the tree.
+    certify_ptmc_twinning(ptmc)
 
     mapping_tolerance = max(
         100.0 * float(policy.algebraic),

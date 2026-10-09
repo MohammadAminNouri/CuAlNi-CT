@@ -190,6 +190,7 @@ def main() -> None:
         else:
             st.session_state.pop("twin_tree_family_view", None)
             st.session_state.pop("twin_selected_couple", None)
+            st.session_state.pop("tf_selected_couple_v6", None)
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
 

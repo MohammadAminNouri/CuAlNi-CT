@@ -97,7 +97,11 @@ def _selected_details(node: CoupleNode) -> None:
     if twin.continuum_fraction:
         st.markdown('<div class="tf-alert-teal"><strong>Continuous exact compatibility</strong> · no single discrete habit-plane branch.</div>', unsafe_allow_html=True)
     elif not twin.habit_solutions:
-        st.info("No exact austenite–martensite interface exists for this twin solution. This is a calculated result, not missing data.")
+        st.info(
+            "No exact austenite–martensite interface for this selected twin branch. "
+            "Other twin couples can still have exact solutions; use the compatibility "
+            "shortcut above the tree to find one."
+        )
     else:
         st.markdown('<div class="tf-alert-teal"><strong>Exact compatible interface found</strong> · the values below come from this twin solution.</div>', unsafe_allow_html=True)
         shown, extra = representative_habit_solutions(twin.habit_solutions)
@@ -144,8 +148,27 @@ def render_report(report: TwinFamilyReport) -> None:
 
     lookup = {node.key: node for node in layout.couples}
     choice_key, chart_key = "tf_selected_couple_v6", "tf_all_families_chart_v6"
+    compatible = tuple(node for node in layout.couples if _habit_count(node))
+    exact_count = sum(_habit_count(node) for node in compatible)
     if st.session_state.get(choice_key) not in lookup:
-        st.session_state[choice_key] = next((n.key for n in layout.couples if _habit_count(n)), layout.couples[0].key)
+        st.session_state[choice_key] = compatible[0].key if compatible else layout.couples[0].key
+
+    if compatible:
+        st.markdown(
+            f"**{len(compatible)} couples with exact habit planes · "
+            f"{exact_count} calculated habit branches**"
+        )
+        st.caption(
+            "Not every martensite twin is compatible with austenite. "
+            "You can inspect every family, or jump directly to one with a habit solution."
+        )
+        if st.button("Show a couple with an exact habit plane", key="tf_find_exact_habit"):
+            st.session_state[choice_key] = compatible[0].key
+    else:
+        st.info(
+            "No exact undilated A/M habit plane was found anywhere in this "
+            "calculation. This can be a valid result for the entered crystal data."
+        )
 
     def _select_from_chart() -> None:
         state = st.session_state.get(chart_key)
