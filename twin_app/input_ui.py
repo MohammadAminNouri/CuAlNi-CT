@@ -16,6 +16,7 @@ from cualni_cryst.weak_twins import BravaisNodeBasis
 from .input_logic import canonical_correspondence_rows, displayed_relation, exact_matrix
 from .symmetry_inventory import SymmetryInventory, build_symmetry_inventory
 from .point_group_explainer import explain_group, simple_group_label
+from .input_explainer import preview_correspondence, validate_metric_parameters
 
 
 FAMILY_ORDER = (
@@ -166,7 +167,7 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
         with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
             st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
             st.caption(f"Full symmetry group metric-preservation residual: {inventory.metric_preservation_maximum_residual:.2e}")
-            st.caption("[uvw] is a direct-space rotation axis; (hkl) is a reciprocal plane covector. The two coordinate objects cannot be substituted for each other.")
+            st.caption("rotation axis [uvw] is a direct-space direction; mirror plane (hkl) is a reciprocal-space covector. They are not interchangeable.")
 
 
 def render_phase_input(
@@ -278,6 +279,8 @@ def render_phase_input(
     )
     lattice = Lattice(a, b, c, alpha, beta, gamma, label=label, length_unit=length_unit)
     inventory = build_symmetry_inventory(point_group, lattice.metric())
+    volume, condition = validate_metric_parameters((a, b, c), (alpha, beta, gamma))
+    st.caption(f"Valid positive-definite cell metric · volume {volume:.5g} {length_unit}³ · normalized metric condition {condition:.3g}")
     with selected_group_explanation:
         _render_operation_summary(inventory, parent=(role == "parent"), cell=(a,b,c,alpha,beta,gamma))
     return PhaseUIResult(phase=phase, inventory=inventory)
@@ -326,6 +329,12 @@ def render_correspondence_input(
         rows.append(row)
 
     canonical = canonical_correspondence_rows(rows, direction=direction)
+    preview = preview_correspondence(rows, direction=direction)
+    st.markdown("**How this matrix maps the parent basis**")
+    for parent_axis, product_coords in preview.basis_mappings:
+        st.markdown(f"**{parent_axis}** → **{product_coords}**")
+    st.caption("Every column is one parent basis direction expressed in product coordinates. This is a lattice correspondence, not a rigid rotation or an orientation relationship.")
+    st.caption(f"Exact correspondence determinant: {preview.determinant} (nonzero = invertible).")
     with st.expander("Show the exact canonical A → M matrix sent to the solver", expanded=False):
         st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
         if direction == "M_TO_A":

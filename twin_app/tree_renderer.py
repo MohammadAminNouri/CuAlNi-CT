@@ -16,6 +16,7 @@ from .navigator_component import render_navigator
 from .navigator_model import build_navigator_model, first_interpretable_couple
 from .scientific_models import PairTwinConstruction, TwinFamilyReport
 from .ux_language import twin_name, representative_habit_solutions
+from .branch_presentation import distinct_twin_branches
 
 
 def _fmt(value: float, precision: int = 6) -> str:
@@ -50,34 +51,45 @@ def _named_value(label: str, symbol: str, meaning: str, value: str) -> None:
     )
 
 
-def _habit_branches(construction: PairTwinConstruction) -> None:
+def _habit_branches(construction: PairTwinConstruction, *, all_solutions: tuple | None = None) -> None:
     st.markdown("#### Austenite–martensite compatibility")
     if construction.continuum_fraction:
-        st.markdown('<div class="tf-banner tf-banner-exact"><strong>Continuous compatible family</strong> · There is no unique discrete habit plane.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tf-banner tf-banner-exact"><strong>Continuous compatible family</strong> · No unique discrete habit plane.</div>', unsafe_allow_html=True)
         return
-    if not construction.habit_solutions:
+    candidates = construction.habit_solutions if all_solutions is None else all_solutions
+    if not candidates:
         st.markdown(
             '<div class="tf-banner tf-banner-neutral"><strong>No exact A/M habit plane for this twin branch.</strong> '
-            'This is a valid calculated outcome for the entered crystal parameters. Other couples may have solutions.</div>',
+            'This is a calculated outcome for the entered metrics, not missing data. Other twin couples may have compatible interfaces.</div>',
             unsafe_allow_html=True,
         )
         return
-    st.markdown('<div class="tf-banner tf-banner-exact"><strong>Compatible interface calculated</strong> · Each alternative below is a separate exact solution.</div>', unsafe_allow_html=True)
-    shown, extras = representative_habit_solutions(construction.habit_solutions)
-    st.caption("λ is the volume fraction of the other martensite variant. The normal m and shape vector b are expressed in the parent Cartesian frame.")
-    for i, solution in enumerate(shown, 1):
-        branch = "+" if solution.habit_branch > 0 else "−" if solution.habit_branch < 0 else "0"
-        with st.container(border=True):
-            st.markdown(f"**Habit alternative {i} · {branch}**")
-            _named_value("Second-variant fraction", "λ", "A fraction from 0 to 1", _fmt(solution.other_variant_volume_fraction))
-            _named_value("Shape-strain vector", f"b{branch}", "Magnitude and direction; parent Cartesian", _vec(solution.shape_vector_parent_cartesian))
-            _named_value("Habit-plane normal", f"m{branch}", "Unit normal; parent Cartesian, not Miller indices", _vec(solution.habit_normal_parent_cartesian, plane=True))
-    if extras:
-        with st.expander(f"Other valid solutions ({len(extras)})", expanded=False):
-            st.caption("Complementary fractions and branch conventions are preserved without inventing or averaging any value.")
-            for i, s in enumerate(extras, 1):
-                st.markdown(f"**Additional solution {i}** · λ = `{_fmt(s.other_variant_volume_fraction)}` · branch {s.habit_branch:+d}")
-                st.code(f"b = {_vec(s.shape_vector_parent_cartesian)}\nm = {_vec(s.habit_normal_parent_cartesian, plane=True)}", language="text")
+    st.markdown('<div class="tf-banner tf-banner-exact"><strong>Compatible A/M interface found</strong> · Habit alternatives are separate from M/M interface A/B.</div>', unsafe_allow_html=True)
+    shown, extras = representative_habit_solutions(candidates)
+    alternatives = tuple(shown) + tuple(extras)
+    st.caption("Choose ONE habit orientation below. λ is the other martensite variant's fraction; b includes magnitude and direction; m is a Cartesian unit normal, NOT Miller indices.")
+    if not alternatives:
+        return
+    habit_key = f"tf_v9_habit_{construction.construction_id}"
+    options = tuple(range(len(alternatives)))
+    if st.session_state.get(habit_key) not in options:
+        st.session_state[habit_key] = 0
+    if len(options) > 1:
+        st.radio(
+            "Habit interface orientation",
+            options, key=habit_key, horizontal=True,
+            format_func=lambda i: f"Habit {i+1} · {'+' if alternatives[i].habit_branch > 0 else '−' if alternatives[i].habit_branch < 0 else '0'}",
+            help="These are A/M habit solutions of the selected M/M interface, not alternative twinning classifications.",
+        )
+    sol = alternatives[st.session_state[habit_key]]
+    branch = '+' if sol.habit_branch > 0 else '−' if sol.habit_branch < 0 else '0'
+    _named_value("Second-variant fraction", "λ", "0 is none of the other variant; 1 is entirely the other variant", _fmt(sol.other_variant_volume_fraction))
+    _named_value("Habit-plane normal", f"m{branch}", "Unit normal; parent Cartesian, not Miller indices", _vec(sol.habit_normal_parent_cartesian, plane=True))
+    _named_value("Shape-strain vector", f"b{branch}", "Physical shape strain with magnitude and direction; parent Cartesian", _vec(sol.shape_vector_parent_cartesian))
+    with st.expander("View other calculated habit solutions", expanded=False):
+        st.caption("Every admissible calculated solution is preserved. Complementary fractions are not automatically discarded.")
+        for i, extra in enumerate(alternatives):
+            st.write(f"Habit {i+1} · λ = {_fmt(extra.other_variant_volume_fraction, 8)} · sign {extra.habit_branch:+d}")
 
 
 def _selected_details(node: CoupleNode) -> None:
@@ -100,23 +112,35 @@ def _selected_details(node: CoupleNode) -> None:
     if not pair.constructions:
         st.info("No exact martensite–martensite rank-one twin relation for this couple and these inputs.")
         return
-    indices = list(range(len(pair.constructions)))
-    chosen_key = f"tf_v8_branch_{node.key}"
-    if st.session_state.get(chosen_key) not in indices:
-        st.session_state[chosen_key] = next((i for i, branch in enumerate(pair.constructions) if branch.habit_solutions), 0)
-    if len(indices) > 1:
-        st.radio(
-            "Twin solution",
-            indices,
-            key=chosen_key,
-            horizontal=True,
-            format_func=lambda i: f"Solution {i + 1} · {twin_name(pair.constructions[i].classification).split(' · ')[0]}",
-            help="Some couples have two exact rank-one branches. Choose which physical twin to inspect. This does not change the calculation.",
+    # Display physically DISTINCT rank-one tensors, not anonymous ± solver signs.
+    interfaces = distinct_twin_branches(pair.constructions)
+    choice_key = f"tf_v9_interface_{node.key}"
+    options = tuple(item.label for item in interfaces)
+    if st.session_state.get(choice_key) not in options:
+        st.session_state[choice_key] = next(
+            (item.label for item in interfaces if item.representative.habit_solutions),
+            options[0],
         )
-    else:
-        st.session_state[chosen_key] = 0
-    branch = pair.constructions[st.session_state[chosen_key]]
+    st.markdown("**Martensite–martensite interface geometry**")
+    st.caption("Each interface is a distinct solution of R·Uⱼ − Uᵢ = a⊗n. Interface A/B is not the same as Type I/Type II, and is not the +/− habit-plane designation.")
+    if len(interfaces) > 1:
+        st.radio(
+            "Choose an interface geometry",
+            options, key=choice_key, horizontal=True,
+            format_func=lambda label: (
+                label + " · " + twin_name(next(x for x in interfaces if x.label == label).representative.classification).split(" · ")[0]
+            ),
+            help="These are distinct rank-one interface geometries for this one martensite couple. Selecting one does not recalculate anything.",
+        )
+    selected_interface = next(item for item in interfaces if item.label == st.session_state[choice_key])
+    branch = selected_interface.representative
+    if len(selected_interface.equivalent_source_indices) > 1:
+        st.caption(f"{len(selected_interface.equivalent_source_indices)} algebraic records describe this same physical rank-one tensor; all distinct habit solutions and the original records are preserved.")
+    if len(selected_interface.classifications) > 1:
+        st.warning("Conflicting classification evidence exists for this physical interface. Review all recorded routes before identifying its twin type.")
     kind, label = _status(branch)
+    if len(selected_interface.classifications) > 1:
+        kind, label = "amber", "Twin geometry calculated · conflicting type evidence; not verified"
     st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong> · {escape("Mathematical rank-one twin geometry calculated")}</div>', unsafe_allow_html=True)
     st.markdown("#### Martensite–martensite twinning elements")
     columns = st.columns(3)
@@ -126,7 +150,7 @@ def _selected_details(node: CoupleNode) -> None:
         _named_value("Twin plane", "K₁", "Product reciprocal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
     with columns[2]:
         _named_value("Shear direction", "η₁", "Product direct [uvw]", _vec(branch.shear_direction_product_crystal))
-    _habit_branches(branch)
+    _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
     with st.expander("Scientific verification and full coordinates", expanded=False):
         st.markdown("**Exact twin equation**")
         st.latex(r"R_t U_j-U_i=a\otimes n")

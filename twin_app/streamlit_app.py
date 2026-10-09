@@ -27,6 +27,8 @@ from twin_app.input_ui import (
 from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
 from twin_app.report_export import make_export
+from twin_app.structure_validation import parse_cif, independent_spglib_check
+from twin_app.input_explainer import convert_cell_lengths
 
 
 APP_TITLE = "Martensitic Crystallography · Research Workbench"
@@ -128,6 +130,7 @@ def _load_niti_example() -> None:
         for j, value in enumerate(row):
             st.session_state[f"correspondence_A_TO_M_{i}_{j}"] = value
     st.session_state["twin_length_unit"] = "angstrom"
+    st.session_state["tf_v9_last_unit"] = "angstrom"
     for key in (
         "twin_family_report", "twin_family_result_signature",
         "twin_tree_family_view", "twin_selected_couple",
@@ -152,8 +155,47 @@ def main() -> None:
 
     existing = st.session_state.get("twin_family_report")
     st.subheader("Crystallographic inputs")
-    st.caption("The editable NiTi demonstration contains crystal parameters only. All twin and habit results are computed from the entered parameters.")
-    with st.expander("View or change parent, product and correspondence", expanded=existing is None):
+    st.caption("Enter or import the two crystal structures and verify their lattice correspondence. No published outputs are used as answers.")
+    with st.expander("Crystal parameters and correspondence", expanded=existing is None):
+        source = st.radio(
+            "Input method",
+            ("Published example", "Import CIF structures", "Manual lattice data"),
+            horizontal=True, key="tf_v9_input_method",
+            help="All three methods feed exactly the same scientific solver. A CIF never provides the transformation correspondence automatically.",
+        )
+        imported_spglib = {}
+        if source == "Import CIF structures":
+            st.caption("Import structures to check actual atomic symmetry and optionally fill cell lengths/angles. The correspondence remains your separate input.")
+            left, right = st.columns(2)
+            imported = {}
+            for name, col in (("parent", left), ("product", right)):
+                with col:
+                    uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}")
+                    if uploaded is not None:
+                        try:
+                            parsed = parse_cif(uploaded.getvalue(), filename=uploaded.name)
+                            imported[name] = parsed
+                            st.success(f"{parsed.site_count} atomic sites; cell dimensions verified")
+                            try:
+                                evidence = independent_spglib_check(parsed)
+                            except (RuntimeError, ValueError) as exc:
+                                st.caption(f"Independent symmetry check unavailable: {exc}")
+                            else:
+                                imported_spglib[name] = evidence
+                                st.caption(f"spglib found space group {evidence['international']} ({evidence['number']}), point group {evidence['pointgroup']} at tolerance {evidence['symprec']:.0e}. Verify the conventional setting before selecting it below.")
+                        except ValueError as exc:
+                            st.error(f"Could not read {name} CIF: {exc}")
+            if imported and st.button("Use imported cell parameters", key="tf_v9_use_cif_cells"):
+                display_unit = st.session_state.get("twin_length_unit", "angstrom")
+                for name, parsed in imported.items():
+                    converted_lengths = convert_cell_lengths(parsed.lengths, from_unit="angstrom", to_unit=display_unit)
+                    for label, value in zip(("a", "b", "c", "alpha", "beta", "gamma"), converted_lengths + parsed.angles):
+                        st.session_state[f"{name}_{label}"] = value
+                st.rerun()
+        elif source == "Published example":
+            st.caption("NiTi B2→B19′ is preloaded as an editable input example. You can replace every value. Literature twin results are not loaded.")
+        else:
+            st.caption("Enter both crystal metrics and an exact invertible correspondence; select point groups in their conventional settings.")
         st.button("Restore published NiTi crystal inputs", on_click=_load_niti_example, help="Restores the input lattice and correspondence only. It does not load calculated or published twin results.")
 
         try:
@@ -162,6 +204,19 @@ def main() -> None:
                 ("angstrom", "nanometer", "picometer", "micrometer", "meter"),
                 key="twin_length_unit",
             )
+            previous_unit = st.session_state.get("tf_v9_last_unit", length_unit)
+            if previous_unit != length_unit:
+                for role in ("parent", "product"):
+                    labels = ("a", "b", "c")
+                    keys = tuple(f"{role}_{label}" for label in labels)
+                    if all(key in st.session_state for key in keys):
+                        new_lengths = convert_cell_lengths(
+                            tuple(st.session_state[key] for key in keys),
+                            from_unit=previous_unit, to_unit=length_unit,
+                        )
+                        for key, value in zip(keys, new_lengths):
+                            st.session_state[key] = value
+            st.session_state["tf_v9_last_unit"] = length_unit
             parent_ui = render_phase_input(
                 prefix="parent", heading="Parent crystal A", role="parent", length_unit=length_unit,
                 default_family="cubic", default_point_group="m-3m", defaults=NITI_PARENT,
@@ -172,6 +227,21 @@ def main() -> None:
                 default_family="monoclinic", default_point_group="2/m", defaults=NITI_PRODUCT,
             )
             st.divider()
+            # Independent structure symmetry is advisory, never an override of
+            # explicitly entered point-group and correspondence conventions.
+            for role, selected_phase in (("parent", parent_ui.phase), ("product", product_ui.phase)):
+                evidence = imported_spglib.get(role)
+                if evidence and evidence["pointgroup"].replace(" ", "") != selected_phase.point_group.replace(" ", ""):
+                    st.warning(
+                        f"{role.capitalize()} point-group mismatch: CIF atoms suggest "
+                        f"{evidence['pointgroup']}, but the calculation is set to "
+                        f"{selected_phase.point_group}. Resolve the conventional setting before trusting the result."
+                    )
+                elif evidence:
+                    st.caption(
+                        f"{role.capitalize()} declared class agrees with the independent CIF-derived class. "
+                        "Confirm the crystal-axis setting separately."
+                    )
             correspondence_ui = render_correspondence_input(
                 prefix="correspondence", default_rows=NITI_CORRESPONDENCE,
             )
