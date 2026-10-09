@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """General, predictable entry point; no NiTi-vs-custom operating modes."""
 
+from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
@@ -19,14 +20,16 @@ import streamlit as st
 
 from app.application import CalculationRequest, TransformationInput
 from app.errors import ApplicationError
+from cualni_cryst.numerics import DEFAULT_NUMERICAL_POLICY
 from twin_app.input_ui import (
     render_correspondence_input, render_phase_input, render_weak_basis_input,
 )
 from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
+from twin_app.report_export import make_export
 
 
-APP_TITLE = "Martensitic Crystallography"
+APP_TITLE = "Martensitic Crystallography · Research Workbench"
 
 # Starting example INPUT only. The same inputs are fully editable; the solver
 # never reads expected outputs from Bhattacharya's tables.
@@ -39,7 +42,10 @@ NITI_CORRESPONDENCE = (
 )
 
 
-def _style() -> None:
+def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
+    base_background = {"dark": "#101922", "light": "#fff", "contrast": "#050505"}[appearance]
+    text_color = {"dark": "#f2f5f8", "light": "#1b3240", "contrast": "#fff"}[appearance]
+    fontsize = "1.12rem" if font_scale == "large" else "1rem"
     st.markdown("""<style>
     :root { --tf-blue:#5C85AD; --tf-teal:#458C81; --tf-amber:#B68C4F;
             --tf-grey:#788491; }
@@ -48,7 +54,7 @@ def _style() -> None:
       animation-duration: 0s !important; animation-delay: 0s !important;
       transition-duration: 0s !important;
     }
-    .block-container { max-width: 1120px; padding-top: 1.7rem; padding-bottom: 3rem; }
+    .block-container { max-width: 1320px; padding-top: 1.25rem; padding-bottom: 3rem; }
     p, li { line-height: 1.65; font-size: 1.06rem; }
     label { font-size: 1.04rem !important; }
     [data-testid="stCaptionContainer"] p { font-size: 0.97rem; line-height:1.55; }
@@ -58,7 +64,7 @@ def _style() -> None:
     .tf-alert-blue { border-color: var(--tf-blue); background: rgba(92,133,173,.11); }
     .tf-alert-teal { border-color: var(--tf-teal); background: rgba(69,140,129,.11); }
     .tf-alert-amber { border-color: var(--tf-amber); background: rgba(182,140,79,.11); }
-    h1 { font-size: 1.9rem !important; line-height:1.25; }
+    h1 { font-size: 2.1rem !important; line-height:1.25; font-weight:750 !important; }
     h2 { font-size: 1.35rem !important; line-height:1.3; }
     h3,h4 { line-height:1.3; }
     button { font-weight: 600 !important; }
@@ -79,7 +85,20 @@ def _style() -> None:
     @media (prefers-reduced-motion: reduce) {
        *, *::before, *::after { animation:none !important; transition:none !important; }
     }
-    </style>""", unsafe_allow_html=True)
+    .tf-pane-heading { color:#8fb4d3; font-size:.81rem; font-weight:800; letter-spacing:.075em; margin-top:1rem; }
+    .tf-quantity { border:1px solid rgba(124,146,163,.38); border-radius:11px; padding:15px 15px 14px; margin:8px 0 13px; background:rgba(115,136,152,.045); min-height:124px; }
+    .tf-quantity-label {font-weight:700; font-size:1rem; margin-bottom:10px;}
+    .tf-quantity-label span {font-weight:500; opacity:.8;}
+    .tf-quantity-value {font-family:ui-monospace,Consolas,monospace; font-size:1.17rem; word-break:break-word; line-height:1.55; font-weight:600;}
+    .tf-quantity-help {font-size:.91rem; opacity:.83; margin-top:9px; line-height:1.4;}
+    .tf-banner {border:1px solid rgba(124,146,163,.4); border-left:5px solid #8592a0; border-radius:10px; padding:13px 16px; margin:16px 0; line-height:1.65;}
+    .tf-banner-blue {border-left-color:#85b4e3;background:rgba(111,156,201,.11);}
+    .tf-banner-amber {border-left-color:#e3bd81;background:rgba(227,189,129,.12);}
+    .tf-banner-exact {border-left-color:#75bfb5;background:rgba(117,191,181,.11);}
+    .tf-banner-neutral {border-left-color:#8995a2;background:rgba(125,145,160,.08);}
+    [data-testid="stWidgetLabel"] {font-size:1rem;font-weight:650;}
+    [data-testid="stExpander"] summary { min-height:48px; align-items:center; }
+    </style>""" + f"<style>:root{{--tf-fsize:{fontsize}}} .stApp{{background:{base_background};color:{text_color}}} .stApp p, .stApp label{{font-size:{fontsize}}}</style>", unsafe_allow_html=True)
 
 
 def _fingerprint(value: Any) -> str:
@@ -112,21 +131,28 @@ def _load_niti_example() -> None:
     for key in (
         "twin_family_report", "twin_family_result_signature",
         "twin_tree_family_view", "twin_selected_couple",
+        "tf_selected_couple_v8", "tf_text_finder_v8",
     ):
         st.session_state.pop(key, None)
 
 
 def main() -> None:
     st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="collapsed")
-    _style()
-    st.title(APP_TITLE)
-    st.markdown("**Twin families and habit-plane compatibility**")
-    st.caption("Research workbench · exact crystal symmetry, correspondence and laminate compatibility")
-    st.markdown("**Crystal definitions** → **Calculate** → **Explore all families** → **Inspect one couple**")
+    with st.sidebar:
+        st.subheader("Display preferences")
+        appearance = st.radio("Appearance", ("Dark", "Light", "High contrast"), horizontal=False, key="tf_appearance_v8", help="Choose what is easiest to read. This never changes the scientific result.")
+        font_scale = st.radio("Text size", ("Standard", "Large"), key="tf_font_scale_v8", horizontal=True)
+        density = st.radio("Tree spacing", ("Comfortable", "Compact"), key="tf_density_v8", horizontal=True)
+        st.caption("Display choices are not scientific inputs; no calculation is restarted when you change them.")
+    theme = {"Dark": "dark", "Light": "light", "High contrast": "contrast"}[appearance]
+    _style(appearance=theme, font_scale=font_scale.lower())
+    st.title("Martensitic Crystallography")
+    st.markdown("**A research workbench for twins, symmetry and habit-plane compatibility**")
+    st.caption("Define the two crystals → Calculate → Explore the genealogy → Inspect verified results")
 
     existing = st.session_state.get("twin_family_report")
-    st.markdown("### Crystal state")
-    st.caption("The editable fields use the published NiTi lattice and correspondence as a starting example, not as fixed material answers.")
+    st.subheader("Crystallographic inputs")
+    st.caption("The editable NiTi demonstration contains crystal parameters only. All twin and habit results are computed from the entered parameters.")
     with st.expander("View or change parent, product and correspondence", expanded=existing is None):
         st.button("Restore published NiTi crystal inputs", on_click=_load_niti_example, help="Restores the input lattice and correspondence only. It does not load calculated or published twin results.")
 
@@ -191,14 +217,26 @@ def main() -> None:
             st.session_state.pop("twin_tree_family_view", None)
             st.session_state.pop("twin_selected_couple", None)
             st.session_state.pop("tf_selected_couple_v6", None)
+            st.session_state.pop("tf_selected_couple_v8", None)
+            st.session_state.pop("tf_text_finder_v8", None)
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
 
     report = st.session_state.get("twin_family_report")
     if report is not None and st.session_state.get("twin_family_result_signature") == signature:
-        render_report(report)
+        render_report(report, theme=theme, density=density.lower())
+        with st.expander("Export reproducible scientific report", expanded=False):
+            st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
+            record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
+            st.download_button(
+                "Download complete analysis as JSON",
+                data=json.dumps(record, indent=2, default=str),
+                file_name="twin_family_research_record.json",
+                mime="application/json",
+                key="tf_export_v8",
+            )
     else:
-        st.caption("The calculated tree will appear below. All families will be shown together; published numerical results are never substituted for calculations.")
+        st.caption("Calculate to create the full twin-family genealogy. The solver does not use published result tables as answers.")
 
 
 if __name__ == "__main__":

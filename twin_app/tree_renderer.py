@@ -1,208 +1,200 @@
 from __future__ import annotations
 
-"""One complete crystallographic family tree and one stable interpretation pane.
+"""Accessible tree and a stable Bhattacharya-style scientific interpretation pane.
 
-The full family/couple graph is the default, never an arbitrarily selected
-family. All outputs come from the active scientific report, not benchmark data.
+The custom navigator is an *interface*, not an independent source of physics.
+All values, classifications and no-solution outcomes originate in TwinFamilyReport.
 """
 
+from html import escape
 from typing import Iterable
 
 import streamlit as st
 
-from .family_tree_graph import CoupleNode, normalized_rank_one, plot_family_tree, tree_layout
-from .scientific_models import PairTwinConstruction, TwinFamilyReport, TwinFamilyRecord
+from .family_tree_graph import CoupleNode, normalized_rank_one, tree_layout
+from .navigator_component import render_navigator
+from .navigator_model import build_navigator_model, first_interpretable_couple
+from .scientific_models import PairTwinConstruction, TwinFamilyReport
 from .ux_language import twin_name, representative_habit_solutions
 
 
-def _fmt(value: float, precision: int = 5) -> str:
+def _fmt(value: float, precision: int = 6) -> str:
     v = float(value)
-    return "0" if abs(v) < 5e-10 else (f"{v:.3e}" if abs(v) < 1e-4 or abs(v) >= 1e5 else f"{v:.{precision}g}")
+    if abs(v) < 5e-11:
+        return "0"
+    return f"{v:.{precision}g}" if 1.e-4 <= abs(v) < 1.e5 else f"{v:.3e}"
 
 
-def _vec(values: Iterable[float], *, plane: bool = False, precision: int = 6) -> str:
+def _vec(values: Iterable[float], *, plane: bool = False, precision: int = 5) -> str:
     parts = ", ".join(_fmt(v, precision) for v in values)
     return f"({parts})" if plane else f"[{parts}]"
 
 
 def _habit_count(node: CoupleNode) -> int:
-    return sum(len(c.habit_solutions) for c in node.pair.constructions) if node.pair else 0
+    return sum(len(c.habit_solutions) for c in node.pair.constructions) if node.pair is not None else 0
 
 
-def _status_for(node: CoupleNode) -> str:
-    if node.pair is None:
-        return "Geometry not evaluated"
-    if _habit_count(node):
-        return "Compatible A/M interface"
-    if any(c.continuum_fraction for c in node.pair.constructions):
-        return "Continuous compatibility"
-    if node.pair.constructions:
-        return "No exact A/M interface"
-    return "No exact classical twin"
+def _status(construction: PairTwinConstruction) -> tuple[str, str]:
+    if "unresolved" in construction.classification.lower() or "unresolved" in construction.classification_status.lower():
+        return "amber", "Twin type not verified"
+    return "blue", twin_name(construction.classification)
+
+
+def _named_value(label: str, symbol: str, meaning: str, value: str) -> None:
+    st.markdown(
+        '<div class="tf-quantity"><div class="tf-quantity-label">'
+        f'{escape(label)} <span>· {escape(symbol)}</span></div>'
+        f'<div class="tf-quantity-value">{escape(value)}</div>'
+        f'<div class="tf-quantity-help">{escape(meaning)}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _habit_branches(construction: PairTwinConstruction) -> None:
+    st.markdown("#### Austenite–martensite compatibility")
+    if construction.continuum_fraction:
+        st.markdown('<div class="tf-banner tf-banner-exact"><strong>Continuous compatible family</strong> · There is no unique discrete habit plane.</div>', unsafe_allow_html=True)
+        return
+    if not construction.habit_solutions:
+        st.markdown(
+            '<div class="tf-banner tf-banner-neutral"><strong>No exact A/M habit plane for this twin branch.</strong> '
+            'This is a valid calculated outcome for the entered crystal parameters. Other couples may have solutions.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    st.markdown('<div class="tf-banner tf-banner-exact"><strong>Compatible interface calculated</strong> · Each alternative below is a separate exact solution.</div>', unsafe_allow_html=True)
+    shown, extras = representative_habit_solutions(construction.habit_solutions)
+    st.caption("λ is the volume fraction of the other martensite variant. The normal m and shape vector b are expressed in the parent Cartesian frame.")
+    for i, solution in enumerate(shown, 1):
+        branch = "+" if solution.habit_branch > 0 else "−" if solution.habit_branch < 0 else "0"
+        with st.container(border=True):
+            st.markdown(f"**Habit alternative {i} · {branch}**")
+            _named_value("Second-variant fraction", "λ", "A fraction from 0 to 1", _fmt(solution.other_variant_volume_fraction))
+            _named_value("Shape-strain vector", f"b{branch}", "Magnitude and direction; parent Cartesian", _vec(solution.shape_vector_parent_cartesian))
+            _named_value("Habit-plane normal", f"m{branch}", "Unit normal; parent Cartesian, not Miller indices", _vec(solution.habit_normal_parent_cartesian, plane=True))
+    if extras:
+        with st.expander(f"Other valid solutions ({len(extras)})", expanded=False):
+            st.caption("Complementary fractions and branch conventions are preserved without inventing or averaging any value.")
+            for i, s in enumerate(extras, 1):
+                st.markdown(f"**Additional solution {i}** · λ = `{_fmt(s.other_variant_volume_fraction)}` · branch {s.habit_branch:+d}")
+                st.code(f"b = {_vec(s.shape_vector_parent_cartesian)}\nm = {_vec(s.habit_normal_parent_cartesian, plane=True)}", language="text")
 
 
 def _selected_details(node: CoupleNode) -> None:
-    st.divider()
-    st.subheader(f"Selected variant couple: {node.label}")
-    st.markdown(
-        f"**Family {node.family.family_id}** · {_status_for(node)}.  "
-        "The M numbers are calculated correspondence-variant IDs—not Bhattacharya's published mode numbering."
-    )
+    st.markdown("<div class='tf-pane-heading'>SELECTED TWIN COUPLE</div>", unsafe_allow_html=True)
+    st.subheader(f"{node.label} · {node.family.family_id}")
+    st.caption("M-identifiers are computed correspondence variants; they are not Bhattacharya's printed variant numbering.")
     pair = node.pair
     if node.family.route == "axial_weak":
-        st.markdown("**Higher-order symmetry relation · potential weak twin**")
-        st.write("This is a symmetry relationship, not automatically an exact classical twin or austenite–martensite habit plane.")
+        st.markdown('<div class="tf-banner tf-banner-amber"><strong>Higher-order weak candidate.</strong> This is a symmetry relationship, not proof of an exact classical twin.</div>', unsafe_allow_html=True)
         if node.family.weak_candidates:
-            for item in node.family.weak_candidates:
-                st.write(f"Rotation order {item.parent_rotation_order} · candidate weak planes {_vec(item.plane1_primitive, plane=True)} and {_vec(item.plane2_primitive, plane=True)}")
-                st.caption(f"Calculated generalized shear: {_fmt(item.generalized_shear)}")
+            with st.expander("Calculated weak-plane candidates", expanded=False):
+                for w in node.family.weak_candidates:
+                    st.write(f"Parent rotation order {w.parent_rotation_order} · primitive planes {w.plane1_primitive} / {w.plane2_primitive} · generalized shear {_fmt(w.generalized_shear)}")
         else:
-            st.info("Weak-plane indices were not determined. A product primitive-node basis may be required.")
+            st.caption("A primitive product-node basis is required to enumerate weak planes. No indices are invented.")
         return
     if pair is None:
-        st.info("A correspondence relation exists, but no pair-specific twin geometry is available.")
+        st.info("The correspondence couple exists, but physical twin geometry was not evaluated.")
         return
     if not pair.constructions:
-        st.info("No exact classical twin was found for this pair with the current lattice input.")
+        st.info("No exact martensite–martensite rank-one twin relation for this couple and these inputs.")
         return
-
-    options = tuple(range(len(pair.constructions)))
-    key = f"tf_branch_{node.key}"
-    if st.session_state.get(key) not in options:
-        st.session_state[key] = next((i for i,c in enumerate(pair.constructions) if c.habit_solutions), 0)
-    chosen = st.selectbox(
-        "Twin solution for this couple",
-        options, key=key,
-        format_func=lambda i: f"Solution {i + 1} — {twin_name(pair.constructions[i].classification)}; " +
-        ("habit plane found" if pair.constructions[i].habit_solutions else "no discrete habit plane"),
-    )
-    twin: PairTwinConstruction = pair.constructions[chosen]
-    unresolved = "unresolved" in twin.classification.lower() or "unresolved" in twin.classification_status.lower()
-    if unresolved:
-        st.markdown('<div class="tf-alert-amber"><strong>Classification not confirmed</strong> · A rank-one twin relation was computed, but the independent symmetry checks do not agree on Type I or II.</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="tf-alert-blue"><strong>{twin_name(twin.classification)}</strong> · independently checked twin classification</div>', unsafe_allow_html=True)
-
-    st.markdown("#### Martensite–martensite twin")
-    st.markdown(f"**Amount of shear:** `{_fmt(twin.shear_magnitude)}`  ·  conventional symbol **s**")
-    st.markdown(f"**Twin interface plane:** `{_vec(twin.twin_plane_product_crystal, plane=True)}`  ·  **K₁**, indices (hkl) in the product crystal")
-    st.markdown(f"**Direction of shear:** `{_vec(twin.shear_direction_product_crystal)}`  ·  **η₁**, direction [uvw] in the product crystal")
-    with st.expander("Detailed twin deformation · a and n̂", expanded=False):
-        a, n = normalized_rank_one(twin.a_parent_cartesian, twin.n_parent_cartesian)
-        st.markdown(f"**a · shear vector:** `{_vec(a)}` (parent Cartesian)")
-        st.markdown(f"**n̂ · unit normal to twin interface:** `{_vec(n)}` (parent Cartesian)")
-        st.caption("The displayed a is rescaled with n̂ so a ⊗ n̂ equals the computed tensor. This is NOT a unit-cell (hkl) index.")
-
-    st.markdown("#### Austenite–martensite habit plane")
-    if twin.continuum_fraction:
-        st.markdown('<div class="tf-alert-teal"><strong>Continuous exact compatibility</strong> · no single discrete habit-plane branch.</div>', unsafe_allow_html=True)
-    elif not twin.habit_solutions:
-        st.info(
-            "No exact austenite–martensite interface for this selected twin branch. "
-            "Other twin couples can still have exact solutions; use the compatibility "
-            "shortcut above the tree to find one."
+    indices = list(range(len(pair.constructions)))
+    chosen_key = f"tf_v8_branch_{node.key}"
+    if st.session_state.get(chosen_key) not in indices:
+        st.session_state[chosen_key] = next((i for i, branch in enumerate(pair.constructions) if branch.habit_solutions), 0)
+    if len(indices) > 1:
+        st.radio(
+            "Twin solution",
+            indices,
+            key=chosen_key,
+            horizontal=True,
+            format_func=lambda i: f"Solution {i + 1} · {twin_name(pair.constructions[i].classification).split(' · ')[0]}",
+            help="Some couples have two exact rank-one branches. Choose which physical twin to inspect. This does not change the calculation.",
         )
     else:
-        st.markdown('<div class="tf-alert-teal"><strong>Exact compatible interface found</strong> · the values below come from this twin solution.</div>', unsafe_allow_html=True)
-        shown, extra = representative_habit_solutions(twin.habit_solutions)
-        st.markdown(f"**Second-variant volume fraction λ:** `{_fmt(shown[0].other_variant_volume_fraction)}` (between 0 and 1)")
-        st.caption("A compatible interface is not the same thing as the martensite–martensite twin plane K₁ above.")
-        for index, solution in enumerate(shown, start=1):
-            name = "+" if solution.habit_branch > 0 else "−" if solution.habit_branch < 0 else "0"
-            st.markdown(f"**Habit alternative {index} ({name})**")
-            if abs(solution.other_variant_volume_fraction - shown[0].other_variant_volume_fraction) > 1e-8:
-                st.markdown(f"Volume fraction for this alternative: `{_fmt(solution.other_variant_volume_fraction)}`")
-            st.markdown(f"**Shape-strain vector b{name}:** `{_vec(solution.shape_vector_parent_cartesian)}`")
-            st.markdown(f"**Habit-plane normal m{name}:** `{_vec(solution.habit_normal_parent_cartesian)}`")
-            st.caption("b includes magnitude and direction; m is a unit normal. Both are in the parent Cartesian frame, not Miller-index (hkl) coordinates.")
-        if extra:
-            with st.expander(f"Show {len(extra)} additional equivalent/complementary solutions", expanded=False):
-                st.caption("Complementary variant fractions and alternative branch descriptions are preserved without averaging or inventing data.")
-                for sol in extra:
-                    st.write(f"λ {_fmt(sol.other_variant_volume_fraction)} · branch {sol.habit_branch:+d} · b {_vec(sol.shape_vector_parent_cartesian)} · m {_vec(sol.habit_normal_parent_cartesian)}")
+        st.session_state[chosen_key] = 0
+    branch = pair.constructions[st.session_state[chosen_key]]
+    kind, label = _status(branch)
+    st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong> · {escape("Mathematical rank-one twin geometry calculated")}</div>', unsafe_allow_html=True)
+    st.markdown("#### Martensite–martensite twinning elements")
+    columns = st.columns(3)
+    with columns[0]:
+        _named_value("Twin shear", "s", "Relative shear amount", _fmt(branch.shear_magnitude))
+    with columns[1]:
+        _named_value("Twin plane", "K₁", "Product reciprocal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
+    with columns[2]:
+        _named_value("Shear direction", "η₁", "Product direct [uvw]", _vec(branch.shear_direction_product_crystal))
+    _habit_branches(branch)
+    with st.expander("Scientific verification and full coordinates", expanded=False):
+        st.markdown("**Exact twin equation**")
+        st.latex(r"R_t U_j-U_i=a\otimes n")
+        a, n = normalized_rank_one(branch.a_parent_cartesian, branch.n_parent_cartesian)
+        st.code(f"a = {_vec(a)}  · parent Cartesian\nn = {_vec(n)}  · unit normal, parent Cartesian", language="text")
+        st.write("Classification check:", branch.classification_status)
+        st.caption(f"Twin rank-one residual {_fmt(branch.rank_one_residual, 9)} · proper rotation residual {_fmt(branch.rotation_residual, 9)}")
+        st.markdown("**Exact A/M compatibility equation**")
+        st.latex(r"R_h(U_i+\lambda a\otimes n)-I=b\otimes m")
+        for sol in branch.habit_solutions:
+            st.code(
+                f"λ={_fmt(sol.other_variant_volume_fraction, 9)}; branch {sol.habit_branch:+d}\n"
+                f"m in parent reciprocal coordinates = {_vec(sol.habit_plane_parent_crystal, plane=True)}\n"
+                f"b in parent direct coordinates = {_vec(sol.shape_vector_parent_crystal)}\n"
+                f"rank-one residual={_fmt(sol.rank_one_residual, 9)}\n"
+                f"rotation residual={_fmt(sol.rotation_residual, 9)}\n"
+                f"middle stretch residual={_fmt(sol.middle_stretch_residual, 9)}\n"
+                f"frame residuals=({_fmt(sol.frame_plane_residual, 9)}, {_fmt(sol.frame_shape_vector_residual, 9)})",
+                language="text",
+            )
+        st.caption("A/m compatibility is numerical for the entered lattice parameters; it does not establish experimental exactness within measurement uncertainty.")
 
-    with st.expander("Research checks and coordinate frames", expanded=False):
-        st.write(f"Classification cross-check: {twin.classification_status}")
-        st.write(f"Rank-one residual: {_fmt(twin.rank_one_residual)}; rotation residual: {_fmt(twin.rotation_residual)}")
-        st.latex(r"R U_j-U_i=a\otimes n")
-        if pair.stretch_i is not None and pair.stretch_j is not None:
-            st.write(f"Stretch variants: U{pair.stretch_i} and U{pair.stretch_j}")
-        for sol in twin.habit_solutions:
-            st.write(f"λ={_fmt(sol.other_variant_volume_fraction, 9)}, m_A (reciprocal)={_vec(sol.habit_plane_parent_crystal, plane=True)}, b_A (direct)={_vec(sol.shape_vector_parent_crystal)}")
-            st.caption(f"Frame residuals: m={_fmt(sol.frame_plane_residual)}, b={_fmt(sol.frame_shape_vector_residual)}, habit={_fmt(sol.rank_one_residual)}")
 
-
-def render_report(report: TwinFamilyReport) -> None:
-    """Always render every scientific family first; do not default to F1 only."""
-    layout = tree_layout(report)
-    st.header("Calculated twin-family tree")
-    if not layout.couples:
-        st.info("There are no nonidentity variant couples for this input.")
+def render_report(report: TwinFamilyReport, *, theme: str = "dark", density: str = "comfortable") -> None:
+    """Show every family in a single navigator and a single fixed details pane."""
+    st.header("Twin-family navigator")
+    model = build_navigator_model(report)
+    summary = model["summary"]
+    if not summary["couple_count"]:
+        st.info("No non-identity correspondence couples for these entered crystals.")
         return
-
     st.markdown(
-        f"**{len(layout.families)} families · {len(layout.couples)} variant couples** · "
-        "Every family and couple belongs to the same transformation root."
+        f"**{summary['family_count']} families** · {summary['couple_count']} couples · "
+        f"**{summary['couples_with_habit']} couples with exact habit solutions**"
     )
-    st.caption("Root = your A → M transformation. F1, F2, … = symmetry-related twin families. M1 ↔ M2 = one pair of correspondence variants. All families remain visible; zoom or pan if the tree is crowded.")
-
-    lookup = {node.key: node for node in layout.couples}
-    choice_key, chart_key = "tf_selected_couple_v6", "tf_all_families_chart_v6"
-    compatible = tuple(node for node in layout.couples if _habit_count(node))
-    exact_count = sum(_habit_count(node) for node in compatible)
-    if st.session_state.get(choice_key) not in lookup:
-        st.session_state[choice_key] = compatible[0].key if compatible else layout.couples[0].key
-
-    if compatible:
-        st.markdown(
-            f"**{len(compatible)} couples with exact habit planes · "
-            f"{exact_count} calculated habit branches**"
+    st.caption("All families belong to one transformation. Expand the couples for the full genealogy; select a node to inspect its result below.")
+    lookup = {node.key: node for node in tree_layout(report).couples}
+    state_key = "tf_selected_couple_v8"
+    if st.session_state.get(state_key) not in lookup:
+        st.session_state[state_key] = first_interpretable_couple(model)
+    default = st.session_state[state_key]
+    if summary["couples_with_habit"]:
+        if st.button("Show a couple with an exact habit plane", key="tf_go_to_habit_v8", help="Selects an already calculated compatible couple. Does not recompute results."):
+            st.session_state[state_key] = first_interpretable_couple(model)
+            default = st.session_state[state_key]
+    selected = render_navigator(model, selected=default, theme=theme, density=density, key="tf_browser_family_tree_v8")
+    if selected is not None and selected != st.session_state[state_key]:
+        st.session_state[state_key] = selected
+    if (st.session_state.get("tf_text_finder_v8") not in lookup or
+        (selected is not None and selected == st.session_state[state_key])):
+        st.session_state["tf_text_finder_v8"] = st.session_state[state_key]
+    def _select_from_text() -> None:
+        choice = st.session_state.get("tf_text_finder_v8")
+        if choice in lookup:
+            st.session_state[state_key] = choice
+    with st.expander("Find a couple by name (text and keyboard alternative)", expanded=False):
+        st.selectbox(
+            "Calculated correspondence couple",
+            options=list(lookup), index=list(lookup).index(st.session_state[state_key]),
+            format_func=lambda k: f"{lookup[k].family.family_id} · {lookup[k].label}",
+            key="tf_text_finder_v8", on_change=_select_from_text,
         )
-        st.caption(
-            "Not every martensite twin is compatible with austenite. "
-            "You can inspect every family, or jump directly to one with a habit solution."
-        )
-        if st.button("Show a couple with an exact habit plane", key="tf_find_exact_habit"):
-            st.session_state[choice_key] = compatible[0].key
-    else:
-        st.info(
-            "No exact undilated A/M habit plane was found anywhere in this "
-            "calculation. This can be a valid result for the entered crystal data."
-        )
-
-    def _select_from_chart() -> None:
-        state = st.session_state.get(chart_key)
-        try:
-            points = state["selection"]["points"]
-        except (KeyError, TypeError):
-            return
-        for point in reversed(points):
-            if point.get("curve_number") != 2:
-                continue
-            raw = point.get("customdata")
-            key = raw[0] if isinstance(raw, (list, tuple)) and raw else raw
-            if key in lookup:
-                st.session_state[choice_key] = key
-                return
-
-    st.plotly_chart(
-        plot_family_tree(report, st.session_state[choice_key], focus_family=None),
-        use_container_width=True, key=chart_key,
-        on_select=_select_from_chart, selection_mode="points",
-        config={"displaylogo": False, "scrollZoom": False, "modeBarButtonsToRemove": ["lasso2d", "select2d"]},
-    )
-    st.caption("Blue circle = selected couple · Teal diamond = a calculated exact habit plane · Grey circle = another couple. Colour is never the only indicator.")
-    st.selectbox(
-        "Find and select a couple (keyboard or screen-reader accessible)",
-        options=list(lookup), key=choice_key,
-        format_func=lambda k: f"Family {lookup[k].family.family_id} — {lookup[k].label} — {_status_for(lookup[k])}",
-    )
-    _selected_details(lookup[st.session_state[choice_key]])
-
-    with st.expander("Full correspondence inventory and technical warnings", expanded=False):
-        st.write(f"Correspondence variants: {report.audit.topology_variant_count}; stretch variants: {report.audit.stretch_variant_count}")
-        st.write(f"Correspondence subgroup size: {report.audit.correspondence_subgroup_order}; operator classes: {report.audit.operator_count}")
-        for record in report.correspondence_variants:
-            st.write(f"M{record.variant_index} → U{record.stretch_variant_index if record.stretch_variant_index is not None else 'unmapped'} · {record.mapping_status}")
+    _selected_details(lookup[st.session_state[state_key]])
+    with st.expander("Correspondence genealogy and all numerical warnings", expanded=False):
+        st.markdown(f"**Correspondence variants:** {report.audit.topology_variant_count} · **Distinct stretch variants:** {report.audit.stretch_variant_count}")
+        st.markdown(f"**Operator classes:** {report.audit.operator_count} · **Correspondence subgroup order:** {report.audit.correspondence_subgroup_order}")
+        for r in report.correspondence_variants:
+            target = f"U{r.stretch_variant_index}" if r.stretch_variant_index is not None else "unmapped"
+            st.write(f"M{r.variant_index} → {target} · {r.mapping_status}")
         for warning in report.audit.warnings:
             st.warning(warning)

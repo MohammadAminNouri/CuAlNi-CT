@@ -43,13 +43,15 @@ def test_initial_tree_contains_every_family_and_every_couple_without_crop():
 
 
 def test_app_does_not_default_to_one_family():
-    source = (ROOT / "twin_app" / "tree_renderer.py").read_text(encoding="utf-8")
-    assert "All families remain visible" in source
-    assert "focus_family=None" in source
-    assert "twin_tree_family_view" not in source
-    assert "st.plotly_chart(" in source
-    assert "Find and select a couple" in source
-    assert "The M numbers are calculated correspondence-variant IDs" in source
+    renderer = (ROOT / "twin_app" / "tree_renderer.py").read_text(encoding="utf-8")
+    navigator = (ROOT / "twin_app" / "navigator_frontend" / "index.html").read_text(encoding="utf-8")
+    assert "build_navigator_model(report)" in renderer
+    assert "All families belong to one transformation" in renderer
+    assert "render_navigator" in renderer
+    assert "Show all couples" in navigator
+    assert "family-compact" in navigator
+    assert "Find a couple" in navigator
+    assert "st.plotly_chart(" not in renderer
 
 
 def test_point_group_meaning_immediately_below_selection_is_metric_validated():
@@ -64,10 +66,10 @@ def test_point_group_meaning_immediately_below_selection_is_metric_validated():
 
 def test_standard_notation_is_explained_and_unresolved_stays_unverified():
     src = (ROOT / "twin_app" / "tree_renderer.py").read_text(encoding="utf-8")
-    for text in ("**K₁**", "**η₁**", "**s**", "fraction λ", "shape-strain", "unit normal",
-                 "No exact austenite–martensite interface", "Full correspondence inventory"):
-        assert text.lower() in src.lower()
-    assert "Classification not confirmed" in src
+    for item in ("K₁", "η₁", "λ", "Shape-strain vector", "Habit-plane normal",
+                 "No exact A/M habit plane", "Correspondence genealogy"):
+        assert item in src
+    assert "Twin type not verified" in src
     assert "Type I" not in twin_name("Exact rank-one relation — classification cross-lock unresolved")
     assert "not verified" in twin_name("Exact rank-one relation — classification cross-lock unresolved")
 
