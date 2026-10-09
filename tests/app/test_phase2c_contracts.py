@@ -246,7 +246,7 @@ def test_phase2c_live_entrypoints_are_final_v10_and_guard_is_wired():
     assert "streamlit_workstation_v9" in entry
     assert "research_workspaces_v10" in research_page
     assert "research_workspaces_v9" in research_v10
-    assert "Cayron CT" in research_v10
+    assert "Cayron-CT" in research_v10
     assert "validate_ebsd_config_file(config_path)" in research_v9
     assert "Complete reproducibility archive" in workstation_v9
     assert "Import never activates a calculated result automatically" in workstation_v9

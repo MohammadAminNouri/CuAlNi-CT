@@ -73,3 +73,16 @@ def test_book_rank_one_normalization_preserves_full_physical_tensor():
     for i in range(3):
         for j in range(3):
             assert abs(a[i]*n[j]-aout[i]*nhat[j])<1e-12
+
+
+def test_focused_family_keeps_one_root_and_a_same_level_couple_row():
+    report = _case()
+    layout = tree_layout(report)
+    fig = plot_family_tree(report, layout.couples[-1].key, focus_family="F2")
+    assert len(fig.data) == 4
+    assert len(fig.data[3].x) == 1  # exactly one root
+    assert len(fig.data[1].x) == 1  # focused family
+    assert len(fig.data[2].x) == 2  # all F2 couples
+    assert set(fig.data[2].y) == {0.0}
+    assert all("F2" in x[0] for x in fig.data[2].customdata)
+    assert len(tree_layout(report).couples) == 5  # focus doesn't mutate science

@@ -26,6 +26,7 @@ from twin_app.input_ui import (
 )
 from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
+from twin_app.point_group_explainer import explain_group
 
 
 APP_TITLE = "Twin-family tree"
@@ -134,12 +135,23 @@ def main() -> None:
             st.code(f"{type(exc).__name__}: {exc}")
         return
 
+    st.markdown("**Symmetry of the selected transformation**")
+    for role, chosen in (("Parent A", parent_ui), ("Product M", product_ui)):
+        inventory = chosen.inventory
+        content = explain_group(
+            inventory.symbol, dict(inventory.counts), inventory.expected_order,
+            tuple(op.determinant for op in inventory.operations),
+        )
+        st.markdown(f"**{role} · {inventory.symbol}** — {content['signature']}")
+        st.caption(
+            f"{inventory.expected_order} operations · {content['proper']} proper · "
+            f"{content['improper']} improper · inversion "
+            f"{'yes' if content['inversion'] else 'no'}"
+        )
     st.caption(
-        f"Current groups: **{parent_ui.phase.point_group}** "
-        f"({parent_ui.inventory.expected_order} operations) → "
-        f"**{product_ui.phase.point_group}** "
-        f"({product_ui.inventory.expected_order} operations). "
-        "Open ‘Crystal inputs and point groups’ to inspect exact axes, planes and matrices."
+        "These symmetries enter the correspondence subgroup H. "
+        "The twin tree below contains only results calculated after compatibility checks. "
+        "Open crystal inputs to inspect exact axes and plane covectors."
     )
     signature = _fingerprint({
         "project": project_payload, "weak_basis": _basis_payload(weak_basis_ui),
@@ -171,6 +183,11 @@ def main() -> None:
             with st.expander("Technical error", expanded=False):
                 st.code("".join(traceback.format_exception(exc)))
         else:
+            # A new calculation must not inherit a stale couple/family choice
+            # from a different crystallographic state. This enables the tree's
+            # accurate "first family with exact habit solution" default.
+            st.session_state.pop("twin_tree_family_view", None)
+            st.session_state.pop("twin_selected_couple", None)
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
 

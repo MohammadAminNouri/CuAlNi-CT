@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-"""Deterministic, presentation-only graph for ALL calculated variant couples.
+"""Read-only, deterministic three-level crystallographic family tree.
 
-Scientific identity follows the report: root -> operator/inverse-operator
-family -> all correspondence-variant couples. Every couple occupies y=0.
-The twin constructions and A/M habit branches belong in ONE details panel,
-never in a second row of visual cards.
+Root (y=2) -> operator/inverse family (y=1) -> every M_i/M_j couple
+(y=0). Focusing one family changes the viewport, never the scientific
+report or the identity of its couples. No literature outputs enter the graph.
 """
 
 from dataclasses import dataclass
+from math import isfinite, sqrt
 from typing import Any
 
 from .scientific_models import TwinFamilyRecord, TwinFamilyReport, VariantPairRecord
@@ -40,161 +40,160 @@ class TreeLayout:
     root_x: float
 
 
-def normalized_rank_one(a: tuple[float, float, float], n: tuple[float, float, float]) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
-    """Book convention: n-hat unit, a rescaled so a tensor n is unchanged.
-
-    Rank-one products are gauge-invariant; printing an unnormalized n as
-    'n-hat' would misrepresent the physical twinning elements.
-    """
-    from math import sqrt, isfinite
-    length = sqrt(sum(float(x) ** 2 for x in n))
-    if not isfinite(length) or length <= 1.0e-15:
-        raise ValueError("Cannot present a zero/nonfinite rank-one normal as n-hat")
-    return (
-        tuple(float(x) * length for x in a),
-        tuple(float(x) / length for x in n),
-    )
+def normalized_rank_one(a, n):
+    """Choose unit n, keeping (a ⊗ n) *exactly* unchanged."""
+    length = sqrt(sum(float(x)**2 for x in n))
+    if not isfinite(length) or length <= 1.e-15:
+        raise ValueError("Cannot display a zero or nonfinite twin-plane normal")
+    return tuple(float(x)*length for x in a), tuple(float(x)/length for x in n)
 
 
 def tree_layout(report: TwinFamilyReport) -> TreeLayout:
-    """Include every reported pair, not merely the family representative.
-
-    A pair without an available physical rank-one solution remains in the tree;
-    omission would misleadingly imply it is not a crystallographic couple.
-    """
     couples: list[CoupleNode] = []
     families: list[FamilyNode] = []
-    x = 0.0
+    x = 0.
     for family in report.families:
         pairs_by_index = {
-            (min(p.variant_i, p.variant_j), max(p.variant_i, p.variant_j)): p
+            tuple(sorted((p.variant_i, p.variant_j))): p
             for p in family.pair_records
         }
-        pairs = sorted(set(family.equivalent_pairs) | set(pairs_by_index))
-        family_couples = []
-        for i, j in pairs:
-            i, j = min(i, j), max(i, j)
-            item = CoupleNode(
+        all_pairs = sorted({tuple(sorted(p)) for p in family.equivalent_pairs} | set(pairs_by_index))
+        first = x
+        for i, j in all_pairs:
+            couples.append(CoupleNode(
                 key=f"{family.family_id}:M{i}-M{j}",
-                label=f"M{i} ↔ M{j}",
-                family=family,
+                label=f"M{i} ↔ M{j}", family=family,
                 pair=pairs_by_index.get((i, j)),
-                variant_i=i,
-                variant_j=j,
-                x=x,
-            )
-            family_couples.append(item)
-            couples.append(item)
-            x += 1.0
-        if family_couples:
-            midpoint = (family_couples[0].x + family_couples[-1].x) / 2.0
-        else:
-            midpoint = x
-            x += 1.0
-        families.append(FamilyNode(family, midpoint, len(family_couples)))
-        x += 0.65  # only separates families, never puts couples on a lower row
-
-    if families:
-        root_x = (families[0].x + families[-1].x) / 2.0
-    else:
-        root_x = 0.0
+                variant_i=i, variant_j=j, x=x,
+            ))
+            x += 1.
+        families.append(FamilyNode(family, (first + x - 1.) / 2. if all_pairs else x, len(all_pairs)))
+        x += 1.0  # visual separation only; all couples remain at y=0
+    root_x = (families[0].x + families[-1].x) / 2. if families else 0.
     return TreeLayout(tuple(families), tuple(couples), root_x)
+
+
+def couple_habit_count(node: CoupleNode) -> int:
+    if node.pair is None:
+        return 0
+    return sum(len(c.habit_solutions) for c in node.pair.constructions)
 
 
 def _pair_status(node: CoupleNode) -> str:
     if node.pair is None:
-        return "Pair geometry not evaluated"
-    constructions = node.pair.constructions
-    if not constructions:
+        return "Correspondence couple; physical twin geometry not evaluated"
+    if not node.pair.constructions:
         return node.pair.status
-    count = sum(len(c.habit_solutions) for c in constructions)
+    count = couple_habit_count(node)
     if count:
-        return f"{len(constructions)} twin solution(s), {count} exact habit branch(es)"
-    if any(c.continuum_fraction for c in constructions):
-        return "Continuous A/M compatibility family"
-    return f"{len(constructions)} twin solution(s), no exact A/M habit"
+        return f"{len(node.pair.constructions)} twin branch(es), {count} exact A/M habit solution(s)"
+    if any(c.continuum_fraction for c in node.pair.constructions):
+        return "Continuous compatible-fraction family; no discrete habit selected"
+    return f"{len(node.pair.constructions)} twin branch(es), no exact A/M habit plane"
 
 
-def _mode_short(family: TwinFamilyRecord) -> str:
-    return {"classical_exact":"Classical", "axial_weak":"Weak", "unsupported":"Unresolved"}.get(
-        family.route, family.route.replace("_", " ").capitalize()
-    )
+def plot_family_tree(
+    report: TwinFamilyReport,
+    selected_key: str | None = None,
+    focus_family: str | None = None,
+) -> Any:
+    """Four ordered Plotly traces; trace #2 is the clickable couple level.
 
-
-def plot_family_tree(report: TwinFamilyReport, selected_key: str | None = None) -> Any:
-    """Plotly selection lives only in the renderer; this function is pure.
-
-    Trace 2 contains all the same-level couple nodes, each with a stable key
-    as its customdata. A selected Plotly point maps unambiguously to one pair.
+    All-view and family-focus share the same node keys. The root and family
+    ancestry stay visible in *focus view*, preventing cropped orphan branches.
+    The scientific tree_layout always holds every pair, even those not in the
+    focused viewport; the family picker gives access to every reported couple.
     """
     import plotly.graph_objects as go
 
-    layout = tree_layout(report)
+    complete = tree_layout(report)
+    shown_families = tuple(
+        f for f in complete.families if focus_family is None or f.family.family_id == focus_family
+    )
+    shown_couples = tuple(
+        c for c in complete.couples if focus_family is None or c.family.family_id == focus_family
+    )
+    # A focused family gets a local, stable coordinate system. No data changed.
+    if focus_family is not None:
+        positions = {c.key: i * 1.25 for i, c in enumerate(shown_couples)}
+        family_positions = {
+            f.family.family_id: ((len(shown_couples) - 1) * 1.25 / 2. if shown_couples else 0.)
+            for f in shown_families
+        }
+        root_x = next(iter(family_positions.values()), 0.)
+    else:
+        positions = {c.key: c.x * 1.25 for c in shown_couples}
+        family_positions = {f.family.family_id: f.x * 1.25 for f in shown_families}
+        root_x = complete.root_x * 1.25
+
     fig = go.Figure()
-    # Trace 0: physical connectors from root to family and family to EVERY couple.
     xs: list[float | None] = []
     ys: list[float | None] = []
-    for family in layout.families:
-        xs.extend([layout.root_x, family.x, None])
-        ys.extend([2.0, 1.0, None])
-    for item in layout.couples:
-        parent_x = next(x.x for x in layout.families if x.family.family_id == item.family.family_id)
-        xs.extend([parent_x, item.x, None])
-        ys.extend([1.0, 0.0, None])
+    for f in shown_families:
+        x = family_positions[f.family.family_id]
+        xs.extend([root_x, root_x, x, x, None])
+        ys.extend([2., 1.50, 1.50, 1., None])
+    for c in shown_couples:
+        x = positions[c.key]
+        fx = family_positions[c.family.family_id]
+        xs.extend([fx, fx, x, x, None])
+        ys.extend([1., .57, .57, .0, None])
     fig.add_trace(go.Scatter(
-        x=xs, y=ys, mode="lines", line=dict(color="#A5ABB2", width=1.35),
-        hoverinfo="skip", showlegend=False, name="Connectors",
+        x=xs, y=ys, mode="lines", line=dict(color="#87909A", width=1.7),
+        hoverinfo="skip", showlegend=False, name="Family connections",
     ))
-    # Trace 1: operator-family nodes.
     fig.add_trace(go.Scatter(
-        x=[f.x for f in layout.families], y=[1.0] * len(layout.families),
-        mode="markers+text",
-        marker=dict(size=24, color="#6E7B86", symbol="diamond"),
-        text=[f.family.family_id for f in layout.families], textposition="top center",
-        customdata=[[f.family.family_id] for f in layout.families],
-        hovertext=[f"{f.family.family_id} · {_mode_short(f.family)} · {f.count} couples" for f in layout.families],
-        hovertemplate="%{hovertext}<extra></extra>", name="Operator families", showlegend=False,
+        x=[family_positions[f.family.family_id] for f in shown_families],
+        y=[1.] * len(shown_families), mode="markers+text",
+        text=[f"{f.family.family_id}" for f in shown_families],
+        textposition="middle center", textfont=dict(color="#FFFFFF", size=12),
+        marker=dict(symbol="square", size=44, color="#344452", line=dict(width=1, color="#27323C")),
+        hovertext=[f"{f.family.family_id} · {f.family.route.replace('_', ' ')} · {f.count} couples"
+                   for f in shown_families],
+        hovertemplate="%{hovertext}<extra></extra>", showlegend=False,
+        name="Operator families",
     ))
-    # Trace 2: ALL variant couples are siblings at the SAME y position.
     fig.add_trace(go.Scatter(
-        x=[item.x for item in layout.couples], y=[0.0] * len(layout.couples),
-        mode="markers+text",
+        x=[positions[c.key] for c in shown_couples],
+        y=[0.] * len(shown_couples), mode="markers+text",
+        text=[c.label for c in shown_couples], textposition="bottom center",
+        textfont=dict(color="#263947", size=12),
         marker=dict(
-            size=[31 if item.key == selected_key else 24 for item in layout.couples],
-            color=["#275C95" if item.key == selected_key else "#566C7C" for item in layout.couples],
-            line=dict(color="#FFFFFF", width=1.5),
-            symbol="circle",
+            size=[26 if c.key == selected_key else 19 for c in shown_couples],
+            color=["#17649D" if c.key == selected_key else "#617989" for c in shown_couples],
+            symbol=["circle" if couple_habit_count(c) else "circle-open" for c in shown_couples],
+            line=dict(width=2, color="#17649D"),
         ),
-        text=[item.label.replace(" ↔ ", "<br>↔ ") for item in layout.couples],
-        textposition="bottom center",
-        customdata=[[item.key] for item in layout.couples],
-        hovertext=[f"{item.label} · {_pair_status(item)}" for item in layout.couples],
+        customdata=[[c.key] for c in shown_couples],
+        hovertext=[f"{c.label} · {_pair_status(c)}" for c in shown_couples],
         hovertemplate="%{hovertext}<extra></extra>",
-        name="Twin couples", showlegend=False,
+        showlegend=False, name="Twin couples",
     ))
-    # Trace 3: unique root.
     fig.add_trace(go.Scatter(
-        x=[layout.root_x], y=[2.0], mode="markers+text",
-        marker=dict(size=30, color="#34434F", symbol="diamond"),
-        text=[f"A → M<br>{report.audit.topology_variant_count} M · {report.audit.stretch_variant_count} U"],
-        textposition="top center", name="Transformation root", hoverinfo="skip", showlegend=False,
+        x=[root_x], y=[2.], mode="markers+text",
+        marker=dict(symbol="diamond", size=30, color="#1E374B"),
+        text=["A → M"], textposition="top center", textfont=dict(color="#1E374B", size=15),
+        hoverinfo="skip", showlegend=False, name="Transformation root",
     ))
-    # Keep labels readable even for 12-variant cases with many couples.
-    # The *whole* single-level tree remains navigable by panning and zooming;
-    # only the viewport is cropped, never the scientific node inventory.
-    selected = next((node for node in layout.couples if node.key == selected_key), None)
-    center = selected.x if selected is not None else layout.root_x
-    half_window = 5.75 if len(layout.couples) > 11 else max(2.0, len(layout.couples) / 2.0 + 0.75)
-    visible_min, visible_max = center - half_window, center + half_window
+
+    if focus_family is not None:
+        total = len(shown_couples)
+        center = root_x
+    else:
+        total = len(shown_couples)
+        center = root_x
+    # A focused group is fully visible up to 10 nodes; larger groups are
+    # keyboard-selectable and pannable without making tiny unreadable labels.
+    half = max(3.5, min(9.0, ((total-1)*1.25)/2.+1.25))
     fig.update_layout(
-        height=375,
-        margin=dict(l=22, r=22, b=80, t=62),
+        height=335,
+        margin=dict(l=32, r=32, b=85, t=45),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=12),
         dragmode="pan", clickmode="event+select",
-        xaxis=dict(visible=False, range=[visible_min, visible_max], fixedrange=False),
-        yaxis=dict(visible=False, range=[-0.58, 2.52], fixedrange=True),
+        xaxis=dict(visible=False, range=[center-half, center+half], fixedrange=False),
+        yaxis=dict(visible=False, range=[-.73, 2.48], fixedrange=True),
         showlegend=False,
-        uirevision=f"twin-layout-{selected_key}",
+        uirevision=f"family-{focus_family or 'all'}",
     )
     return fig
