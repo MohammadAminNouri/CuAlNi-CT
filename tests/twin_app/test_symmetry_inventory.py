@@ -95,7 +95,21 @@ def test_all_32_builtin_point_groups_have_readable_metric_validated_inventories(
 
 
 def test_symmetry_display_keeps_rotation_axes_and_mirror_covectors_distinct():
-    source = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
-    assert "rotation axis [uvw]" in source
-    assert "mirror-plane covector (hkl)" in source
-    assert "These are not the same kind of object" in source
+    """Check the actual V8 explanation and metric duals, not old UI wording."""
+    import numpy as np
+    from twin_app.point_group_visualizer import cell_basis, element_geometry
+
+    ui = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
+    assert "explain_group(" in ui
+    assert "make_operation_scene" in ui
+
+    # A monoclinic cell demonstrates why direct [uvw] and reciprocal (hkl)
+    # cannot be conflated, even when their three coefficients match.
+    basis = cell_basis(3.1, 4.0, 5.4, 90.0, 102.0, 90.0)
+    axis_label, axis = element_geometry(basis, "proper 2-fold rotation", (0, 0, 1))
+    plane_label, normal = element_geometry(basis, "mirror reflection", (0, 0, 1))
+    assert "direct rotation axis [uvw]" in axis_label
+    assert "reciprocal mirror-plane normal (hkl)" in plane_label
+    assert np.isclose(np.linalg.norm(axis), 1.0)
+    assert np.isclose(np.linalg.norm(normal), 1.0)
+    assert abs(float(axis @ normal)) < 0.999

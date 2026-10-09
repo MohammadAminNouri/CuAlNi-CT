@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Twin-family navigator</title>
+<style>
+:root{font-family:Inter,Arial,Helvetica,sans-serif;color-scheme:dark;--bg:#101922;--surface:#182631;--surface2:#213342;--fg:#f1f5f8;--secondary:#c2cdd6;--line:#8295a4;--border:#4b6578;--accent:#85b4e3;--focus:#b8dfff;--exact:#75bfb5;--warning:#e3bd81;--gap:14px}
+*{box-sizing:border-box} html,body{margin:0;background:transparent;color:var(--fg);font-size:16px}body{padding:5px 2px 12px}
+body.light{color-scheme:light;--bg:#fff;--surface:#f3f7fa;--surface2:#e9f1f6;--fg:#18303f;--secondary:#405865;--line:#657e8d;--border:#9db2bc;--accent:#245f98;--focus:#175e9f;--exact:#197c72;--warning:#99631a}
+body.contrast{--bg:#050505;--surface:#111;--surface2:#202020;--fg:#fff;--secondary:#fff;--line:#fff;--border:#f5f5f5;--accent:#acd8ff;--focus:#fff;--exact:#adf4df;--warning:#ffdb8a}
+button,input{font:inherit} button{cursor:pointer} button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.shell{border:1px solid var(--border);border-radius:15px;background:var(--bg);overflow:hidden}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:17px 19px 12px}
+.root{font-size:18px;font-weight:720;display:flex;align-items:center;gap:10px}.root:before{content:"";width:15px;height:15px;border:2px solid var(--accent);border-radius:5px;transform:rotate(45deg)}
+.intro{color:var(--secondary);font-size:14px;line-height:1.45;margin-top:4px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:0 19px 14px}
+.control{min-height:44px;border-radius:9px;background:var(--surface);border:1px solid var(--border);padding:9px 13px;color:var(--fg);font-weight:650}
+.control[aria-pressed="true"]{border-color:var(--accent);background:var(--surface2);box-shadow:inset 0 0 0 1px var(--accent)}
+.counter{color:var(--secondary);font-size:14px} .search{width:min(290px,100%);min-height:44px;border-radius:9px;border:1px solid var(--border);padding:9px 12px;background:var(--surface);color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:11px 20px;padding:9px 18px 13px;font-size:13px;color:var(--secondary);border-top:1px solid var(--border)}
+.dot{display:inline-block;height:11px;width:11px;border-radius:100%;margin-right:7px;background:var(--line)}.dot.exact{background:var(--exact)}.dot.selected{background:var(--accent)}.dot.warning{background:var(--warning)}
+.viewport{overflow-x:auto;overflow-y:hidden;scrollbar-color:var(--border) var(--bg);padding:15px 20px 20px;border-top:1px solid var(--border);min-height:212px;position:relative}
+.track{display:flex;gap:20px;align-items:flex-start;width:max-content;min-width:100%;padding-bottom:4px}
+.family{position:relative;display:flex;flex-direction:column;align-items:center;gap:0;flex:none;padding:0 9px;min-width:170px;min-height:175px}
+.family:before{content:"";height:19px;width:1px;background:var(--line);position:absolute;top:-18px;left:50%}
+.family-head{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 15px;min-height:56px;min-width:160px;color:var(--fg);text-align:center}
+.family-head strong{display:block;font-size:15px}.family-head span{display:block;font-size:12px;color:var(--secondary);margin-top:3px}
+.family-head:focus-visible{outline-offset:3px}.siblings{display:flex;gap:10px;border-top:2px solid var(--line);margin-top:20px;padding-top:21px;justify-content:center;position:relative}
+.siblings:before{content:"";position:absolute;left:50%;top:-20px;height:20px;border-left:2px solid var(--line)}
+.node{position:relative;min-height:63px;min-width:120px;max-width:145px;text-align:center;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--fg);padding:9px 8px;line-height:1.25;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.node:before{content:"";position:absolute;height:20px;border-left:2px solid var(--line);top:-22px;left:50%}
+.node strong{font-size:15px}.node small{font-size:12px;color:var(--secondary);line-height:1.3}
+.node[data-state="exact"]{border-bottom:4px solid var(--exact)}.node[data-state="unresolved"]{border-bottom:4px solid var(--warning)}.node[data-unresolved="true"]{border-top:4px solid var(--warning)}
+.node[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px;background:var(--surface2)}
+.node.hidden-by-filter{opacity:.3}.family.hidden-by-filter{opacity:.43}
+.family-compact .siblings{display:none}.family-compact{min-width:205px}.family-compact .family-head{min-width:190px}
+.empty{padding:30px;text-align:center;color:var(--secondary)}
+.foot{padding:11px 18px 13px;border-top:1px solid var(--border);color:var(--secondary);font-size:13px;display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;line-height:1.4}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.compact .node{min-width:108px;min-height:54px}body.compact .family{min-height:155px}
+@media(max-width:660px){.top{padding:15px}.controls{padding:0 15px 13px}.root{font-size:17px}.family-head{min-width:150px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style></head>
+<body><div id="app" class="shell" aria-label="Calculated crystallographic families"></div><div id="announcement" role="status" aria-live="polite" class="sr-only"></div>
+<script>
+'use strict';
+const el=document.getElementById('app');
+let model={root:'Parent → product',families:[],summary:{}};let selected=null;let expanded=false;let query='';let currentTheme='dark';let currentDensity='comfortable';let initialSelection=true;
+function E(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;}
+function send(msg){if(window.parent&&window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type:msg},'*');}
+function select(id){selected=id;document.querySelectorAll('.node').forEach(n=>n.setAttribute('aria-pressed',String(n.dataset.id===id)));const node=findNode(id);document.getElementById('announcement').textContent=node?`Selected ${node.label}. Details appear below the diagram.`:'';sendValue(id);}
+function sendValue(value){if(window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setComponentValue',dataType:'json',value},'*');}
+function findNode(id){for(const f of model.families||[])for(const c of f.couples||[])if(c.id===id)return c;return null;}
+function setHeight(){const h=Math.ceil(document.body.scrollHeight+3);if(window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:h},'*');}
+function makeButton(label,cls,handler){const b=E('button',cls,label);b.type='button';b.addEventListener('click',handler);return b;}
+function statusLabel(c){return c.state==='exact'?(c.twinTypeUnresolved?'Habit found · type unresolved':'Exact habit found'):c.state==='continuum'?'Continuous compatibility':c.state==='unresolved'?'Twin type unresolved':c.state==='weak-candidate'?'Weak candidate only':c.state==='not-tested'?'Not evaluated':'No exact A/M habit';}
+function render(){
+ document.body.className=(currentTheme==='light'?'light':currentTheme==='contrast'?'contrast':'')+(currentDensity==='compact'?' compact':'');
+ el.replaceChildren();const top=E('div','top');const headline=E('div');headline.append(E('div','root',`Crystal transformation ${model.root}`),E('div','intro','Choose any family or couple. The full numerical result appears in one panel below.'));top.append(headline);el.append(top);
+ const controls=E('div','controls');const btn=makeButton(expanded?'Show family overview':'Show all couples','control',()=>{expanded=!expanded;render();});btn.setAttribute('aria-pressed',String(expanded));controls.append(btn);
+ const summary=model.summary||{};controls.append(E('span','counter',`${summary.family_count||0} families · ${summary.couple_count||0} couples · ${summary.couples_with_habit||0} with exact habits`));
+ const search=E('input','search');search.type='search';search.placeholder='Find a couple, e.g. M1 M3';search.setAttribute('aria-label','Search for a variant couple');search.value=query;search.addEventListener('input',()=>{query=search.value.toLowerCase().replaceAll('↔',' ').replace(/\s+/g,' ').trim();if(query&&!expanded){expanded=true;render();document.querySelector('.search').focus();return;}document.querySelectorAll('.node').forEach(node=>{node.classList.toggle('hidden-by-filter',!!query&&!node.dataset.label.includes(query));});document.querySelectorAll('.family').forEach(f=>{const matched=Array.from(f.querySelectorAll('.node')).some(n=>!n.classList.contains('hidden-by-filter'));f.classList.toggle('hidden-by-filter',!!query&&!matched);});});controls.append(search);el.append(controls);
+ const viewport=E('div','viewport');viewport.setAttribute('aria-label','All crystallographic family branches, scroll horizontally to explore');const track=E('div','track');
+ for(const fam of model.families||[]){const section=E('section','family'+(!expanded?' family-compact':''));section.id='nav-'+fam.id;section.setAttribute('aria-label',`${fam.label}: ${fam.count} couples`);
+ const fh=makeButton('', 'family-head',()=>{expanded=true;render();const t=document.getElementById('nav-'+fam.id);if(t)t.scrollIntoView({block:'nearest',inline:'center',behavior:'instant'});});fh.append(E('strong','',fam.label),E('span','',`${fam.count} couples${fam.hasExactHabit?' · exact habits':''}`));fh.setAttribute('aria-label',`Explore ${fam.label}, ${fam.count} couples`);section.append(fh);
+ const siblings=E('div','siblings');for(const c of fam.couples||[]){const node=makeButton('','node',()=>select(c.id));node.dataset.id=c.id;node.dataset.label=(c.label+' '+c.id+' '+fam.label).toLowerCase().replaceAll('↔',' ').replace(/\s+/g,' ').trim();node.dataset.state=c.state;node.dataset.unresolved=String(!!c.twinTypeUnresolved);node.setAttribute('aria-pressed',String(c.id===selected));node.setAttribute('aria-label',`${fam.label}, ${c.label}. ${statusLabel(c)}. Select to read the full scientific result below.`);
+ node.append(E('strong','',c.label),E('small','',statusLabel(c)));siblings.append(node);}section.append(siblings);track.append(section);}viewport.append(track);if(!(model.families||[]).length)viewport.append(E('div','empty','No non-identity twin families for these input metrics.'));el.append(viewport);
+ const legend=E('div','legend');for(const [cls,text] of [['selected','Blue outline: selected'],['exact','Teal line: exact habit'],['warning','Amber line: twin type unresolved'],['','Grey: no exact habit']]){const s=E('span');s.append(E('i','dot '+cls),document.createTextNode(text));legend.append(s);}el.append(legend);
+ const foot=E('div','foot');foot.append(E('span','',expanded?'All couples remain in a single sibling row, grouped by family. Scroll horizontally to see every one.':'Every family is visible. Choose a family to reveal its couples.'),E('span','', 'Tab to a node, then press Enter or Space to select.'));el.append(foot);
+ if(query){search.value=query;search.dispatchEvent(new Event('input'));}
+ if(initialSelection){initialSelection=false;const node=document.querySelector('.node[aria-pressed="true"]');if(node){const x=node.getBoundingClientRect(),v=viewport.getBoundingClientRect();viewport.scrollLeft+=(x.left+x.width/2)-(v.left+v.width/2);}}
+ requestAnimationFrame(setHeight);
+}
+function applyArgs(args){if(!args)return;const incoming=args.model;if(incoming&&Array.isArray(incoming.families))model=incoming;selected=typeof args.selected==='string'?args.selected:selected;currentTheme=['dark','light','contrast'].includes(args.theme)?args.theme:'dark';currentDensity=args.density==='compact'?'compact':'comfortable';render();}
+window.__renderTwinNavigator=applyArgs;
+window.addEventListener('message',e=>{const data=e.data||{};if(data.type==='streamlit:render')applyArgs(data.args||{});});
+window.addEventListener('load',()=>{if(window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:componentReady',apiVersion:1},'*');render();});
+new ResizeObserver(()=>requestAnimationFrame(setHeight)).observe(document.body);
+</script></body></html>
