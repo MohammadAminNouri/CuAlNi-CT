@@ -113,16 +113,6 @@ def _selected_details(node: CoupleNode) -> None:
     if not pair.constructions:
         st.info("No exact martensite–martensite rank-one twin relation for this couple and these inputs.")
         return
-<<<<<<< HEAD
-    # Display physically DISTINCT rank-one tensors, not anonymous ± solver signs.
-    interfaces = distinct_twin_branches(pair.constructions)
-    choice_key = f"tf_v9_interface_{node.key}"
-    options = tuple(item.label for item in interfaces)
-    if st.session_state.get(choice_key) not in options:
-        st.session_state[choice_key] = next(
-            (item.label for item in interfaces if item.representative.habit_solutions),
-            options[0],
-=======
     # Display physically DISTINCT rank-one tensors, not anonymous ± solver signs.
     interfaces = distinct_twin_branches(pair.constructions)
     choice_key = f"tf_v9_interface_{node.key}"
@@ -132,19 +122,6 @@ def _selected_details(node: CoupleNode) -> None:
             (item.label for item in interfaces if item.representative.habit_solutions),
             options[0],
         )
-    st.markdown("**Martensite–martensite interface geometry**")
-    st.caption("Each interface is a distinct solution of R·Uⱼ − Uᵢ = a⊗n. Interface A/B is not the same as Type I/Type II, and is not the +/− habit-plane designation.")
-    if len(interfaces) > 1:
-        st.radio(
-            "Choose an interface geometry",
-            options, key=choice_key, horizontal=True,
-            format_func=lambda label: (
-                label + " · " + twin_name(next(x for x in interfaces if x.label == label).representative.classification).split(" · ")[0]
-            ),
-            help="These are distinct rank-one interface geometries for this one martensite couple. Selecting one does not recalculate anything.",
->>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
-        )
-<<<<<<< HEAD
     st.markdown("#### The possible twin interfaces")
     st.write(
         "The **same two martensite variants** can sometimes meet through two different "
@@ -189,16 +166,7 @@ def _selected_details(node: CoupleNode) -> None:
         st.caption(f"{len(selected_interface.equivalent_source_indices)} algebraic records describe this same physical rank-one tensor; all distinct habit solutions and the original records are preserved.")
     if len(selected_interface.classifications) > 1:
         st.warning("Conflicting classification evidence exists for this physical interface. Review all recorded routes before identifying its twin type.")
-=======
-    selected_interface = next(item for item in interfaces if item.label == st.session_state[choice_key])
-    branch = selected_interface.representative
-    if len(selected_interface.equivalent_source_indices) > 1:
-        st.caption(f"{len(selected_interface.equivalent_source_indices)} algebraic records describe this same physical rank-one tensor; all distinct habit solutions and the original records are preserved.")
-    if len(selected_interface.classifications) > 1:
-        st.warning("Conflicting classification evidence exists for this physical interface. Review all recorded routes before identifying its twin type.")
->>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     kind, label = _status(branch)
-<<<<<<< HEAD
     if len(selected_interface.classifications) > 1:
         kind, label = "amber", "Twin geometry calculated · conflicting type evidence; not verified"
     st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong></div>', unsafe_allow_html=True)
@@ -208,11 +176,6 @@ def _selected_details(node: CoupleNode) -> None:
             "crystallographic checks do not yet establish a Type-I, Type-II or Compound label. "
             "This does not mean the interface geometry is absent."
         )
-=======
-    if len(selected_interface.classifications) > 1:
-        kind, label = "amber", "Twin geometry calculated · conflicting type evidence; not verified"
-    st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong> · {escape("Mathematical rank-one twin geometry calculated")}</div>', unsafe_allow_html=True)
->>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     st.markdown("#### Martensite–martensite twinning elements")
     columns = st.columns(3)
     with columns[0]:
@@ -220,13 +183,8 @@ def _selected_details(node: CoupleNode) -> None:
     with columns[1]:
         _named_value("Twin plane", "K₁", "Which plane can separate the two martensite variants; product-crystal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
     with columns[2]:
-<<<<<<< HEAD
         _named_value("Shear direction", "η₁", "Crystal direction associated with the twin shear; product-crystal [uvw]", _vec(branch.shear_direction_product_crystal))
     _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
-=======
-        _named_value("Shear direction", "η₁", "Product direct [uvw]", _vec(branch.shear_direction_product_crystal))
-    _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
->>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     with st.expander("Scientific verification and full coordinates", expanded=False):
         st.markdown("**Exact twin equation**")
         st.latex(r"R_t U_j-U_i=a\otimes n")

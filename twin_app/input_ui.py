@@ -133,33 +133,6 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
             "verified against the entered lattice metric. Lattice parameters alone do not "
             "establish atomic-structure or space-group symmetry."
         )
-<<<<<<< HEAD
-=======
-        op = items[selection]
-        st.markdown(f"**{_operation_label(op)}**")
-        st.write("**Action in fractional crystal coordinates:** " + _coordinate_rule(op.matrix))
-        # An arbitrary illustrative point, not a Miller index or a measured direction.
-        import sympy as sp
-        demo = sp.Matrix([sp.Rational(1, 4), sp.Rational(1, 3), sp.Rational(1, 5)])
-        matrix = sp.Matrix([[sp.Rational(x) for x in row] for row in op.matrix])
-        mapped = matrix * demo
-        st.caption("Example point (fractional coordinates): " +
-                   "(" + ", ".join(str(x) for x in demo) + ") → (" +
-                   ", ".join(str(x) for x in mapped) + "). This example is illustrative, not an experimental coordinate.")
-        st.write(f"**Why this matters:** {op.twin_role}.")
-        with st.expander("Visualize this axis or plane within the unit cell", expanded=False):
-            from .point_group_visualizer import cell_basis, make_operation_scene
-            from numpy import asarray
-            # Use the actual entered cell, not a hard-coded cubic scene.
-            B = cell_basis(*[float(v) for v in cell])
-            fig = make_operation_scene(B, op.kind, op.axis_or_plane)
-            st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
-            st.caption("A geometrical view of the chosen symmetry element in the entered conventional cell; not a full stereographic projection of the group.")
-        with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
-            st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
-            st.caption(f"Full symmetry group metric-preservation residual: {inventory.metric_preservation_maximum_residual:.2e}")
-            st.caption("rotation axis [uvw] is a direct-space direction; mirror plane (hkl) is a reciprocal-space covector. They are not interchangeable.")
->>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
 
         with st.expander("Understand the symmetry elements and their directions", expanded=False):
             st.write(
