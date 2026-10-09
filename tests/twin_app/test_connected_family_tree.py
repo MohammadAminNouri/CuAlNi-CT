@@ -45,7 +45,7 @@ def test_graph_has_one_root_two_families_and_all_couples_selection_keys():
     report = _case()
     layout = tree_layout(report)
     fig = plot_family_tree(report, layout.couples[0].key)
-    assert len(fig.data)==4
+    assert len(fig.data)==5
     assert len(fig.data[2].x)==5
     assert set(fig.data[2].y)=={0.0}
     assert len(fig.data[1].x)==2
@@ -53,6 +53,7 @@ def test_graph_has_one_root_two_families_and_all_couples_selection_keys():
     assert len({c.key for c in layout.couples}) == len(layout.couples)
     assert fig.data[2].customdata[0][0] == layout.couples[0].key
     assert '↔' in fig.data[2].hovertext[0]
+    assert len(fig.data[4].text) == len(layout.couples)
 
 
 def test_habit_branches_not_precomputed_from_book():
@@ -79,7 +80,7 @@ def test_focused_family_keeps_one_root_and_a_same_level_couple_row():
     report = _case()
     layout = tree_layout(report)
     fig = plot_family_tree(report, layout.couples[-1].key, focus_family="F2")
-    assert len(fig.data) == 4
+    assert len(fig.data) == 5
     assert len(fig.data[3].x) == 1  # exactly one root
     assert len(fig.data[1].x) == 1  # focused family
     assert len(fig.data[2].x) == 2  # all F2 couples

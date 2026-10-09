@@ -12,7 +12,7 @@ def test_all_couples_share_one_tree_and_one_results_pane():
     assert "st.plotly_chart(" in renderer
     assert "on_select=_select_from_chart" in renderer
     assert 'selection_mode="points"' in renderer
-    assert "Twin couple (keyboard-friendly alternative" in renderer
+    assert "Find and select a couple (keyboard or screen-reader accessible)" in renderer
     assert renderer.index("st.plotly_chart(") < renderer.index("_selected_details(lookup[")
     assert "for family in report.families:" in graph
     assert "for i, j in all_pairs:" in graph
@@ -24,23 +24,23 @@ def test_all_couples_share_one_tree_and_one_results_pane():
 def test_book_notation_exists_without_wide_numeric_result_tables():
     renderer = (APP / "tree_renderer.py").read_text(encoding="utf-8")
     for needed in (
-        "Twin plane K₁", "Shear direction η₁", "Twin shear s",
-        "**a**", "**n̂**", "other_variant_volume_fraction",
+        "Twin interface plane:", "Direction of shear:", "Amount of shear:",
+        "**a · shear vector:**", "**n̂ · unit normal", "other_variant_volume_fraction",
         "shape_vector_parent_cartesian", "habit_normal_parent_cartesian",
-        "Habit alternative", "Research details", "No exact austenite–martensite habit plane",
+        "Habit alternative", "Research checks", "No exact austenite–martensite interface",
         "representative_habit_solutions",
     ):
         assert needed in renderer
-    assert renderer.index("_book_twin_elements(twin)") < renderer.index("Research details")
+    assert renderer.index("#### Martensite–martensite twin") < renderer.index("Research checks")
     assert "if extra:" in renderer
-    assert "complementary fractions" in renderer
+    assert "Complementary variant fractions" in renderer
 
 
 def test_general_entry_is_one_workflow_without_material_mode_switch():
     source = (APP / "streamlit_app.py").read_text(encoding="utf-8")
-    assert "Crystal twins & habit planes" in source
-    assert "Calculate twins and habit planes" in source
-    assert "Load example inputs" in source
+    assert "Martensitic Crystallography" in source
+    assert "Calculate twin families and habit planes" in source
+    assert "Restore published NiTi crystal inputs" in source
     assert "NiTi book example · inputs only" not in source
     assert "Custom transformation" not in source
     assert "st.tabs(" not in source
@@ -55,12 +55,12 @@ def test_point_group_is_named_and_explained_before_matrix_inspector():
     atlas = (APP / "point_group_explainer.py").read_text(encoding="utf-8")
     assert "simple_group_label" in source
     assert "POINT_GROUP_SHORT_NAMES" in atlas
-    assert "Why does this point group matter?" in source
-    assert "Explore one symmetry operation (optional)" in source
-    assert "Show exact 3×3 transformation matrix" in source
-    assert source.index("Why does this point group matter?") < source.index("Show exact 3×3")
-    assert "Candidate is not confirmation" in source
-    assert "[uvw] = direct crystal direction; (hkl) = reciprocal plane normal" in source
+    assert "Verified contents:" in source
+    assert "Inspect one symmetry operation (optional)" in source
+    assert "Show exact coordinate matrix and numerical check" in source
+    assert source.index("Verified contents:") < source.index("Show exact coordinate matrix")
+    assert "To predict actual twin families" in source
+    assert "[uvw] is a direct-space rotation axis; (hkl) is a reciprocal plane covector" in source
 
 
 def test_colour_system_uses_only_three_meaningful_accents_with_text_labels():
@@ -69,10 +69,11 @@ def test_colour_system_uses_only_three_meaningful_accents_with_text_labels():
     assert "COLOR_SELECTED" in palette
     assert "COLOR_HABIT" in palette
     assert "COLOR_UNRESOLVED" in palette
-    assert "Blue = selected twin" in app
-    assert "Teal = exact habit found" in app
-    assert "Amber = scientific verification pending" in app
-    assert "Colours are always accompanied by written labels" in app
+    renderer = (APP / "tree_renderer.py").read_text(encoding="utf-8")
+    assert "Blue circle = selected couple" in renderer
+    assert "Teal diamond = a calculated exact habit plane" in renderer
+    assert "Classification not confirmed" in renderer
+    assert "Colour is never the only indicator" in renderer
 
 
 def test_unresolved_classification_is_never_silently_type_i_or_ii():

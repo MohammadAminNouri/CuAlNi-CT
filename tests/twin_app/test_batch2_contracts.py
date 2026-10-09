@@ -34,7 +34,7 @@ def test_new_app_contains_no_material_answer_lookup_and_no_named_theorist():
 
 def test_streamlit_ui_is_linear_and_user_triggered():
     text = (PRODUCTION / "streamlit_app.py").read_text(encoding="utf-8")
-    assert "Calculate twins and habit planes" in text
+    assert "Calculate twin families and habit planes" in text
     assert "st.tabs(" not in text
     assert "animation-duration: 0s" in text
     assert "transition-duration: 0s" in text
@@ -44,7 +44,7 @@ def test_streamlit_ui_is_linear_and_user_triggered():
 def test_tree_renders_book_style_twin_and_habit_quantities_without_answers():
     text = (PRODUCTION / "tree_renderer.py").read_text(encoding="utf-8")
     for token in (
-        "**a**", "**n̂**", "K₁", "η₁",
+        "**a · shear vector:**", "**n̂ · unit normal", "K₁", "η₁",
         "other_variant_volume_fraction", "shape_vector_parent_cartesian",
         "habit_normal_parent_cartesian", "st.plotly_chart(",
     ):

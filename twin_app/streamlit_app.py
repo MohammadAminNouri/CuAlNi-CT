@@ -26,7 +26,7 @@ from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
 
 
-APP_TITLE = "Crystal twins & habit planes"
+APP_TITLE = "Martensitic Crystallography"
 
 # Starting example INPUT only. The same inputs are fully editable; the solver
 # never reads expected outputs from Bhattacharya's tables.
@@ -48,8 +48,16 @@ def _style() -> None:
       animation-duration: 0s !important; animation-delay: 0s !important;
       transition-duration: 0s !important;
     }
-    .block-container { max-width: 1040px; padding-top: 1rem; padding-bottom: 3rem; }
-    p, li { line-height: 1.5; }
+    .block-container { max-width: 1120px; padding-top: 1.7rem; padding-bottom: 3rem; }
+    p, li { line-height: 1.65; font-size: 1.06rem; }
+    label { font-size: 1.04rem !important; }
+    [data-testid="stCaptionContainer"] p { font-size: 0.97rem; line-height:1.55; }
+    div[data-baseweb="select"] { min-height: 48px; }
+    [data-testid="stExpander"] { margin-top: 0.7rem; }
+    .tf-alert-blue,.tf-alert-teal,.tf-alert-amber { padding: .85rem 1rem; border-left: 5px solid; border-radius: 5px; margin: .85rem 0 1rem; line-height: 1.6; }
+    .tf-alert-blue { border-color: var(--tf-blue); background: rgba(92,133,173,.11); }
+    .tf-alert-teal { border-color: var(--tf-teal); background: rgba(69,140,129,.11); }
+    .tf-alert-amber { border-color: var(--tf-amber); background: rgba(182,140,79,.11); }
     h1 { font-size: 1.9rem !important; line-height:1.25; }
     h2 { font-size: 1.35rem !important; line-height:1.3; }
     h3,h4 { line-height:1.3; }
@@ -112,22 +120,15 @@ def main() -> None:
     st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="collapsed")
     _style()
     st.title(APP_TITLE)
-    st.caption("One workflow: enter crystals → calculate → select a twin couple → read the result below.")
-    with st.expander("What do the three colours mean?", expanded=False):
-        st.markdown(
-            '<div class="tf-legend"><span class="tf-dot tf-blue"></span> Blue = selected twin'
-            '&nbsp; <span class="tf-dot tf-teal"></span> Teal = exact habit found'
-            '&nbsp; <span class="tf-dot" style="background:var(--tf-amber)"></span>'
-            ' Amber = scientific verification pending</div>', unsafe_allow_html=True
-        )
-        st.caption("Colours are always accompanied by written labels. Grey means other branches or background information.")
+    st.markdown("**Twin families and habit-plane compatibility**")
+    st.caption("Research workbench · exact crystal symmetry, correspondence and laminate compatibility")
+    st.markdown("**Crystal definitions** → **Calculate** → **Explore all families** → **Inspect one couple**")
 
     existing = st.session_state.get("twin_family_report")
-    with st.expander("Edit crystal inputs", expanded=existing is None):
-        st.caption("Editable example lattice values are prefilled for NiTi. Replace them for ANY supported transformation; no NiTi-specific answers are used.")
-        with st.expander("Reset inputs to the published NiTi example (optional)", expanded=False):
-            st.caption("Uses only the lattice and correspondence data. This is not a separate app mode.")
-            st.button("Load example inputs", on_click=_load_niti_example)
+    st.markdown("### Crystal state")
+    st.caption("The editable fields use the published NiTi lattice and correspondence as a starting example, not as fixed material answers.")
+    with st.expander("View or change parent, product and correspondence", expanded=existing is None):
+        st.button("Restore published NiTi crystal inputs", on_click=_load_niti_example, help="Restores the input lattice and correspondence only. It does not load calculated or published twin results.")
 
         try:
             length_unit = st.selectbox(
@@ -171,7 +172,7 @@ def main() -> None:
     if previous is not None and previous != signature:
         st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
-    if st.button("Calculate twins and habit planes", type="primary", use_container_width=True):
+    if st.button("Calculate twin families and habit planes", type="primary", use_container_width=True):
         st.session_state.pop("twin_family_report", None)
         st.session_state.pop("twin_family_result_signature", None)
         try:
@@ -196,7 +197,7 @@ def main() -> None:
     if report is not None and st.session_state.get("twin_family_result_signature") == signature:
         render_report(report)
     else:
-        st.caption("The tree will appear here after you calculate. It never uses published values as answers.")
+        st.caption("The calculated tree will appear below. All families will be shown together; published numerical results are never substituted for calculations.")
 
 
 if __name__ == "__main__":

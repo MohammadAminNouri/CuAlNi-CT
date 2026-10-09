@@ -103,57 +103,54 @@ def _operation_label(operation: object) -> str:
     return kind.replace("order-", "order ")
 
 
+def _coordinate_rule(matrix: tuple[tuple[str, str, str], ...]) -> str:
+    """Explain an exact symmetry action on fractional crystal coordinates."""
+    symbols = ("x", "y", "z")
+    import sympy as sp
+    M = sp.Matrix([[sp.Rational(x) for x in row] for row in matrix])
+    v = M * sp.Matrix(sp.symbols("x y z"))
+    return "(x, y, z) → (" + ", ".join(str(sp.simplify(expr)) for expr in v) + ")"
+
+
 def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool) -> None:
-    """First the meaning of the chosen point group; operations remain optional."""
-    data = explain_group(
-        inventory.symbol,
-        dict(inventory.counts),
-        inventory.expected_order,
+    """Visible selection-specific scientific explanation; optional operation details."""
+    d = explain_group(
+        inventory.symbol, dict(inventory.counts), inventory.expected_order,
         tuple(op.determinant for op in inventory.operations),
     )
-    st.markdown(f"**{data['plain_name']}** · {inventory.symbol}")
-    st.caption(data["signature"])
-    st.caption(f"{inventory.expected_order} exact symmetry operations · {inventory.conventional_setting}")
-
-    with st.expander("Why does this point group matter?", expanded=False):
-        st.write(
-            "It tells us which rotations and reflections leave this crystal unchanged. "
-            "Together with the other phase and lattice correspondence, it determines "
-            "which variants and twin families are possible."
+    st.markdown(f"**What {inventory.symbol} means: {d['plain_name']}**")
+    st.write(d["signature"])
+    st.markdown(
+        f"**Verified contents:** {d['proper']} proper rotations (including identity); "
+        f"{d['improper']} orientation-reversing operations; "
+        f"{d['twofold']} twofold rotations; {d['mirror']} mirrors. "
+        f"{'Inversion is present.' if d['inversion'] else 'No inversion centre.'}"
+    )
+    if parent:
+        st.markdown(
+            "**Relevance to twins:** "
+            + ("mirrors can provide Type-I generators; " if d["mirror"] else "no parent mirror generator; ")
+            + ("twofold rotations can provide Type-II generators." if d["twofold"] else "no proper twofold generator.")
         )
-        if parent:
-            possible = []
-            if data["mirror"]:
-                possible.append("mirror → Type I candidate")
-            if data["twofold"]:
-                possible.append("180° rotation → Type II candidate")
-            if data["higher"]:
-                possible.append("higher-order rotation → possible weak route")
-            st.write("For this parent: " + ("; ".join(possible) if possible else "no supported rotation/mirror route") + ".")
-            st.caption("Candidate is not confirmation. Classification requires correspondence, metrics and compatibility.")
-        else:
-            st.write("Product point-group operations help determine correspondence equivalence and variant counts; they do not alone prove twins.")
-        st.caption("[uvw] = direct crystal direction; (hkl) = reciprocal plane normal.")
-
-    with st.expander("Explore one symmetry operation (optional)", expanded=False):
-        st.caption("Choose an action to understand it. The full matrix stays hidden until requested.")
+    else:
+        st.markdown("**Relevance to the transformation:** product symmetry helps decide which correspondences are equivalent. It does not establish a physical twin by itself.")
+    st.caption("Symmetry operations leave this crystal unchanged. To predict actual twin families we also need the other crystal, the correspondence matrix and both lattice metrics.")
+    with st.expander("Inspect one symmetry operation (optional)", expanded=False):
         items = list(inventory.operations)
-        # Avoid launching beginners directly into the uninformative identity G0.
-        default_index = next((i for i, op in enumerate(items) if op.kind == "proper 2-fold rotation"), 0)
-        chosen = st.selectbox(
-            "Operation to examine",
-            list(range(len(items))),
-            index=default_index,
+        default = next((i for i, item in enumerate(items) if item.kind == "proper 2-fold rotation"), 0)
+        selection = st.selectbox(
+            "Choose an operation", list(range(len(items))), index=default,
             format_func=lambda i: _operation_label(items[i]),
             key=f"inspect_{'parent' if parent else 'product'}_{inventory.symbol}",
         )
-        op = items[chosen]
+        op = items[selection]
         st.markdown(f"**{_operation_label(op)}**")
-        st.write("What this can mean for twinning: " + op.twin_role + ".")
-        with st.expander("Show exact 3×3 transformation matrix", expanded=False):
+        st.write(_coordinate_rule(op.matrix))
+        st.write(f"Role in the twin calculation: {op.twin_role}.")
+        with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
             st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
-            st.caption("Each matrix acts on crystallographic coordinates in the stated conventional setting.")
-            st.caption(f"Maximum metric-preservation residual over this group: {inventory.metric_preservation_maximum_residual:.2e}")
+            st.caption(f"Full symmetry group metric-preservation residual: {inventory.metric_preservation_maximum_residual:.2e}")
+            st.caption("[uvw] is a direct-space rotation axis; (hkl) is a reciprocal plane covector. The two coordinate objects cannot be substituted for each other.")
 
 
 def render_phase_input(
@@ -197,6 +194,10 @@ def render_phase_input(
         ),
         help="Symbol followed by a plain-language name. Choose a group to see what it means directly below.",
     )
+
+    # Reserve the location right below the selection. Fill it once the real
+    # edited cell metric has been validated (never display a guessed count).
+    selected_group_explanation = st.container()
 
     a0, b0, c0, alpha0, beta0, gamma0 = defaults
     st.markdown("**Conventional cell**")
@@ -261,7 +262,8 @@ def render_phase_input(
     )
     lattice = Lattice(a, b, c, alpha, beta, gamma, label=label, length_unit=length_unit)
     inventory = build_symmetry_inventory(point_group, lattice.metric())
-    _render_operation_summary(inventory, parent=(role == "parent"))
+    with selected_group_explanation:
+        _render_operation_summary(inventory, parent=(role == "parent"))
     return PhaseUIResult(phase=phase, inventory=inventory)
 
 
@@ -338,11 +340,11 @@ def _standard_basis(name: str) -> sp.Matrix:
 
 
 def render_weak_basis_input() -> WeakBasisUIResult:
-    with st.expander("Weak-plane lattice basis (advanced)", expanded=False):
+    with st.expander("Optional: higher-order weak-twin plane search", expanded=False):
         st.caption(
-            "Point-group symmetry does not determine Bravais centering. Weak-plane enumeration "
-            "therefore requires an explicit primitive-node basis. Leaving this unspecified is safe: "
-            "higher-order families are still identified, but no weak plane is invented."
+            "Only needed if you want plane indices for higher-order weak-twin candidates. "
+            "A point group describes rotational symmetry but does not specify where lattice nodes sit. "
+            "For ordinary exact Type-I/Type-II twins, leave this at 'Not specified'."
         )
         choices = (
             "Not specified — identify weak families only",
@@ -354,7 +356,7 @@ def render_weak_basis_input() -> WeakBasisUIResult:
             "F — face-centered conventional cell",
             "Custom exact primitive-node basis",
         )
-        choice = st.selectbox("Product Bravais-node basis", choices)
+        choice = st.selectbox("Product lattice node arrangement (only for weak-plane enumeration)", choices)
         if choice.startswith("Not specified"):
             return WeakBasisUIResult(None, choice)
         if choice.startswith("Custom"):

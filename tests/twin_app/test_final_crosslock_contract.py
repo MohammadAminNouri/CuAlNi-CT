@@ -45,4 +45,4 @@ def test_compound_never_deduplicates_type_i_k1_eta1_against_type_ii_k2_eta2():
 def test_invalid_edit_state_is_caught_before_calculation_boundary():
     source = (ROOT / "twin_app" / "streamlit_app.py").read_text(encoding="utf-8")
     assert 'One input is incomplete or incompatible.' in source
-    assert 'Calculate twins and habit planes' in source
+    assert 'Calculate twin families and habit planes' in source

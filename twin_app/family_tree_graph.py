@@ -147,8 +147,8 @@ def plot_family_tree(
         x=[family_positions[f.family.family_id] for f in shown_families],
         y=[1.] * len(shown_families), mode="markers+text",
         text=[f"{f.family.family_id}" for f in shown_families],
-        textposition="middle center", textfont=dict(color="#FFFFFF", size=12),
-        marker=dict(symbol="square", size=42, color=COLOR_FAMILY, line=dict(width=1, color="#3C566B")),
+        textposition="middle center", textfont=dict(color="#FFFFFF", size=14),
+        marker=dict(symbol="square", size=46, color=COLOR_FAMILY, line=dict(width=1, color="#3C566B")),
         hovertext=[f"{f.family.family_id} · {f.family.route.replace('_', ' ')} · {f.count} couples"
                    for f in shown_families],
         hovertemplate="%{hovertext}<extra></extra>", showlegend=False,
@@ -156,11 +156,10 @@ def plot_family_tree(
     ))
     fig.add_trace(go.Scatter(
         x=[positions[c.key] for c in shown_couples],
-        y=[0.] * len(shown_couples), mode="markers+text",
-        text=[c.label for c in shown_couples], textposition="bottom center",
-        textfont=dict(color="#DDE5ED", size=12),
+        y=[0.] * len(shown_couples), mode="markers",
         marker=dict(
-            size=[29 if c.key == selected_key else 22 for c in shown_couples],
+            size=[(30 if len(shown_couples) <= 20 else 18 if len(shown_couples) <= 40 else 12)
+                  + (5 if c.key == selected_key else 0) for c in shown_couples],
             color=[COLOR_SELECTED if c.key == selected_key else
                    COLOR_HABIT if couple_habit_count(c) else COLOR_EDGE for c in shown_couples],
             symbol=["circle" if c.key == selected_key else
@@ -175,8 +174,25 @@ def plot_family_tree(
     fig.add_trace(go.Scatter(
         x=[root_x], y=[2.], mode="markers+text",
         marker=dict(symbol="diamond", size=28, color=COLOR_FAMILY),
-        text=["A → M"], textposition="top center", textfont=dict(color="#DDE5ED", size=14),
+        text=["Parent A → product M"], textposition="top center", textfont=dict(color="#EDF3F8", size=15),
         hoverinfo="skip", showlegend=False, name="Transformation root",
+    ))
+
+    # Labels are a separate, nonselectable trace. Every couple remains at y=0;
+    # staggering ONLY the textual labels avoids illegible overlap in the full map.
+    total = len(shown_couples)
+    rows = 1 if total <= 11 else 2 if total <= 24 else 3 if total <= 44 else 4
+    abbreviated = total > 11
+    label_text = [
+        f"{c.variant_i}↔{c.variant_j}" if abbreviated else c.label
+        for c in shown_couples
+    ]
+    fig.add_trace(go.Scatter(
+        x=[positions[c.key] for c in shown_couples],
+        y=[-.42 - (i % rows) * .25 for i in range(total)],
+        mode="text", text=label_text, textposition="middle center",
+        textfont=dict(color="#EDF3F8", size=13 if total <= 24 else 12),
+        hoverinfo="skip", showlegend=False, name="Couple labels",
     ))
 
     if focus_family is not None:
@@ -185,17 +201,17 @@ def plot_family_tree(
     else:
         total = len(shown_couples)
         center = root_x
-    # A focused group is fully visible up to 10 nodes; larger groups are
-    # keyboard-selectable and pannable without making tiny unreadable labels.
-    half = max(3.5, min(9.0, ((total-1)*1.25)/2.+1.25))
+    # An all-families overview MUST not crop entire operator families. Users may
+    # zoom/pan to read a dense tree, with the accessible couple picker below.
+    half = max(3.5, ((total-1)*1.25)/2.+2.0) if focus_family is None else max(3.5, ((total-1)*1.25)/2.+1.0)
     fig.update_layout(
-        height=325,
-        margin=dict(l=26, r=26, b=85, t=50),
-        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        height=490,
+        margin=dict(l=40, r=40, b=55, t=70),
+        plot_bgcolor="#101922", paper_bgcolor="#101922",
         font=dict(size=12),
         dragmode="pan", clickmode="event+select",
         xaxis=dict(visible=False, range=[center-half, center+half], fixedrange=False),
-        yaxis=dict(visible=False, range=[-.73, 2.48], fixedrange=True),
+        yaxis=dict(visible=False, range=[-1.48, 2.48], fixedrange=True),
         showlegend=False,
         uirevision=f"family-{focus_family or 'all'}",
     )
