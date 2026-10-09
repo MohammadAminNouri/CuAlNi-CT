@@ -51,3 +51,18 @@ def test_environment_installs_validation_tools_without_changing_base_solver_depe
     assert any(x.startswith("hypothesis") for x in extras["dev"])
     assert "spglib" not in " ".join(project["project"]["dependencies"])
     assert "hypothesis" not in " ".join(project["project"]["dependencies"])
+
+
+def test_tracked_files_have_no_unresolved_git_merge_markers():
+    """Prevent github.dev's previous silent conflict-marker commits.
+
+    Search each manifest-tracked source and document as a *whole line*;
+    ordinary comparison operators in Python do not count as conflicts.
+    """
+    tracked = (ROOT / "MANIFEST.sha256").read_text(encoding="utf-8").splitlines()
+    paths = ["MANIFEST.sha256"] + [line.partition("  ")[2] for line in tracked]
+    markers = ("<<<<<<< ", "=======", ">>>>>>> ", "||||||| ")
+    for name in paths:
+        assert name and (ROOT / name).is_file(), name
+        for number, line in enumerate((ROOT / name).read_text(encoding="utf-8").splitlines(), 1):
+            assert not line.startswith(markers), f"Unresolved merge marker in {name}:{number}"

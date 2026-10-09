@@ -99,9 +99,16 @@ def test_symmetry_display_keeps_rotation_axes_and_mirror_covectors_distinct():
     import numpy as np
     from twin_app.point_group_visualizer import cell_basis, element_geometry
 
+    # Inspect the actual UI wiring: the phase input delegates to a typed
+    # guide, which calls explain_group on a metric-validated inventory.
+    # Calling explain_group directly in input_ui is NOT required.
     ui = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
-    assert "explain_group(" in ui
+    guide = (ROOT / "twin_app" / "point_group_guide.py").read_text(encoding="utf-8")
+    assert "_render_operation_summary(inventory," in ui
+    assert "group_guide(inventory," in ui
+    assert "explanation_for_operation(op)" in ui
     assert "make_operation_scene" in ui
+    assert "explain_group(inventory.symbol," in guide
 
     # A monoclinic cell demonstrates why direct [uvw] and reciprocal (hkl)
     # cannot be conflated, even when their three coefficients match.
