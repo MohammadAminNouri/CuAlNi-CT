@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+import tomllib
 
 
 def test_v11_is_additive_and_solver_free():
@@ -37,16 +38,9 @@ def test_v11_guides_each_unresolved_cayron_question_to_real_app_sections():
     source = (root / "app" / "research_workspaces_v11.py").read_text(encoding="utf-8")
 
     for step_id in (
-        '"state"',
-        '"topology"',
-        '"mm_twins"',
-        '"am_exact"',
-        '"nearest"',
-        '"habit"',
-        '"smc"',
-        '"closing_gap"',
-        '"supercompatibility"',
-        '"overall"',
+        '"state"', '"topology"', '"mm_twins"', '"am_exact"',
+        '"nearest"', '"habit"', '"smc"', '"closing_gap"',
+        '"supercompatibility"', '"overall"',
     ):
         assert step_id in source
 
@@ -79,6 +73,13 @@ def test_cayron_geometry_uses_authoritative_outputs_and_keeps_diagnostics_nonexa
 
 
 def test_plotly_is_an_app_dependency_not_a_core_science_dependency():
+    """Parse TOML semantics; additional independent validators must not break CI."""
     root = Path(__file__).resolve().parents[2]
-    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'app = ["streamlit>=1.40,<2", "plotly>=5.24,<7"]' in pyproject
+    config = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    core = config["project"]["dependencies"]
+    app = config["project"]["optional-dependencies"]["app"]
+    assert any(req.startswith("streamlit>=") for req in app)
+    assert any(req.startswith("plotly>=") for req in app)
+    assert any(req.startswith("gemmi>=") for req in app)
+    assert any(req.startswith("spglib>=") for req in app)
+    assert not any(req.lower().startswith(("streamlit", "plotly", "gemmi", "spglib")) for req in core)

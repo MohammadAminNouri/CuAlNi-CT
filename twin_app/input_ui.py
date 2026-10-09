@@ -16,6 +16,7 @@ from cualni_cryst.weak_twins import BravaisNodeBasis
 from .input_logic import canonical_correspondence_rows, displayed_relation, exact_matrix
 from .symmetry_inventory import SymmetryInventory, build_symmetry_inventory
 from .point_group_explainer import explain_group, simple_group_label
+from .point_group_guide import group_guide, explanation_for_operation
 from .input_explainer import preview_correspondence, validate_metric_parameters
 
 
@@ -114,36 +115,26 @@ def _coordinate_rule(matrix: tuple[tuple[str, str, str], ...]) -> str:
 
 
 def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cell: tuple[float, float, float, float, float, float]) -> None:
-    """Visible selection-specific scientific explanation; optional operation details."""
-    d = explain_group(
-        inventory.symbol, dict(inventory.counts), inventory.expected_order,
-        tuple(op.determinant for op in inventory.operations),
-    )
-    st.markdown(f"**What {inventory.symbol} means: {d['plain_name']}**")
-    st.write(d["signature"])
-    st.markdown(
-        f"**Verified contents:** {d['proper']} proper rotations (including identity); "
-        f"{d['improper']} orientation-reversing operations; "
-        f"{d['twofold']} twofold rotations; {d['mirror']} mirrors. "
-        f"{'Inversion is present.' if d['inversion'] else 'No inversion centre.'}"
-    )
-    if parent:
+    """Scientific meaning beside the selected group, not a large operations dump."""
+    guide = group_guide(inventory, parent=parent)
+    with st.container(border=True):
+        st.markdown(f"**{guide.symbol} · {guide.title}**")
+        st.write(guide.signature)
+        st.caption(f"{guide.family.capitalize()} · {guide.setting} · {guide.order} total point operations")
         st.markdown(
-            "**Relevance to twins:** "
-            + ("mirrors can provide Type-I generators; " if d["mirror"] else "no parent mirror generator; ")
-            + ("twofold rotations can provide Type-II generators." if d["twofold"] else "no proper twofold generator.")
+            f"**Verified contents:**  {guide.proper} proper (orientation-preserving) operations; "
+            f"{guide.improper} improper (orientation-reversing) operations. "
+            f"Inversion centre: {'present' if guide.inversion else 'absent'}."
         )
-    else:
-        st.markdown("**Relevance to the transformation:** product symmetry helps decide which correspondences are equivalent. It does not establish a physical twin by itself.")
-    st.caption("Symmetry operations leave this crystal unchanged. To predict actual twin families we also need the other crystal, the correspondence matrix and both lattice metrics.")
-    with st.expander("Inspect one symmetry operation (optional)", expanded=False):
-        items = list(inventory.operations)
-        default = next((i for i, item in enumerate(items) if item.kind == "proper 2-fold rotation"), 0)
-        selection = st.selectbox(
-            "Choose an operation", list(range(len(items))), index=default,
-            format_func=lambda i: _operation_label(items[i]),
-            key=f"inspect_{'parent' if parent else 'product'}_{inventory.symbol}",
+        st.markdown("**Why it matters for this calculation**")
+        st.write(guide.role_explanation)
+        st.caption(
+            "These operations are an exact inventory of the *selected* point group, "
+            "verified against the entered lattice metric. Lattice parameters alone do not "
+            "establish atomic-structure or space-group symmetry."
         )
+<<<<<<< HEAD
+=======
         op = items[selection]
         st.markdown(f"**{_operation_label(op)}**")
         st.write("**Action in fractional crystal coordinates:** " + _coordinate_rule(op.matrix))
@@ -168,6 +159,50 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
             st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
             st.caption(f"Full symmetry group metric-preservation residual: {inventory.metric_preservation_maximum_residual:.2e}")
             st.caption("rotation axis [uvw] is a direct-space direction; mirror plane (hkl) is a reciprocal-space covector. They are not interchangeable.")
+>>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
+
+        with st.expander("Understand the symmetry elements and their directions", expanded=False):
+            st.write(
+                "Each operation maps the crystal onto itself. The operation count is NOT "
+                "always the number of geometric axes: +90° and −90° can share one axis."
+            )
+            for family in guide.families:
+                line = f"**{family.name}** — {family.operations} operation(s)"
+                if family.geometric_elements:
+                    axes = family.geometric_elements
+                    label = ('(' + ', '.join(str(v) for v in axes[0]) + ')') if 'plane' in family.coordinate_type else ('[' + ', '.join(str(v) for v in axes[0]) + ']')
+                    line += f" · {len(axes)} distinct indexed {'planes' if 'plane' in family.coordinate_type else 'axes'} · e.g. {label}"
+                st.markdown(line)
+            st.caption(
+                "A rotation axis [uvw] denotes a direct-space direction. A mirror plane (hkl) "
+                "is a reciprocal-space covector. They are not interchangeable. "
+                "These indices follow the selected conventional setting."
+            )
+
+        with st.expander("Inspect one symmetry operation (optional) · action, axis and matrix", expanded=False):
+            ops = list(inventory.operations)
+            default = next((i for i, item in enumerate(ops) if item.kind == "proper 2-fold rotation"), 0)
+            index = st.selectbox(
+                "Symmetry operation", list(range(len(ops))), index=default,
+                format_func=lambda i: _operation_label(ops[i]),
+                key=f"inspect_{'parent' if parent else 'product'}_{inventory.symbol}",
+                help="Select one operation to see exactly what happens to crystal coordinates.",
+            )
+            op = ops[index]
+            meaning, limitation = explanation_for_operation(op)
+            st.markdown(f"**{_operation_label(op)}**")
+            st.write(meaning)
+            st.write(f"**Action on a point:** {_coordinate_rule(op.matrix)}")
+            st.caption(limitation)
+            with st.expander("3D geometry in the entered cell", expanded=False):
+                from .point_group_visualizer import cell_basis, make_operation_scene
+                B = cell_basis(*[float(v) for v in cell])
+                fig = make_operation_scene(B, op.kind, op.axis_or_plane)
+                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
+                st.caption("Geometry only: this is not a stereographic projection, EBSD pattern, or physical twin prediction.")
+            with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
+                st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
+                st.caption(f"Metric-preservation maximum residual over the selected group: {inventory.metric_preservation_maximum_residual:.2e}")
 
 
 def render_phase_input(

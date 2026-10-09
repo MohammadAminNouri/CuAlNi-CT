@@ -69,7 +69,10 @@ def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     h1 { font-size: 2.1rem !important; line-height:1.25; font-weight:750 !important; }
     h2 { font-size: 1.35rem !important; line-height:1.3; }
     h3,h4 { line-height:1.3; }
-    button { font-weight: 600 !important; }
+    button { font-weight: 600 !important; min-height: 44px; }
+    button:focus-visible, [role="radio"]:focus-visible, [role="option"]:focus-visible {
+      outline: 3px solid #8dbdff !important; outline-offset: 3px !important;
+    }
     .tf-inline { padding: .72rem .95rem; border: 1px solid rgba(128,140,154,.26);
        border-left-width: 5px; border-radius: .45rem; margin: .7rem 0 .9rem 0;
        font-weight: 600; line-height: 1.4; }
@@ -83,16 +86,16 @@ def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     .tf-blue { background:var(--tf-blue); }
     .tf-teal { background:var(--tf-teal); }
     .tf-grey { background:var(--tf-grey); }
-    [data-testid="stCaptionContainer"] p { line-height: 1.45; }
+    [data-testid="stCaptionContainer"] p { line-height: 1.55; font-size: 1rem; }
     @media (prefers-reduced-motion: reduce) {
        *, *::before, *::after { animation:none !important; transition:none !important; }
     }
     .tf-pane-heading { color:#8fb4d3; font-size:.81rem; font-weight:800; letter-spacing:.075em; margin-top:1rem; }
     .tf-quantity { border:1px solid rgba(124,146,163,.38); border-radius:11px; padding:15px 15px 14px; margin:8px 0 13px; background:rgba(115,136,152,.045); min-height:124px; }
-    .tf-quantity-label {font-weight:700; font-size:1rem; margin-bottom:10px;}
+    .tf-quantity-label {font-weight:700; font-size:1.07rem; margin-bottom:10px;}
     .tf-quantity-label span {font-weight:500; opacity:.8;}
     .tf-quantity-value {font-family:ui-monospace,Consolas,monospace; font-size:1.17rem; word-break:break-word; line-height:1.55; font-weight:600;}
-    .tf-quantity-help {font-size:.91rem; opacity:.83; margin-top:9px; line-height:1.4;}
+    .tf-quantity-help {font-size:1rem; opacity:1; margin-top:9px; line-height:1.48;}
     .tf-banner {border:1px solid rgba(124,146,163,.4); border-left:5px solid #8592a0; border-radius:10px; padding:13px 16px; margin:16px 0; line-height:1.65;}
     .tf-banner-blue {border-left-color:#85b4e3;background:rgba(111,156,201,.11);}
     .tf-banner-amber {border-left-color:#e3bd81;background:rgba(227,189,129,.12);}

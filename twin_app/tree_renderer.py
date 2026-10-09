@@ -17,6 +17,7 @@ from .navigator_model import build_navigator_model, first_interpretable_couple
 from .scientific_models import PairTwinConstruction, TwinFamilyReport
 from .ux_language import twin_name, representative_habit_solutions
 from .branch_presentation import distinct_twin_branches
+from .interface_interpretation import compare_interface_geometries, interface_choice_description
 
 
 def _fmt(value: float, precision: int = 6) -> str:
@@ -112,6 +113,16 @@ def _selected_details(node: CoupleNode) -> None:
     if not pair.constructions:
         st.info("No exact martensite–martensite rank-one twin relation for this couple and these inputs.")
         return
+<<<<<<< HEAD
+    # Display physically DISTINCT rank-one tensors, not anonymous ± solver signs.
+    interfaces = distinct_twin_branches(pair.constructions)
+    choice_key = f"tf_v9_interface_{node.key}"
+    options = tuple(item.label for item in interfaces)
+    if st.session_state.get(choice_key) not in options:
+        st.session_state[choice_key] = next(
+            (item.label for item in interfaces if item.representative.habit_solutions),
+            options[0],
+=======
     # Display physically DISTINCT rank-one tensors, not anonymous ± solver signs.
     interfaces = distinct_twin_branches(pair.constructions)
     choice_key = f"tf_v9_interface_{node.key}"
@@ -131,26 +142,91 @@ def _selected_details(node: CoupleNode) -> None:
                 label + " · " + twin_name(next(x for x in interfaces if x.label == label).representative.classification).split(" · ")[0]
             ),
             help="These are distinct rank-one interface geometries for this one martensite couple. Selecting one does not recalculate anything.",
+>>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
         )
+<<<<<<< HEAD
+    st.markdown("#### The possible twin interfaces")
+    st.write(
+        "The **same two martensite variants** can sometimes meet through two different "
+        "planar interfaces. Each option is a separately calculated solution of the "
+        "martensite–martensite rank-one equation. You are selecting a *geometry*, "
+        "not changing the material or choosing Type I versus Type II. "
+        "Interface A/B is not the same as Type I/Type II."
+    )
+    if len(interfaces) > 1:
+        comparison = compare_interface_geometries(interfaces[0].representative, interfaces[1].representative)
+        st.caption(comparison.narrative)
+    else:
+        st.caption("One physically distinct interface was obtained. Duplicate algebraic records are combined for presentation only.")
+    # Larger, clear selection surfaces; one stable details pane below.
+    columns = st.columns(min(len(interfaces), 2), gap="medium")
+    for i, interface in enumerate(interfaces):
+        with columns[i % len(columns)]:
+            active = st.session_state[choice_key] == interface.label
+            with st.container(border=True):
+                st.markdown(f"**{interface.label}**{' · Currently selected' if active else ''}")
+                st.write(interface_choice_description(interface))
+                st.caption(
+                    f"Twin plane (product crystal): {_vec(interface.representative.twin_plane_product_crystal, plane=True)}"
+                )
+                has_habit = bool(interface.all_habit_solutions) or bool(interface.representative.continuum_fraction)
+                st.caption("A/M compatible habit: " + ("calculated for this branch" if has_habit else "no discrete exact habit calculated for this branch"))
+                if st.button(
+                    "Currently selected" if active else f"Inspect {interface.label}",
+                    key=f"tf_v91_select_{node.key}_{i}",
+                    use_container_width=True,
+                    disabled=active,
+                ):
+                    st.session_state[choice_key] = interface.label
+    st.caption(
+        "Interface A/B are screen labels, not published crystallographic modes. "
+        "A verified Type I, Type II or Compound label is a separate scientific conclusion. "
+        "Habit-plane alternatives belong *inside* whichever twin interface you inspect."
+    )
     selected_interface = next(item for item in interfaces if item.label == st.session_state[choice_key])
     branch = selected_interface.representative
     if len(selected_interface.equivalent_source_indices) > 1:
         st.caption(f"{len(selected_interface.equivalent_source_indices)} algebraic records describe this same physical rank-one tensor; all distinct habit solutions and the original records are preserved.")
     if len(selected_interface.classifications) > 1:
         st.warning("Conflicting classification evidence exists for this physical interface. Review all recorded routes before identifying its twin type.")
+=======
+    selected_interface = next(item for item in interfaces if item.label == st.session_state[choice_key])
+    branch = selected_interface.representative
+    if len(selected_interface.equivalent_source_indices) > 1:
+        st.caption(f"{len(selected_interface.equivalent_source_indices)} algebraic records describe this same physical rank-one tensor; all distinct habit solutions and the original records are preserved.")
+    if len(selected_interface.classifications) > 1:
+        st.warning("Conflicting classification evidence exists for this physical interface. Review all recorded routes before identifying its twin type.")
+>>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     kind, label = _status(branch)
+<<<<<<< HEAD
+    if len(selected_interface.classifications) > 1:
+        kind, label = "amber", "Twin geometry calculated · conflicting type evidence; not verified"
+    st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong></div>', unsafe_allow_html=True)
+    if kind == "amber":
+        st.write(
+            "The rank-one equation has a numerical solution, but the independent "
+            "crystallographic checks do not yet establish a Type-I, Type-II or Compound label. "
+            "This does not mean the interface geometry is absent."
+        )
+=======
     if len(selected_interface.classifications) > 1:
         kind, label = "amber", "Twin geometry calculated · conflicting type evidence; not verified"
     st.markdown(f'<div class="tf-banner tf-banner-{kind}"><strong>{escape(label)}</strong> · {escape("Mathematical rank-one twin geometry calculated")}</div>', unsafe_allow_html=True)
+>>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     st.markdown("#### Martensite–martensite twinning elements")
     columns = st.columns(3)
     with columns[0]:
-        _named_value("Twin shear", "s", "Relative shear amount", _fmt(branch.shear_magnitude))
+        _named_value("Twin shear magnitude", "s", "How much one martensite variant shears relative to the other (dimensionless)", _fmt(branch.shear_magnitude))
     with columns[1]:
-        _named_value("Twin plane", "K₁", "Product reciprocal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
+        _named_value("Twin plane", "K₁", "Which plane can separate the two martensite variants; product-crystal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
     with columns[2]:
+<<<<<<< HEAD
+        _named_value("Shear direction", "η₁", "Crystal direction associated with the twin shear; product-crystal [uvw]", _vec(branch.shear_direction_product_crystal))
+    _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
+=======
         _named_value("Shear direction", "η₁", "Product direct [uvw]", _vec(branch.shear_direction_product_crystal))
     _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
+>>>>>>> 2fce910d70d4b7cc9f6cc900b26f34ec5c719f62
     with st.expander("Scientific verification and full coordinates", expanded=False):
         st.markdown("**Exact twin equation**")
         st.latex(r"R_t U_j-U_i=a\otimes n")
