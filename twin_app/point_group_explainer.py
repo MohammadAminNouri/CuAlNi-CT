@@ -44,6 +44,48 @@ POINT_GROUP_SIGNATURES: dict[str, str] = {
 }
 
 
+# Human-first names are for navigation, not alternative Hermann–Mauguin symbols.
+# These are crystal point classes, not Bravais types or space groups.
+POINT_GROUP_SHORT_NAMES: dict[str, str] = {
+    "1": "No nontrivial symmetry",
+    "-1": "Inversion-only",
+    "2": "One half-turn axis",
+    "m": "One mirror plane",
+    "2/m": "Half-turn, mirror and inversion",
+    "222": "Three perpendicular half-turns",
+    "mm2": "Two mirrors and a half-turn",
+    "mmm": "Three perpendicular mirror families",
+    "4": "Quarter-turn axis",
+    "-4": "Fourfold rotoinversion",
+    "4/m": "Quarter-turn, mirror and inversion",
+    "422": "Quarter-turn and half-turn axes",
+    "4mm": "Quarter-turn with mirrors",
+    "-42m": "Roto-inversion and mirrors",
+    "4/mmm": "Full tetragonal symmetry",
+    "3": "Threefold rotation axis",
+    "-3": "Threefold rotation plus inversion",
+    "32": "Threefold and half-turn axes",
+    "3m": "Threefold rotation with mirrors",
+    "-3m": "Full centrosymmetric trigonal class",
+    "6": "Sixfold rotation axis",
+    "-6": "Sixfold rotoinversion",
+    "6/m": "Sixfold rotation and inversion",
+    "622": "Sixfold and half-turn axes",
+    "6mm": "Sixfold rotation with mirrors",
+    "-6m2": "Roto-inversion, mirrors and half-turns",
+    "6/mmm": "Full hexagonal symmetry",
+    "23": "Tetrahedral rotations only",
+    "m-3": "Inversion with tetrahedral rotations",
+    "432": "Cubic rotations only",
+    "-43m": "Tetrahedral mirrors and rotoinversion",
+    "m-3m": "Full cubic symmetry",
+}
+
+
+def simple_group_label(symbol: str) -> str:
+    return POINT_GROUP_SHORT_NAMES[symbol]
+
+
 def explain_group(
     symbol: str, counts: dict[str, int], order: int, determinants: tuple[int, ...] | None = None,
 ) -> dict[str, object]:
@@ -67,6 +109,7 @@ def explain_group(
     inv = counts.get("inversion", 0) == 1
     return {
         "signature": POINT_GROUP_SIGNATURES[symbol],
+        "plain_name": POINT_GROUP_SHORT_NAMES[symbol],
         "proper": proper,
         "improper": improper,
         "inversion": inv,

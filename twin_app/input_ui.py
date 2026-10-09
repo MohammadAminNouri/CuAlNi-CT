@@ -15,7 +15,7 @@ from cualni_cryst.weak_twins import BravaisNodeBasis
 
 from .input_logic import canonical_correspondence_rows, displayed_relation, exact_matrix
 from .symmetry_inventory import SymmetryInventory, build_symmetry_inventory
-from .point_group_explainer import explain_group
+from .point_group_explainer import explain_group, simple_group_label
 
 
 FAMILY_ORDER = (
@@ -83,83 +83,77 @@ def _number(label: str, value: float, *, key: str, angle: bool = False) -> float
     return float(st.number_input(**kwargs))
 
 
-def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool) -> None:
-    """Compact, point-group-specific crystallographic explanation.
+def _operation_label(operation: object) -> str:
+    """Tell the user what an operation *does* before exposing G-indices."""
+    kind = str(operation.kind)
+    axis = operation.axis_or_plane
+    if kind == "identity":
+        return "No change · identity"
+    if kind == "inversion":
+        return "Flip every direction · inversion"
+    if axis is not None:
+        indices = ",".join(str(v) for v in axis)
+        if kind == "mirror reflection":
+            return f"Reflect across plane ({indices})"
+        if "rotation" in kind:
+            if operation.order == 2:
+                return f"Rotate 180° about [{indices}]"
+            # Group order alone does NOT distinguish, e.g., +90° from −90°.
+            return f"{operation.order}-fold rotation about [{indices}]"
+    return kind.replace("order-", "order ")
 
-    Only the exact inventory supplies counts/axes/planes. Group descriptions
-    never claim that a candidate symmetry operation guarantees a physical twin.
-    """
+
+def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool) -> None:
+    """First the meaning of the chosen point group; operations remain optional."""
     data = explain_group(
-        inventory.symbol, dict(inventory.counts), inventory.expected_order,
+        inventory.symbol,
+        dict(inventory.counts),
+        inventory.expected_order,
         tuple(op.determinant for op in inventory.operations),
     )
-    st.markdown(f"**{inventory.symbol} · {inventory.crystal_family.capitalize()}**")
-    st.write(str(data["signature"]))
-    st.caption(
-        f"|G| = {inventory.expected_order} operations · "
-        f"{data['proper']} proper · {data['improper']} improper · "
-        f"inversion {'present' if data['inversion'] else 'absent'} · "
-        f"{inventory.conventional_setting}"
-    )
+    st.markdown(f"**{data['plain_name']}** · {inventory.symbol}")
+    st.caption(data["signature"])
+    st.caption(f"{inventory.expected_order} exact symmetry operations · {inventory.conventional_setting}")
 
-    # Explain precisely why these operations matter to this transformation.
-    if parent:
-        st.caption(
-            f"Potential routes: Type I—{data['route_I']}; "
-            f"Type II—{data['route_II']}; weak—{data['route_weak']}. "
-            "A candidate becomes a real twin only after correspondence, metric "
-            "and rank-one compatibility checks."
+    with st.expander("Why does this point group matter?", expanded=False):
+        st.write(
+            "It tells us which rotations and reflections leave this crystal unchanged. "
+            "Together with the other phase and lattice correspondence, it determines "
+            "which variants and twin families are possible."
         )
-    else:
-        st.caption(
-            "Product symmetry enters H = G_A ∩ C⁻¹G_M C and the counting of "
-            "correspondence variants. It does not independently prove a twin."
-        )
+        if parent:
+            possible = []
+            if data["mirror"]:
+                possible.append("mirror → Type I candidate")
+            if data["twofold"]:
+                possible.append("180° rotation → Type II candidate")
+            if data["higher"]:
+                possible.append("higher-order rotation → possible weak route")
+            st.write("For this parent: " + ("; ".join(possible) if possible else "no supported rotation/mirror route") + ".")
+            st.caption("Candidate is not confirmation. Classification requires correspondence, metrics and compatibility.")
+        else:
+            st.write("Product point-group operations help determine correspondence equivalence and variant counts; they do not alone prove twins.")
+        st.caption("[uvw] = direct crystal direction; (hkl) = reciprocal plane normal.")
 
-    with st.expander("Point-group contents: operations, axes and planes", expanded=False):
-        st.caption("Exact operation inventory · every item is metric-validated for this cell")
-        rows = []
-        for kind, count in inventory.counts:
-            elements: list[str] = []
-            for op in inventory.operations:
-                if op.kind != kind or op.axis_or_plane is None:
-                    continue
-                indices = ",".join(str(v) for v in op.axis_or_plane)
-                label = (f"({indices})" if kind == "mirror reflection" else f"[{indices}]")
-                if label not in elements:
-                    elements.append(label)
-            exemplar = ", ".join(elements[:4]) if elements else "—"
-            if len(elements) > 4:
-                exemplar += f" · +{len(elements)-4}"
-            rows.append({"Operation": kind, "Count": count, "Example axis/plane": exemplar})
-        st.table(rows)
-        st.caption(
-            "A rotation axis [uvw] is a direct crystal direction; "
-            "a mirror-plane covector (hkl) is reciprocal. "
-            "These are not the same kind of object."
+    with st.expander("Explore one symmetry operation (optional)", expanded=False):
+        st.caption("Choose an action to understand it. The full matrix stays hidden until requested.")
+        items = list(inventory.operations)
+        # Avoid launching beginners directly into the uninformative identity G0.
+        default_index = next((i for i, op in enumerate(items) if op.kind == "proper 2-fold rotation"), 0)
+        chosen = st.selectbox(
+            "Operation to examine",
+            list(range(len(items))),
+            index=default_index,
+            format_func=lambda i: _operation_label(items[i]),
+            key=f"inspect_{'parent' if parent else 'product'}_{inventory.symbol}",
         )
-        options = tuple(range(len(inventory.operations)))
-        op_index = st.selectbox(
-            "Inspect one exact symmetry operation", options,
-            format_func=lambda i: (
-                f"G{inventory.operations[i].index} · "
-                f"{inventory.operations[i].kind} · order {inventory.operations[i].order}"
-            ),
-            key=f"inspect_group_{'parent' if parent else 'product'}_{inventory.symbol}",
-        )
-        operation = inventory.operations[op_index]
-        if operation.axis_or_plane is not None:
-            indices = ", ".join(str(v) for v in operation.axis_or_plane)
-            if operation.kind == "mirror reflection":
-                st.markdown(f"**mirror-plane covector (hkl):** ({indices})")
-            elif "rotation" in operation.kind:
-                st.markdown(f"**rotation axis [uvw]:** [{indices}]")
-        st.caption(operation.twin_role)
-        st.code("\n".join("[ " + "  ".join(row) + " ]" for row in operation.matrix), language="text")
-        st.caption(
-            "Maximum metric preservation residual: "
-            f"{inventory.metric_preservation_maximum_residual:.2e}"
-        )
+        op = items[chosen]
+        st.markdown(f"**{_operation_label(op)}**")
+        st.write("What this can mean for twinning: " + op.twin_role + ".")
+        with st.expander("Show exact 3×3 transformation matrix", expanded=False):
+            st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
+            st.caption("Each matrix acts on crystallographic coordinates in the stated conventional setting.")
+            st.caption(f"Maximum metric-preservation residual over this group: {inventory.metric_preservation_maximum_residual:.2e}")
 
 
 def render_phase_input(
@@ -180,6 +174,7 @@ def render_phase_input(
         for family in FAMILY_ORDER
         if any(str(row["crystal_family"]).lower() == family for row in metadata)
     ]
+    st.caption("Crystal system = shape of the unit cell; point group = rotations and reflections that keep it unchanged.")
     family = st.selectbox(
         "Crystal system",
         families,
@@ -198,10 +193,9 @@ def render_phase_input(
         index=symbols.index(selected_default),
         key=f"{prefix}_point_group_{family}",
         format_func=lambda symbol: (
-            f"{symbol}  ·  {by_symbol[symbol]['conventional_setting']}  ·  "
-            f"order {by_symbol[symbol]['order']}"
+            f"{symbol} — {simple_group_label(symbol)}"
         ),
-        help="The exact operations of the selected group are shown below after the cell is defined.",
+        help="Symbol followed by a plain-language name. Choose a group to see what it means directly below.",
     )
 
     a0, b0, c0, alpha0, beta0, gamma0 = defaults
@@ -281,10 +275,12 @@ def render_correspondence_input(
     ),
 ) -> CorrespondenceUIResult:
     st.subheader("Lattice correspondence")
+    st.caption("This 3×3 matrix tells which parent crystal directions map to which product directions. It does not represent a symmetry operation.")
     choice = st.radio(
-        "Matrix direction",
+        "Which way are the crystal directions mapped?",
         ("A → M", "M → A"),
         horizontal=True,
+        key=f"{prefix}_direction_choice",
         help=(
             "Choose the direction of the matrix you are entering. The scientific backend always "
             "receives the canonical A → M action. A reverse matrix is inverted exactly."

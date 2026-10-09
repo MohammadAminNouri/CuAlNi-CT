@@ -12,6 +12,7 @@ from math import isfinite, sqrt
 from typing import Any
 
 from .scientific_models import TwinFamilyRecord, TwinFamilyReport, VariantPairRecord
+from .ux_language import COLOR_FAMILY, COLOR_SELECTED, COLOR_HABIT, COLOR_EDGE
 
 
 @dataclass(frozen=True)
@@ -139,7 +140,7 @@ def plot_family_tree(
         xs.extend([fx, fx, x, x, None])
         ys.extend([1., .57, .57, .0, None])
     fig.add_trace(go.Scatter(
-        x=xs, y=ys, mode="lines", line=dict(color="#87909A", width=1.7),
+        x=xs, y=ys, mode="lines", line=dict(color=COLOR_EDGE, width=1.8),
         hoverinfo="skip", showlegend=False, name="Family connections",
     ))
     fig.add_trace(go.Scatter(
@@ -147,7 +148,7 @@ def plot_family_tree(
         y=[1.] * len(shown_families), mode="markers+text",
         text=[f"{f.family.family_id}" for f in shown_families],
         textposition="middle center", textfont=dict(color="#FFFFFF", size=12),
-        marker=dict(symbol="square", size=44, color="#344452", line=dict(width=1, color="#27323C")),
+        marker=dict(symbol="square", size=42, color=COLOR_FAMILY, line=dict(width=1, color="#3C566B")),
         hovertext=[f"{f.family.family_id} · {f.family.route.replace('_', ' ')} · {f.count} couples"
                    for f in shown_families],
         hovertemplate="%{hovertext}<extra></extra>", showlegend=False,
@@ -157,12 +158,14 @@ def plot_family_tree(
         x=[positions[c.key] for c in shown_couples],
         y=[0.] * len(shown_couples), mode="markers+text",
         text=[c.label for c in shown_couples], textposition="bottom center",
-        textfont=dict(color="#263947", size=12),
+        textfont=dict(color="#DDE5ED", size=12),
         marker=dict(
-            size=[26 if c.key == selected_key else 19 for c in shown_couples],
-            color=["#17649D" if c.key == selected_key else "#617989" for c in shown_couples],
-            symbol=["circle" if couple_habit_count(c) else "circle-open" for c in shown_couples],
-            line=dict(width=2, color="#17649D"),
+            size=[29 if c.key == selected_key else 22 for c in shown_couples],
+            color=[COLOR_SELECTED if c.key == selected_key else
+                   COLOR_HABIT if couple_habit_count(c) else COLOR_EDGE for c in shown_couples],
+            symbol=["circle" if c.key == selected_key else
+                    "diamond" if couple_habit_count(c) else "circle-open" for c in shown_couples],
+            line=dict(width=1.5, color="#D4DEE5"),
         ),
         customdata=[[c.key] for c in shown_couples],
         hovertext=[f"{c.label} · {_pair_status(c)}" for c in shown_couples],
@@ -171,8 +174,8 @@ def plot_family_tree(
     ))
     fig.add_trace(go.Scatter(
         x=[root_x], y=[2.], mode="markers+text",
-        marker=dict(symbol="diamond", size=30, color="#1E374B"),
-        text=["A → M"], textposition="top center", textfont=dict(color="#1E374B", size=15),
+        marker=dict(symbol="diamond", size=28, color=COLOR_FAMILY),
+        text=["A → M"], textposition="top center", textfont=dict(color="#DDE5ED", size=14),
         hoverinfo="skip", showlegend=False, name="Transformation root",
     ))
 
@@ -186,8 +189,8 @@ def plot_family_tree(
     # keyboard-selectable and pannable without making tiny unreadable labels.
     half = max(3.5, min(9.0, ((total-1)*1.25)/2.+1.25))
     fig.update_layout(
-        height=335,
-        margin=dict(l=32, r=32, b=85, t=45),
+        height=325,
+        margin=dict(l=26, r=26, b=85, t=50),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         font=dict(size=12),
         dragmode="pan", clickmode="event+select",
