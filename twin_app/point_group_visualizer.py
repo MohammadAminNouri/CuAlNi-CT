@@ -22,7 +22,9 @@ def cell_basis(a: float, b: float, c: float, alpha: float, beta: float, gamma: f
     cx = c * cos(be)
     cy = c * (cos(al) - cos(be)*cos(ga)) / sg
     cz2 = c*c-cx*cx-cy*cy
-    if cz2 <= 1e-15:
+    # The previous absolute 1e-15 threshold rejected valid Angstrom-scale
+    # cells supplied in metres. Judge degeneracy relative to cell size.
+    if not np.isfinite(cz2) or cz2 <= 1e-12 * c * c:
         raise ValueError("Cell angles do not define a positive-volume lattice")
     B = np.array([[a,b*cos(ga),cx],[0.,b*sg,cy],[0.,0.,sqrt(cz2)]], dtype=float)
     if float(np.linalg.det(B)) <= 0:

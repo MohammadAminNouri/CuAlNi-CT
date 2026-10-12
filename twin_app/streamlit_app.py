@@ -28,7 +28,7 @@ from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
 from twin_app.report_export import make_export
 from twin_app.structure_validation import parse_cif, independent_spglib_check
-from twin_app.input_explainer import convert_cell_lengths
+from twin_app.input_explainer import convert_cell_lengths, cell_compatible_with_family
 
 
 APP_TITLE = "Martensitic Crystallography · Research Workbench"
@@ -178,7 +178,22 @@ def main() -> None:
                         try:
                             parsed = parse_cif(uploaded.getvalue(), filename=uploaded.name)
                             imported[name] = parsed
-                            st.success(f"{parsed.site_count} atomic sites; cell dimensions verified")
+                            st.success(f"{parsed.site_count} expanded unit-cell sites; cell metric validated")
+                            if parsed.symmetry_model:
+                                st.caption(
+                                    "CIF-declared symmetry is checked for internal consistency, "
+                                    "not independently established from diffraction."
+                                )
+                            else:
+                                st.warning(
+                                    "CIF has no declared space group: atom sites are treated "
+                                    "as listed, with no proof that the full unit cell is present."
+                                )
+                            if parsed.has_partial_occupancy:
+                                st.warning(
+                                    "Partial occupancy/disorder found: the cell may be imported, "
+                                    "but atomic symmetry assessment is not supported."
+                                )
                             try:
                                 evidence = independent_spglib_check(parsed)
                             except (RuntimeError, ValueError) as exc:
@@ -189,12 +204,36 @@ def main() -> None:
                         except ValueError as exc:
                             st.error(f"Could not read {name} CIF: {exc}")
             if imported and st.button("Use imported cell parameters", key="tf_v9_use_cif_cells"):
-                display_unit = st.session_state.get("twin_length_unit", "angstrom")
+                # Validate all pending imports before mutating any widget state.
+                # Family-setting constraints may lock b/c/angles, so never
+                # silently overwrite an independent CIF cell parameter.
+                incompatible = []
                 for name, parsed in imported.items():
-                    converted_lengths = convert_cell_lengths(parsed.lengths, from_unit="angstrom", to_unit=display_unit)
-                    for label, value in zip(("a", "b", "c", "alpha", "beta", "gamma"), converted_lengths + parsed.angles):
-                        st.session_state[f"{name}_{label}"] = value
-                st.rerun()
+                    chosen_family = st.session_state.get(
+                        f"{name}_family", "cubic" if name == "parent" else "monoclinic"
+                    )
+                    if not cell_compatible_with_family(
+                        parsed.lengths, parsed.angles, chosen_family
+                    ):
+                        incompatible.append(f"{name}: {chosen_family} conventional setting")
+                if incompatible:
+                    st.error(
+                        "Nothing was imported. The selected crystal system would alter "
+                        "the supplied CIF cell. Choose the matching system/setting "
+                        "and import again: " + "; ".join(incompatible)
+                    )
+                else:
+                    display_unit = st.session_state.get("twin_length_unit", "angstrom")
+                    for name, parsed in imported.items():
+                        converted_lengths = convert_cell_lengths(
+                            parsed.lengths, from_unit="angstrom", to_unit=display_unit
+                        )
+                        for label, value in zip(
+                            ("a", "b", "c", "alpha", "beta", "gamma"),
+                            converted_lengths + parsed.angles,
+                        ):
+                            st.session_state[f"{name}_{label}"] = value
+                    st.rerun()
         elif source == "Published example":
             st.caption("NiTi B2→B19′ is preloaded as an editable input example. You can replace every value. Literature twin results are not loaded.")
         else:
@@ -260,6 +299,25 @@ def main() -> None:
                 notes="Crystallography derived only from entered parent/product metrics and correspondence.",
             )
             payload = request.to_project_payload()
+            # Entered values, literature presets and CIF uploads are not
+            # automatically *measured by this user*. Keep the backend adapter
+            # untouched; adjust provenance for this standalone UI only.
+            for phase_record in payload["phases"]:
+                phase_record["provenance"] = {
+                    "status": "UNVERIFIED",
+                    "notes": (
+                        f"Standalone UI input route: {source}. Physical source, "
+                        "measurement conditions and uncertainties are not independently verified."
+                    ),
+                }
+            for transformation_record in payload["transformations"]:
+                transformation_record["provenance"] = {
+                    "status": "UNVERIFIED",
+                    "notes": (
+                        "Entered crystallographic correspondence. Not independently "
+                        "validated against a measured orientation relationship."
+                    ),
+                }
         except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
             st.warning("One input is incomplete or incompatible. Fix it before calculation.")
             with st.expander("Which input failed?", expanded=False):

@@ -55,14 +55,14 @@ def _point_group_metadata() -> tuple[dict[str, object], ...]:
     return point_group_table()
 
 
-def _locked_number(label: str, value: float, *, key: str, angle: bool = False) -> float:
+def _locked_number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
     st.session_state[key] = float(value)
     kwargs: dict[str, object] = {
         "label": label,
         "value": float(value),
         "disabled": True,
         "key": key,
-        "format": "%.8f",
+        "format": "%.8e" if length_unit == "meter" and not angle else "%.8f",
     }
     if angle:
         kwargs.update(min_value=0.000001, max_value=179.999999)
@@ -71,12 +71,12 @@ def _locked_number(label: str, value: float, *, key: str, angle: bool = False) -
     return float(st.number_input(**kwargs))
 
 
-def _number(label: str, value: float, *, key: str, angle: bool = False) -> float:
+def _number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
     kwargs: dict[str, object] = {
         "label": label,
         "value": float(value),
         "key": key,
-        "format": "%.8f",
+        "format": "%.8e" if length_unit == "meter" and not angle else "%.8f",
     }
     if angle:
         kwargs.update(min_value=0.000001, max_value=179.999999)
@@ -172,6 +172,13 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
                 B = cell_basis(*[float(v) for v in cell])
                 fig = make_operation_scene(B, op.kind, op.axis_or_plane)
                 st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
+                if op.axis_or_plane is None or not (
+                    "rotation" in op.kind or "mirror" in op.kind
+                ):
+                    st.info(
+                        "A 3D symmetry overlay is not implemented for this operation. "
+                        "The exact coordinate action and matrix remain authoritative."
+                    )
                 st.caption("Geometry only: this is not a stereographic projection, EBSD pattern, or physical twin prediction.")
             with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
                 st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
@@ -228,17 +235,17 @@ def render_phase_input(
     st.markdown("**Conventional cell**")
     lengths = st.columns(3)
     with lengths[0]:
-        a = _number("a", a0, key=f"{prefix}_a")
+        a = _number("a", a0, key=f"{prefix}_a", length_unit=length_unit)
     with lengths[1]:
         if family in {"cubic", "tetragonal", "hexagonal", "trigonal"}:
-            b = _locked_number("b", a, key=f"{prefix}_b_locked_{family}")
+            b = _locked_number("b", a, key=f"{prefix}_b_locked_{family}", length_unit=length_unit)
         else:
-            b = _number("b", b0, key=f"{prefix}_b")
+            b = _number("b", b0, key=f"{prefix}_b", length_unit=length_unit)
     with lengths[2]:
         if family == "cubic":
-            c = _locked_number("c", a, key=f"{prefix}_c_locked_{family}")
+            c = _locked_number("c", a, key=f"{prefix}_c_locked_{family}", length_unit=length_unit)
         else:
-            c = _number("c", c0, key=f"{prefix}_c")
+            c = _number("c", c0, key=f"{prefix}_c", length_unit=length_unit)
 
     angles = st.columns(3)
     with angles[0]:
