@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,7 +11,24 @@ def test_one_persistent_results_pane_and_not_a_plotly_selection_chart():
     renderer = (APP / "tree_renderer.py").read_text(encoding="utf-8")
     navigator = (APP / "navigator_frontend" / "index.html").read_text(encoding="utf-8")
     assert "render_navigator" in renderer
-    assert renderer.index("render_navigator(model") < renderer.index("_selected_details(lookup[")
+    parsed = ast.parse(renderer)
+    report = next(
+        node for node in parsed.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "render_report"
+    )
+    calls = [
+        node for node in ast.walk(report)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+    ]
+    navigation = [c for c in calls if c.func.id == "render_navigator"]
+    details = [c for c in calls if c.func.id == "_selected_details"]
+    assert len(navigation) == len(details) == 1
+    assert len(navigation[0].args) >= 1
+    assert isinstance(navigation[0].args[0], ast.Name)
+    assert navigation[0].args[0].id == "model"
+    assert navigation[0].lineno < details[0].lineno
     assert "st.plotly_chart(" not in renderer
     assert "st.table(" not in renderer and "st.dataframe(" not in renderer
     assert "streamlit:setComponentValue" in navigator
