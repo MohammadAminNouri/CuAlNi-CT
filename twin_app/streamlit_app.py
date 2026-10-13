@@ -26,6 +26,7 @@ from twin_app.input_ui import (
 )
 from twin_app.scientific_engine import build_twin_family_report
 from twin_app.tree_renderer import render_report
+from twin_app.report_integrity import validate_report_integrity
 from twin_app.report_export import make_export
 from twin_app.structure_validation import parse_cif, independent_spglib_check
 from twin_app.input_explainer import convert_cell_lengths, cell_compatible_with_family
@@ -338,6 +339,9 @@ def main() -> None:
                     payload, transformation.transformation_id,
                     product_node_basis=weak_basis_ui.basis,
                 )
+                # Presentation-only structural/provenance audit. The scientific
+                # engine and its independent matrix certifier remain untouched.
+                validate_report_integrity(report)
         except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
             st.error(f"Calculation could not finish: {exc}")
         except Exception as exc:
@@ -350,6 +354,7 @@ def main() -> None:
             st.session_state.pop("tf_selected_couple_v6", None)
             st.session_state.pop("tf_selected_couple_v8", None)
             st.session_state.pop("tf_text_finder_v8", None)
+            st.session_state.pop("tf_nav_epoch_p0b2", None)
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
 

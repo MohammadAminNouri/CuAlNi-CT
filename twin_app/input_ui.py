@@ -169,15 +169,25 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
             st.caption(limitation)
             with st.expander("3D geometry in the entered cell", expanded=False):
                 from .point_group_visualizer import cell_basis, make_operation_scene
+                from .operation_witness import operation_witness
                 B = cell_basis(*[float(v) for v in cell])
-                fig = make_operation_scene(B, op.kind, op.axis_or_plane)
+                witness = operation_witness(B, op.matrix)
+                fig = make_operation_scene(
+                    B, op.kind, op.axis_or_plane, operation_matrix=op.matrix
+                )
                 st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
+                st.caption(
+                    "Blue/orange arrows: one generic test direction before/after "
+                    "the exact selected point-group operation; not a measured vector. "
+                    f"Relative metric-length residual: {witness.relative_metric_residual:.2e}. "
+                    "The vectors share one illustrative display scale."
+                )
                 if op.axis_or_plane is None or not (
                     "rotation" in op.kind or "mirror" in op.kind
                 ):
                     st.info(
-                        "A 3D symmetry overlay is not implemented for this operation. "
-                        "The exact coordinate action and matrix remain authoritative."
+                        "A dedicated axis/plane 3D symmetry overlay is not implemented for this operation. "
+                        "The before/after arrows still show its exact coordinate action."
                     )
                 st.caption("Geometry only: this is not a stereographic projection, EBSD pattern, or physical twin prediction.")
             with st.expander("Show exact coordinate matrix and numerical check", expanded=False):

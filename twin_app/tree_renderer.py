@@ -268,14 +268,24 @@ def render_report(report: TwinFamilyReport, *, theme: str = "dark", density: str
     st.caption("All families belong to one transformation. Expand the couples for the full genealogy; select a node to inspect its result below.")
     lookup = {node.key: node for node in tree_layout(report).couples}
     state_key = "tf_selected_couple_v8"
+    # Native finder and custom iframe are two controls for one selection. A
+    # new component key after a programmatic change discards stale iframe
+    # widget values without dropping any scientific report or family node.
+    epoch_key = "tf_nav_epoch_p0b2"
+    if st.session_state.get(epoch_key) is None:
+        st.session_state[epoch_key] = 0
     if st.session_state.get(state_key) not in lookup:
         st.session_state[state_key] = first_interpretable_couple(model)
     default = st.session_state[state_key]
     if summary["couples_with_habit"]:
         if st.button("Show a couple with an exact habit plane", key="tf_go_to_habit_v8", help="Selects an already calculated compatible couple. Does not recompute results."):
             st.session_state[state_key] = first_interpretable_couple(model)
+            st.session_state[epoch_key] += 1
             default = st.session_state[state_key]
-    selected = render_navigator(model, selected=default, theme=theme, density=density, key="tf_browser_family_tree_v8")
+    selected = render_navigator(
+        model, selected=default, theme=theme, density=density,
+        key=f"tf_browser_family_tree_v8_epoch_{st.session_state[epoch_key]}",
+    )
     if selected is not None and selected != st.session_state[state_key]:
         st.session_state[state_key] = selected
     if (st.session_state.get("tf_text_finder_v8") not in lookup or
@@ -285,6 +295,7 @@ def render_report(report: TwinFamilyReport, *, theme: str = "dark", density: str
         choice = st.session_state.get("tf_text_finder_v8")
         if choice in lookup:
             st.session_state[state_key] = choice
+            st.session_state[epoch_key] += 1
     with st.expander("Find a couple by name (text and keyboard alternative)", expanded=False):
         st.selectbox(
             "Calculated correspondence couple",
