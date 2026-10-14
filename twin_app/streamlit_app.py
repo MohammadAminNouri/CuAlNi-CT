@@ -161,6 +161,8 @@ def main() -> None:
     existing = st.session_state.get("twin_family_report")
     st.subheader("Crystallographic inputs")
     st.caption("Enter or import the two crystal structures and verify their lattice correspondence. No published outputs are used as answers.")
+    from twin_app.p1_ui import render_cualni_reference_guide
+    render_cualni_reference_guide()
     with st.expander("Crystal parameters and correspondence", expanded=existing is None):
         source = st.radio(
             "Input method",
@@ -372,6 +374,8 @@ def main() -> None:
             st.warning("Stored report predates the physical-mode catalogue; recalculate to validate mode mapping.")
             return
         render_mode_report(catalogue, report)
+        from twin_app.p1_ui import render_p1_symmetry_orbit_panel
+        render_p1_symmetry_orbit_panel(report, payload, signature)
         with st.expander("Export reproducible scientific report", expanded=False):
             st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
             record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))

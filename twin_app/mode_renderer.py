@@ -235,6 +235,8 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
                "conventional settings and published rounding.")
     _show_habits(entry, selection_key=f"{mode_id}_{selected_type}_{entry.operator_family}_"
                                     f"{pair.variant_i}_{pair.variant_j}_{twin.branch}")
+    from .p1_ui import render_p1_source_evidence
+    render_p1_source_evidence(entry, report)
     with st.expander("Independent verification, numerical residuals and provenance", expanded=False):
         st.write("Classification evidence:", twin.classification_status)
         st.write(f"Rank-one residual: {twin.rank_one_residual:.3e}")
