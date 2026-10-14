@@ -25,7 +25,8 @@ from twin_app.input_ui import (
     render_correspondence_input, render_phase_input, render_weak_basis_input,
 )
 from twin_app.scientific_engine import build_twin_family_report
-from twin_app.tree_renderer import render_report
+from twin_app.mode_catalogue import build_mode_catalogue
+from twin_app.mode_renderer import render_mode_report
 from twin_app.report_integrity import validate_report_integrity
 from twin_app.report_export import make_export
 from twin_app.structure_validation import parse_cif, independent_spglib_check
@@ -330,8 +331,9 @@ def main() -> None:
     if previous is not None and previous != signature:
         st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
-    if st.button("Calculate twin families and habit planes", type="primary", use_container_width=True):
+    if st.button("Calculate physical twinning modes and habit planes", type="primary", use_container_width=True):
         st.session_state.pop("twin_family_report", None)
+        st.session_state.pop("twin_mode_catalogue", None)
         st.session_state.pop("twin_family_result_signature", None)
         try:
             with st.spinner("Calculating exact symmetry and compatible twin interfaces…"):
@@ -342,6 +344,7 @@ def main() -> None:
                 # Presentation-only structural/provenance audit. The scientific
                 # engine and its independent matrix certifier remain untouched.
                 validate_report_integrity(report)
+                catalogue = build_mode_catalogue(report, payload)
         except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
             st.error(f"Calculation could not finish: {exc}")
         except Exception as exc:
@@ -355,15 +358,44 @@ def main() -> None:
             st.session_state.pop("tf_selected_couple_v8", None)
             st.session_state.pop("tf_text_finder_v8", None)
             st.session_state.pop("tf_nav_epoch_p0b2", None)
+            for saved_key in list(st.session_state):
+                if saved_key == "ct_physical_mode" or saved_key.startswith(("ct_type_", "ct_entry_", "ct_ux_")):
+                    st.session_state.pop(saved_key, None)
+            st.session_state["twin_mode_catalogue"] = catalogue
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
 
     report = st.session_state.get("twin_family_report")
     if report is not None and st.session_state.get("twin_family_result_signature") == signature:
-        render_report(report, theme=theme, density=density.lower())
+        catalogue = st.session_state.get("twin_mode_catalogue")
+        if catalogue is None:
+            st.warning("Stored report predates the physical-mode catalogue; recalculate to validate mode mapping.")
+            return
+        render_mode_report(catalogue, report)
         with st.expander("Export reproducible scientific report", expanded=False):
             st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
             record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
+            record["physical_mode_catalogue"] = {
+                "derivation": "parent metric-symmetry orbits of actual stretch-variant pairs; no reference outputs loaded",
+                "modes": [
+                    {
+                        "mode_id": m.mode_id,
+                        "symmetry_equivalent_stretch_pairs": m.stretch_pairs,
+                        "shear_magnitude": m.shear,
+                        "verified_types_and_unresolved": m.types,
+                        "source_records": [
+                            {"operator_family": e.operator_family,
+                             "pair_id": e.pair.pair_id,
+                             "construction_id": e.construction.construction_id,
+                             "classification": e.construction.classification,
+                             "classification_status": e.construction.classification_status}
+                            for e in m.entries
+                        ],
+                    }
+                    for m in catalogue.modes
+                ],
+                "incompatible_pair_orbits": catalogue.incompatible_pair_orbits,
+            }
             st.download_button(
                 "Download complete analysis as JSON",
                 data=json.dumps(record, indent=2, default=str),

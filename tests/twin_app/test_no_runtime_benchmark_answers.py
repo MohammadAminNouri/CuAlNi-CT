@@ -15,4 +15,11 @@ def test_production_twin_app_contains_no_published_answer_constants_or_named_the
         assert token not in text
 
     # The standalone UI/engine uses neutral scientific terminology.
-    assert "cayron" not in text
+    # Academic attribution is permitted, but runtime benchmark
+    # answer lookups and embedded published results are prohibited.
+    for forbidden in (
+        "data/benchmarks/",
+        "bhattacharya_niti_twin_habit_v1.json",
+        "bhattacharya_cualni_orthorhombic_habit_v1.json",
+    ):
+        assert forbidden not in text

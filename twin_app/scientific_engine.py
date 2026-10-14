@@ -1192,6 +1192,28 @@ def build_twin_family_report(
             "is not inferred from point-group symmetry."
         )
 
+    # Classify only symmetry-transportable, physically identical twin branches.
+    # This preserves both solutions, every habit result and direct provenance.
+    from twin_app.symmetry_completion import complete_classifications_by_symmetry
+    families, completion_audit = complete_classifications_by_symmetry(
+        families,
+        parent_metric=parent_metric,
+        parent_group=parent_group,
+        stretch_variants={int(v.index) + 1: v.U for v in ptmc.variants},
+        tolerance=max(float(policy.rank_one) * 10.0, 1e-8),
+    )
+    if completion_audit.transported_branches:
+        warnings.append(
+            f"{completion_audit.transported_branches} twin branches classified "
+            "by proved parent-symmetry transport, not by separate direct CT cross-locks; "
+            "their individual evidence appears in classification_status."
+        )
+    if completion_audit.unresolved_branches:
+        warnings.append(
+            f"{completion_audit.unresolved_branches} twin branches still lack "
+            "sufficient classification evidence; they remain unresolved."
+        )
+
     return TwinFamilyReport(
         transformation_id=transformation_id,
         parent_phase_id=parent.phase_id,

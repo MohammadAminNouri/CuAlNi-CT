@@ -86,7 +86,24 @@ def test_plus_minus_and_complementary_habits_are_never_discarded():
 
 def test_accessibility_has_single_decision_action_and_large_text_defaults():
     src = (ROOT / "twin_app" / "streamlit_app.py").read_text(encoding="utf-8")
-    assert "Calculate twin families and habit planes" in src
+    import ast
+    _tree = ast.parse(src)
+    assert sum(
+        isinstance(n, ast.If)
+        and isinstance(n.test, ast.Call)
+        and isinstance(n.test.func, ast.Attribute)
+        and isinstance(n.test.func.value, ast.Name)
+        and n.test.func.value.id == "st"
+        and n.test.func.attr == "button"
+        and any(
+            isinstance(c, ast.Call)
+            and isinstance(c.func, ast.Name)
+            and c.func.id == "build_twin_family_report"
+            for statement in n.body
+            for c in ast.walk(statement)
+        )
+        for n in ast.walk(_tree)
+    ) == 1
     assert "st.tabs(" not in src
     assert "font-size: 1.06rem" in src
     assert "animation-duration: 0s" in src

@@ -55,7 +55,8 @@ def test_results_are_bhattacharya_compatible_without_hide_and_seek():
 
 def test_ui_uses_one_workflow_and_independent_appearance_choices():
     app = (APP / "streamlit_app.py").read_text(encoding="utf-8")
-    assert "Calculate twin families and habit planes" in app
+    assert "Calculate physical twinning modes and habit planes" in app
+    assert "render_mode_report(catalogue, report)" in app
     assert "tf_appearance_v8" in app and "tf_font_scale_v8" in app
     assert "tf_density_v8" in app
     assert "animation-duration: 0s" in app
