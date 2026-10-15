@@ -137,3 +137,17 @@ def test_no_habit_solutions_never_promotes_twin_as_habit():
     x=compare_specimen_interfaces(
         r,specimen(habit()),np.eye(3),G)["observations"][0]
     assert x["geometric_comparison"]["status"]=="NO_CALCULATED_HABIT_FOR_SELECTED_BRANCH"
+
+
+def test_null_specimen_ids_do_not_become_the_fake_string_none():
+    s={"specimen_id":None,"observed_interface_planes":[twin(specimen_id=None)]}
+    with pytest.raises(InterfaceAuditError,match="SPECIMEN_MISMATCH"):
+        compare_specimen_interfaces(report(),s,np.eye(3),G)
+
+@pytest.mark.parametrize("invalid_ref",[None,"",42,{}])
+def test_missing_or_false_or_reference_prevents_product_habit_comparison(invalid_ref):
+    with pytest.raises(InterfaceAuditError,match="variant-specific OR"):
+        audit(habit(frame="product_reciprocal_miller",
+                    coordinates=[0.,0.,1.],
+                    measured_OR_M_cart_to_A_cart=np.eye(3).tolist(),
+                    OR_observation_reference=invalid_ref))

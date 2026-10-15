@@ -17,6 +17,14 @@ from .p1_evidence import (
 class InterfaceAuditError(ValueError):
     pass
 
+
+def _required_source_string(value, label):
+    # None -> 'None' is truthy under str(None); that is NOT provenance.
+    if not isinstance(value, str) or not value.strip():
+        raise InterfaceAuditError(f"Missing actual nonblank {label}")
+    return value.strip()
+
+
 INTERFACE_TYPES = frozenset({
     "martensite_martensite_twin",
     "austenite_martensite_habit",
@@ -38,18 +46,17 @@ def _source_construction(report, pair_id, branch):
 
 
 def _observation_provenance(spec, obs):
-    a = str(spec.get("specimen_id", "")).strip()
-    b = str(obs.get("specimen_id", "")).strip()
-    if not a or not b or a != b:
+    a = spec.get("specimen_id")
+    b = obs.get("specimen_id")
+    if (not isinstance(a, str) or not a.strip() or
+        not isinstance(b, str) or not b.strip() or a.strip() != b.strip()):
         raise InterfaceAuditError(
             "SPECIMEN_MISMATCH_OR_MISSING_ID: measured interface and solver "
             "lattices must be indexed to the SAME specimen"
         )
-    ref = str(obs.get("observation_reference", "")).strip()
-    if not ref:
-        raise InterfaceAuditError(
-            "Independent indexed interface requires an observation_reference"
-        )
+    ref = _required_source_string(
+        obs.get("observation_reference"), "observation_reference"
+    )
     if not isinstance(obs.get("coordinates"), (list, tuple)):
         raise InterfaceAuditError("Observation must supply three indexed coordinates")
     uncertainty = obs.get("uncertainty_deg")
@@ -143,7 +150,9 @@ def compare_specimen_interfaces(report, spec: Mapping, parent_metric, product_me
             else:
                 orient = obs.get("measured_OR_M_cart_to_A_cart")
                 if frame.startswith("product_"):
-                    if orient is None or not str(obs.get("OR_observation_reference", "")).strip():
+                    if (orient is None or
+                        not isinstance(obs.get("OR_observation_reference"), str) or
+                        not obs["OR_observation_reference"].strip()):
                         raise InterfaceAuditError(
                             "Product-indexed A/M habit requires a measured "
                             "variant-specific OR and its source in the SAME observation"

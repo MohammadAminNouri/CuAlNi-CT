@@ -165,7 +165,9 @@ def check_cualni_specimen(spec:Mapping)->dict:
         except Exception as e:raise CrystalInputError("Correspondence must have exact rational coefficients") from e
         if C.shape!=(3,3) or C.det()==0:raise CrystalInputError("Correspondence must be invertible 3x3")
         cdet=str(C.det())
-    has_source=bool(str(spec.get("correspondence_source","")).strip())
+    # A JSON null is not a correspondence citation (str(None) == 'None').
+    source_field=spec.get("correspondence_source")
+    has_source=isinstance(source_field,str) and bool(source_field.strip())
     evidence_status=("LATTICE_ONLY" if correspondence is None else
                      "C_UNVERIFIED" if not has_source else
                      "C_DOCUMENTED_NOT_EXPERIMENTALLY_CORROBORATED")
