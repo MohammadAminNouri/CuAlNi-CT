@@ -16,8 +16,14 @@
       "experiment": "EBSD",
       "phase": "gamma1_prime_2H",
       "interface_type": "martensite_martensite_twin",
-      "measured_plane_families_product_miller": ["{121}", "{101}"],
-      "variant_pairs": {"A/C and B/D": "{121}", "A/D and B/C": "{101}"},
+      "measured_plane_families_product_miller": [
+        "{121}",
+        "{101}"
+      ],
+      "variant_pairs": {
+        "A/C and B/D": "{121}",
+        "A/D and B/C": "{101}"
+      },
       "reported_parent_product_direction_family": "[010]_2H // <001>_parent",
       "reported_basal_plane_origin": "2H basal plane from {110}_parent",
       "observed_uncertainty_deg": null,
@@ -35,7 +41,10 @@
       "experiment": "TEM diffraction; heat treatment comparison",
       "phase": "gamma1_prime_2H and beta1_prime_M18R",
       "interface_type": null,
-      "observed_stacking_sequences": ["2H", "M18R"],
+      "observed_stacking_sequences": [
+        "2H",
+        "M18R"
+      ],
       "observed_M18R_monoclinic_beta_near_90_deg": true,
       "observed_uncertainty_deg": null,
       "same_specimen_parent_product_metrics": null,
@@ -72,7 +81,9 @@
       "has_published_wlr_habit_table": true,
       "reference_metrics_from_other_cu_zn_al_specimen": true,
       "comparison_ready": false,
-      "not_comparable_reason": "Different alloy (Cu-Zn-Al), and authors reused lattice metrics from another Cu-Zn-Al specimen. Cross-alloy mathematical benchmark only, never experimental Cu-Al-Ni proof."
+      "not_comparable_reason": "Different alloy (Cu-Zn-Al), and authors reused lattice metrics from another Cu-Zn-Al specimen. Cross-alloy mathematical benchmark only, never experimental Cu-Al-Ni proof.",
+      "source_exact_correspondence_C": null,
+      "measured_pair_resolved_OR_matrix": null
     }
   ]
 }
