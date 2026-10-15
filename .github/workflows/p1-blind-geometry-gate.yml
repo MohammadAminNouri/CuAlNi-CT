@@ -1,0 +1,55 @@
+name: P1 blind experimental geometry contract gate
+
+on:
+  push:
+    branches:
+      - "audit/p1-closure-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p1-blind-geometry-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  falsification:
+    name: Blind evidence interface · Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Manifest chain integrity
+        run: python tools/rebuild_twin_manifest.py --check
+      - name: Blind observed geometry falsification and legacy regression
+        run: |
+          python -m pytest -q -x --tb=short \
+            tests/twin_app/test_p1_blind_validation_2026.py \
+            tests/twin_app/test_p0_experimental_evidence_2026.py \
+            tests/twin_app/test_p1_contracts.py \
+            tests/twin_app/test_benchmark_integrity.py \
+            tests/twin_app/test_no_runtime_benchmark_answers.py
+      - name: Do not represent passing synthetic tests as physical validation
+        run: |
+          echo "P1_GEOMETRY_SOFTWARE_CONTRACTS_TESTED"
+          echo "SPECIMEN_SPECIFIC_2H_18R_EXPERIMENTAL_CORROBORATION_NOT_ESTABLISHED"
