@@ -61,7 +61,10 @@ def analyze_report(payload,*,max_branches=None):
            failures.append({'pair':p.pair_id,'branch':c.branch,'rotation_orth':orth,'det':det})
        fractions=sorted({float(h.other_variant_volume_fraction) for h in c.habit_solutions})
        oracle=root_oracle(ui,c.a_parent_cartesian,c.n_parent_cartesian,fractions)
-       if oracle['status']=='MISMATCH' or oracle['status'].startswith('FAIL'):
+       # Boundary/continuum flags never excuse a missing or spurious discrete
+       # fraction. Root completeness and root degeneracy are independent axes.
+       if (oracle.get('unmatched_oracle') or oracle.get('unmatched_reported') or
+           oracle['status']=='MISMATCH' or oracle['status'].startswith('FAIL')):
            failures.append({'pair':p.pair_id,'branch':c.branch,'root_oracle':oracle})
        if oracle['status'] in ('NEEDS_BOUNDARY_INVESTIGATION','INCONCLUSIVE_CONTINUUM_OR_NEAR_ZERO_POLYNOMIAL'):
            root_indeterminate.append({'pair':p.pair_id,'branch':c.branch,'oracle':oracle['status']})

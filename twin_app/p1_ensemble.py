@@ -74,9 +74,18 @@ def propagate_metric_uncertainty(spec:Mapping, solver:Callable,*,n_samples:int,s
     pn=free_parameter_names(pf);dn=free_parameter_names(df)
     names=['parent_'+n for n in pn]+['daughter_'+n for n in dn]
     cov=np.asarray(spec.get('measurement_covariance'),float)
-    if cov.shape!=(len(names),len(names)) or not np.isfinite(cov).all() or not np.allclose(cov,cov.T,atol=1e-12):
-        raise EnsembleInputError('A symmetric covariance for all allowed metric parameters is REQUIRED')
-    if np.linalg.eigvalsh(cov)[0]<-1e-12:
+    if cov.shape!=(len(names),len(names)) or not np.isfinite(cov).all():
+        raise EnsembleInputError('A finite covariance for all allowed metric parameters is REQUIRED')
+    # np.allclose's default rtol=1e-5 permits substantial asymmetric
+    # off-diagonals when covariances have large physical-unit magnitudes.
+    # Use a strict, explicitly scaled Frobenius residual instead.
+    covariance_scale=max(1.,float(np.linalg.norm(cov,ord='fro')))
+    symmetry_residual=float(np.linalg.norm(cov-cov.T,ord='fro')/covariance_scale)
+    if symmetry_residual>1e-12:
+        raise EnsembleInputError('Measurement covariance must be symmetric (relative Frobenius residual <= 1e-12)')
+    cov=(cov+cov.T)/2.
+    eig=np.linalg.eigvalsh(cov)
+    if eig[0]<-1e-12*max(1.,float(np.max(np.abs(eig)))):
         raise EnsembleInputError('Measurement covariance must be positive semidefinite')
     base=np.r_[measured_free_values(pa,pf),measured_free_values(da,df)]
     rng=np.random.default_rng(seed)
@@ -119,6 +128,7 @@ def propagate_metric_uncertainty(spec:Mapping, solver:Callable,*,n_samples:int,s
             'parameter_names':names,'distribution_assumption':'USER_DECLARED_GAUSSIAN_COVARIANCE',
             'seed':seed,'requested_samples':n_samples,'successful_samples':len(outputs),
             'classification_stable':classification_stable,'source_key_inventory_stable':stable,
+            'covariance_symmetry_relative_residual':symmetry_residual,
             'physical_tensor_tracking_under_5pct_heuristic':tracked,
             'counts':counts,'failures':failures,'shear_intervals_conditional':shear_ranges,
             'warning':'The 5% tensor-drift gate is a computational tracking heuristic, not a physical uncertainty bound. Source IDs may fail to track the same physical variant after branch rearrangement. No automatic correspondence between swapped modes. Uncertainty in C, phase identity, OR, stacking faults and model inadequacy NOT included.'}

@@ -124,6 +124,21 @@ def check_cualni_specimen(spec:Mapping)->dict:
         raise CrystalInputError("Specify Cu-Al-Ni phase: gamma1_prime_2H, beta_prime_monoclinic, or reduced_6M; do not guess from Al content")
     if not spec.get("cell_setting"):
         raise CrystalInputError("Explicit martensite cell setting required")
+    setting=str(spec["cell_setting"]).strip().lower().replace("_","-")
+    # Phase and cell setting must agree before metric-only calculation.
+    # Text validation does not prove the physical martensite stacking sequence.
+    if phase=="gamma1_prime_2H" and not any(
+        token in setting for token in ("orthorhombic","pmmn","pnmm")
+    ):
+        raise CrystalInputError("2H gamma1-prime requires an explicit orthorhombic setting")
+    if phase=="beta_prime_monoclinic" and not any(
+        token in setting for token in ("unique-b","unique b","c2/m")
+    ):
+        raise CrystalInputError("Monoclinic beta-prime requires a unique-b/C2/m setting")
+    if phase=="faulted_monoclinic_reduced_6M" and not any(
+        token in setting for token in ("unique-b","unique b")
+    ):
+        raise CrystalInputError("Reduced 6M must be explicitly rebased to unique-b coordinates before solver input")
     M=tuple(map(float,spec["daughter_cell"])); A=tuple(map(float,spec["parent_cell"]))
     Gm=gram(M);Ga=gram(A)
     mg=str(spec.get("daughter_point_group",""));pg=str(spec.get("parent_point_group",""))
