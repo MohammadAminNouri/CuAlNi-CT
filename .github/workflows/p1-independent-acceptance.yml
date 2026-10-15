@@ -1,0 +1,94 @@
+name: P1 independent scientific acceptance
+
+on:
+  push:
+    branches:
+      - "audit/p1-closure-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p1-independent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-validation:
+    name: Source-independent P0 and P1 numerical checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Verify research manifest and independent tests
+        run: |
+          python tools/rebuild_twin_manifest.py --check
+          python -m pytest -q -x --tb=short \
+            tests/twin_app/test_p0_classical_screen_2026.py \
+            tests/twin_app/test_p0_correspondence_rebasis_2026.py \
+            tests/twin_app/test_p1_contracts.py \
+            tests/twin_app/test_published_cualni_habit.py
+      - name: Deep P0 correspondence basis invariance
+        run: python -u tools/run_p0_scientific_acceptance.py --profile deep
+      - name: Independent P1 orthorhombic acceptance
+        run: |
+          python -u tools/run_p1_scientific_acceptance.py --synthetic orthorhombic
+          cp /tmp/cualni_p1_scientific_acceptance_20261014.json /tmp/p1-orthorhombic.json
+      - name: Independent P1 monoclinic acceptance
+        run: |
+          python -u tools/run_p1_scientific_acceptance.py --synthetic monoclinic
+          cp /tmp/cualni_p1_scientific_acceptance_20261014.json /tmp/p1-monoclinic.json
+      - name: Cu-Al-Ni literature records must not invent correspondence
+        run: |
+          python -u tools/run_p1_scientific_acceptance.py --reference-only
+          cp /tmp/cualni_p1_scientific_acceptance_20261014.json /tmp/p1-references.json
+      - name: Strict scientific result review (no silent inconclusive acceptance)
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          problems = []
+          for name in ('orthorhombic','monoclinic'):
+              obj=json.loads(Path('/tmp/p1-'+name+'.json').read_text())['results']
+              print(name,'branches',obj.get('twin_checks'),'failed',len(obj.get('failed_checks',[])),
+                    'inconclusive',len(obj.get('root_boundary_or_continuum_inconclusive',[])))
+              if obj.get('failed_checks'):
+                  problems.append(name+': failed tensor/root checks')
+              if obj.get('root_boundary_or_continuum_inconclusive'):
+                  problems.append(name+': unresolved boundary/continuum root classifications')
+              if not obj.get('twin_checks'):
+                  problems.append(name+': no branches examined')
+          references=json.loads(Path('/tmp/p1-references.json').read_text())['results']
+          if references.get('status')!='REFERENCE_LATTICE_ONLY_NO_PREDICTION':
+              problems.append('reference-only run generated unsupported material prediction')
+          if problems:
+              raise SystemExit('NOT FULLY SCIENTIFICALLY ACCEPTED: '+'; '.join(problems))
+          print('P1_SYNTHETIC_INDEPENDENT_GATE_PASS; EXPERIMENTAL_CUALNI_NOT_VALIDATED')
+          PY
+      - name: Collect scientific evidence regardless of outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-independent-scientific-${{ github.run_id }}
+          path: |
+            /tmp/p1-orthorhombic.json
+            /tmp/p1-monoclinic.json
+            /tmp/p1-references.json
+            /tmp/cualni_p0_rebase_acceptance_20261014.json
+          if-no-files-found: warn
+          retention-days: 30
