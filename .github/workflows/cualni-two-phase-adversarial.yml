@@ -1,0 +1,50 @@
+name: Cu-Al-Ni two-martensite adversarial gate
+
+on:
+  push:
+    branches:
+      - "audit/p1-two-martensites-falsification-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase-discrimination:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Verify exact research manifest
+        run: python tools/rebuild_twin_manifest.py --check
+      - name: Falsify 2H vs 18R identity and correspondence shortcuts
+        run: |
+          python -m pytest -v -x --tb=short \
+            tests/twin_app/test_cualni_two_phase_adversarial_2026.py \
+            tests/twin_app/test_p1_contracts.py \
+            tests/twin_app/test_p1_closure_negative_2026.py
+      - name: Ensure unindexed literature input never generates a physical prediction
+        run: |
+          python tools/run_p1_scientific_acceptance.py --reference-only
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("/tmp/cualni_p1_scientific_acceptance_20261014.json").read_text())["results"]
+          assert r["status"]=="REFERENCE_LATTICE_ONLY_NO_PREDICTION"
+          assert all(v["C"] is None and v["OR"] is None for v in r["references"].values())
+          print("PASS: 2H/18R literature references contain NO inferred C/OR or habit-plane predictions")
+          PY

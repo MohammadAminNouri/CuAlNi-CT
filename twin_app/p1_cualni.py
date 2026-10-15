@@ -147,6 +147,15 @@ def check_cualni_specimen(spec:Mapping)->dict:
     if phase=="faulted_monoclinic_reduced_6M" and "gamma" in str(spec["cell_setting"]).lower():
         raise CrystalInputError("Reduced gamma-angle cell must be rebased before use with conventional unique-b 2/m")
     _validate_point_group(M,mg,phase);_validate_point_group(A,pg,"parent")
+    # Independent phase identity cannot be inferred from a metric, a user-
+    # selected symmetry group, a near-90 monoclinic angle, or successful twins.
+    from .p1_phase_discrimination import (
+        discriminate_cualni_martensite, PhaseDiscriminationError)
+    try:
+        phase_audit=discriminate_cualni_martensite(
+            phase, spec.get("stacking_evidence"))
+    except PhaseDiscriminationError as exc:
+        raise CrystalInputError(str(exc)) from exc
     if spec.get("experimental_status") in ("validated","verified"):
         raise CrystalInputError("Experimental-validation status cannot be asserted by a user input string")
     correspondence=spec.get("correspondence_M_from_A")
@@ -160,7 +169,8 @@ def check_cualni_specimen(spec:Mapping)->dict:
     evidence_status=("LATTICE_ONLY" if correspondence is None else
                      "C_UNVERIFIED" if not has_source else
                      "C_DOCUMENTED_NOT_EXPERIMENTALLY_CORROBORATED")
-    return {"phase":phase,"evidence_status":evidence_status,"correspondence_determinant":cdet,
+    return {"phase":phase,"phase_identity_audit":phase_audit,
+            "evidence_status":evidence_status,"correspondence_determinant":cdet,
             "parent_metric_condition":float(np.linalg.cond(Ga)),"daughter_metric_condition":float(np.linalg.cond(Gm)),
             "accepted_as_physical_prediction":False,
             "reason":"Even a documented C must be checked against phase setting, OR and independent EBSD/TEM interfaces before an experimentally validated claim."}
