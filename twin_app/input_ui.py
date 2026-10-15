@@ -56,19 +56,22 @@ def _point_group_metadata() -> tuple[dict[str, object], ...]:
 
 
 def _locked_number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
-    st.session_state[key] = float(value)
+    # Derived lattice constraints are displayed, never edited or persisted as
+    # independent widget state. Include the exact value in the widget identity
+    # so a change in the controlling length cannot display a stale locked value.
     kwargs: dict[str, object] = {
         "label": label,
         "value": float(value),
         "disabled": True,
-        "key": key,
+        "key": f"{key}_{float(value).hex()}",
         "format": "%.8e" if length_unit == "meter" and not angle else "%.8f",
     }
     if angle:
         kwargs.update(min_value=0.000001, max_value=179.999999)
     else:
         kwargs.update(min_value=1.0e-12)
-    return float(st.number_input(**kwargs))
+    st.number_input(**kwargs)
+    return float(value)
 
 
 def _number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
@@ -175,7 +178,7 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
                 fig = make_operation_scene(
                     B, op.kind, op.axis_or_plane, operation_matrix=op.matrix
                 )
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "scrollZoom": False})
                 st.caption(
                     "Blue/orange arrows: one generic test direction before/after "
                     "the exact selected point-group operation; not a measured vector. "
@@ -381,7 +384,7 @@ def render_correspondence_input(
                    "These results will NOT necessarily reproduce the starting published example. "
                    "This may be intentional for a different transformation.")
         st.button("Restore starting correspondence entries", key=f"{prefix}_restore_C",
-                  on_click=restore_starting_matrix, use_container_width=False)
+                  on_click=restore_starting_matrix, width="content")
     try:
         canonical = canonical_correspondence_rows(rows, direction="A_TO_M")
         C = exact_matrix(canonical)
@@ -446,11 +449,11 @@ def render_correspondence_input(
                 with left:
                     st.caption("Parent direct-coordinate components")
                     st.plotly_chart(arrow_figure(action.parent, "Parent"),
-                                    use_container_width=True, key=f"{prefix}_plot_parent")
+                                    width="stretch", key=f"{prefix}_plot_parent")
                 with right:
                     st.caption("Daughter direct-coordinate components")
                     st.plotly_chart(arrow_figure(action.daughter, "Daughter"),
-                                    use_container_width=True, key=f"{prefix}_plot_daughter")
+                                    width="stretch", key=f"{prefix}_plot_daughter")
                 st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
 
     with st.expander("Expert details: exact C, inverse and determinant", expanded=False):
