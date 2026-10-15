@@ -162,7 +162,7 @@ def render_blind_evidence_comparison_panel():
             'matching branches': r['matching_candidate_count'],
             'all searched': r['compared_candidates'],
             'isotropic-null fraction': r['isotropic_null_chance_at_observed_best_angle'],
-        } for r in result['observations']], use_container_width=True)
+        } for r in result['observations']], width="stretch")
         st.download_button('Download complete residuals, alternatives and limitations',
                            json.dumps(result, indent=2),
                            file_name='cualni_blind_geometry_assessment_NOT_VALIDATED.json',
