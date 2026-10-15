@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "scope": "publicly verified bibliographic/abstract-level evidence registry — NOT numerical benchmarks",
+  "as_of_utc": "2026-10-15",
+  "rule": "Never load observed values into prediction solver or infer correspondence C from phase labels and unrelated lattice metrics.",
+  "sources": [
+    {
+      "doi": "10.1016/S0968-4328(99)00060-8",
+      "citation": "X. Chen et al., Micron 31 (2000) 17-25",
+      "phase": "gamma1_prime_2H",
+      "measured": "EBSD of Cu-12.55 wt% Al-4.84 wt% Ni: 2H variant ORs; A-C/B-D {121}_2H twin mirror and A-D/B-C {101}_2H twin mirror; basal planes from parent {110} and [010]_2H from parent <001>",
+      "evidence_level": "QUALITATIVE_2H_TWIN_RELATIONSHIP",
+      "missing_for_blind_3d": "specimen-matched complete metric, explicit C, per-interface measured 3D Cartesian normals, uncertainty, parent/product sample orientations and preregistration",
+      "numerical_certification": "NOT_ELIGIBLE"
+    },
+    {
+      "doi": "10.1016/j.jallcom.2005.09.049",
+      "citation": "U. Sari and I. Aksoy, J. Alloys Compd. 417 (2006) 138-142",
+      "phase": "gamma1_prime_2H_and_beta1_prime_M18R",
+      "measured": "SEM/TEM and diffraction, Cu-11.92 wt% Al-3.78 wt% Ni after two different heat treatments; heat treatment influences 2H versus 18R; beta1' classified as modified monoclinic M18R",
+      "evidence_level": "PHASE_AND_STACKING_IDENTIFICATION",
+      "missing_for_blind_3d": "matched twin/habit normals, measured ORs, C, matched parent and product metrics and angular uncertainty",
+      "numerical_certification": "NOT_ELIGIBLE"
+    },
+    {
+      "doi": "10.1016/j.actamat.2008.10.017",
+      "citation": "M. L. Nó, D. Caillard and J. San Juan, Acta Mater. 57 (2009) 1004-1014",
+      "phase": "CuAlNi_martensite_type_must_be_resolved_from_full_article",
+      "measured": "TEM study describes nine experimentally investigated habit planes and ORs using diffraction and 3D dense-plane matching; abstract does not provide the per-plane measured numerical values",
+      "evidence_level": "POTENTIALLY_QUANTITATIVE_REQUIRES_FULL_TEXT_EXTRACTION_AND_CHECK",
+      "missing_for_blind_3d": "original tables/diffraction indexing, each specimen identification, phase, parent and daughter metric settings, uncertainty and C",
+      "numerical_certification": "NOT_ELIGIBLE_UNTIL_PRIMARY_DATA_REVIEW"
+    },
+    {
+      "doi": "10.1051/esomat/200902036",
+      "citation": "N. Zárubová et al., ESOMAT (2009), in-situ TEM stress-induced transformations in CuAlNi",
+      "phase": "gamma1_prime_2H_and_beta1_prime_18R",
+      "measured": "In situ TEM observations of austenite-to-2H at lower applied stress and austenite-to-18R at higher stress; interface morphology investigated",
+      "evidence_level": "QUALITATIVE_PHASE_AND_INTERFACE_OBSERVATION",
+      "missing_for_blind_3d": "3D specimen-specific indexed planes with uncertainties, correspondences, full transformation OR and metrics",
+      "numerical_certification": "NOT_ELIGIBLE"
+    }
+  ],
+  "distinctions": [
+    "2H gamma1' is an orthorhombic martensite structure in the stated conventional setting; do not infer from composition alone.",
+    "CuAlNi beta1' can have modified monoclinic 18R stacking; a reduced 6M crystallographic representation must not be identified by name alone with a measured conventional 18R cell.",
+    "Observed 2D traces provide only surface intersections and do not determine full 3D habit/twin plane inclinations.",
+    "A phase-indexing or diffraction identification paper is not necessarily a quantified twin/habit geometry benchmark."
+  ]
+}
