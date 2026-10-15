@@ -154,7 +154,7 @@ def _selected_details(node: CoupleNode) -> None:
                 if st.button(
                     "Currently selected" if active else f"Inspect {interface.label}",
                     key=f"tf_v91_select_{node.key}_{i}",
-                    use_container_width=True,
+                    width="stretch",
                     disabled=active,
                 ):
                     st.session_state[choice_key] = interface.label
