@@ -11,6 +11,11 @@ permissions:
 
 jobs:
   frozen-core-scope:
+    # The frozen-core allowlist is only a contract for the explicitly named
+    # experimental-validation workstream, not for arbitrary P0/P1 repair PRs.
+    # For pull_request, head_ref is the source branch (branches: filters the
+    # base branch instead and would silently fail to express this constraint).
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'next/experimental-validation')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout full history
