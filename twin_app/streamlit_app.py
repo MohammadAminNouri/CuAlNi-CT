@@ -381,7 +381,7 @@ def main() -> None:
         if previous is not None and previous != signature:
             st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
-        if st.button("Calculate physical twinning modes and habit planes", type="primary", use_container_width=True):
+        if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
             st.session_state.pop("twin_family_report", None)
             st.session_state.pop("twin_mode_catalogue", None)
             st.session_state.pop("twin_family_result_signature", None)
