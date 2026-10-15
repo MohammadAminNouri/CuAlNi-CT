@@ -116,8 +116,13 @@ def projective_angle_deg(a,b):
 
 
 def measured_plane_cartesian(measured:Mapping[str,Any],*,parent_metric,product_metric=None,OR_M_cart_to_A_cart=None):
-    frame=measured.get('frame')
-    coords=measured.get('coordinates')
+    frame=measured.get('frame', measured.get('reference_frame'))
+    coords=measured.get('coordinates', measured.get('normal'))
+    if 'frame' in measured and 'reference_frame' in measured and measured['frame']!=measured['reference_frame']:
+        raise EvidenceError("Conflicting frame/reference_frame aliases")
+    if 'coordinates' in measured and 'normal' in measured:
+        if not np.array_equal(np.asarray(measured['coordinates']),np.asarray(measured['normal'])):
+            raise EvidenceError("Conflicting coordinates/normal aliases")
     if frame=='parent_cartesian':return _unit(coords)
     if frame=='parent_reciprocal_miller':return _unit(reciprocal_normal_to_cartesian(coords,parent_metric))
     if frame=='product_cartesian':
@@ -154,13 +159,22 @@ def compare_observed_planes(calculated_normals,measured:Mapping[str,Any],*,paren
         angle=min(projective_angle_deg(q@c,normal) for q in group)
         trials.append((angle,i))
     if not trials:raise EvidenceError("No computed planes to compare")
-    angle,idx=min(trials)
+    # A closest branch is NOT a unique crystallographic assignment. Preserve
+    # every raw candidate, explicit multiplicity and second-nearest residual.
+    ordered=sorted(trials,key=lambda x:(float(x[0]),int(x[1])))
+    angle,idx=ordered[0]
+    matches=[int(i) for a,i in ordered if a<=unc]
     return {"status":"GEOMETRIC_MATCH_ONLY_EXTERNAL_SOURCE_REVIEW_REQUIRED" if angle<=unc else
              "NO_GEOMETRIC_MATCH_AT_DECLARED_UNCERTAINTY",
             "nearest_predicted_index":idx,"angle_deg":float(angle),
+            "second_nearest_predicted_index":int(ordered[1][1]) if len(ordered)>1 else None,
+            "second_nearest_angle_deg":float(ordered[1][0]) if len(ordered)>1 else None,
+            "matching_candidate_indices":matches,"matching_candidate_count":len(matches),
+            "unique_candidate_within_uncertainty":len(matches)==1,
+            "all_candidate_angles_deg":[{"predicted_index":int(i),"angle_deg":float(a)} for a,i in ordered],
             "declared_uncertainty_deg":unc,"standardized_residual":float(angle/unc),
             "compared_candidates":len(trials),
-            "caution":"Matching a plane does NOT validate C, OR, phase identity, independent sample, or theoretical completeness."}
+            "caution":"Nearest among multiple candidates is selection-biased. Matching a plane does NOT validate C, OR, phase identity, independent sample, 2D trace, or theoretical completeness. Use p1_blind_validation for candidate-aware null diagnostics and specimen checks."}
 
 
 def branch_evidence_status(branch,*,lattice_source=None,correspondence_source=None,observations=None):
