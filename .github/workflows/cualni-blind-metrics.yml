@@ -1,0 +1,54 @@
+name: Blind Cu-Al-Ni metamorphic and published-equation tests
+
+on:
+  push:
+    branches:
+      - "audit/p1-blind-cualni-metrics-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-metric:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Verify research manifest
+        run: python tools/rebuild_twin_manifest.py --check
+      - name: Blind published-equation and randomized metric tests
+        run: |
+          python -m pytest -vv -x --tb=short \
+            tests/twin_app/test_cualni_blind_metric_2026.py \
+            tests/twin_app/test_cualni_two_phase_adversarial_2026.py \
+            tests/twin_app/test_p1_contracts.py \
+            tests/twin_app/test_p1_closure_negative_2026.py
+      - name: Strict source-independence / bibliography audit
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import twin_app.p1_james_hane_6m as backend
+          bench=json.loads(Path('data/benchmarks/cualni_james_hane_table4_input_only.json').read_text())
+          assert len(bench['cases'])==3
+          assert all(case['known_correspondence_matrix_in_fixture'] is None for case in bench['cases'])
+          text=Path(backend.__file__).read_text()
+          assert 'published_compatible_angle_approx' not in text
+          assert 'build_twin_family_report' not in text
+          print("PASS input-only source separation; no expected output in mathematical backend")
+          PY

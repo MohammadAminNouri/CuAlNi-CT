@@ -1,0 +1,28 @@
+{
+  "title": "James and Hane (2000), Acta Materialia 48, 197-222, Table 4",
+  "source_url": "https://aem.umn.edu/~james/research/Publications_Files/PDF/67.pdf",
+  "source_equation": "Eq. (25); 6M DO3 parent only",
+  "fixture_status": "SOURCE_INPUTS_AND_HELD_OUT_PUBLICATION_ANGLES_NOT_SOLVER_ANSWERS",
+  "units": {"lattice": "angstrom", "angles": "degrees"},
+  "cases": [
+    {"id":"CuAlNi_DO3_6M", "composition":"Cu-Al-Ni, 14 wt% Al, 4 wt% Ni",
+     "a0":5.836, "a":4.430, "b":5.330, "c":12.79, "theta_measured":95.68,
+     "published_compatible_angle_approx":95.28,
+     "reference_cell_interpretation":"DO3 parent, reduced monoclinic 6M product, gamma angle",
+     "known_correspondence_matrix_in_fixture":null},
+    {"id":"CuZnAl_DO3_6M", "composition":"Cu-Zn-Al, 15 at% Zn, 17 at% Al",
+     "a0":5.996, "a":4.553, "b":5.452, "c":13.014, "theta_measured":94.28,
+     "published_compatible_angle_approx":94.58,
+     "reference_cell_interpretation":"DO3 parent, reduced monoclinic 6M product, gamma angle",
+     "known_correspondence_matrix_in_fixture":null},
+    {"id":"CuZnGa_DO3_6M", "composition":"Cu-Zn-Ga, 20 at% Zn, 12 at% Ga",
+     "a0":5.86, "a":4.40, "b":5.33, "c":12.78, "theta_measured":94.98,
+     "published_compatible_angle_approx":94.58,
+     "reference_cell_interpretation":"DO3 parent, reduced monoclinic 6M product, gamma angle",
+     "known_correspondence_matrix_in_fixture":null}
+  ],
+  "excluded_case": {
+    "alloy": "Cu-Zn, 39.3 at% Zn", "reason": "B2 parent; DO3 normalized Eq25 cannot be applied unchanged"
+  },
+  "interpretation": "Angles calculated from reported rounded parameters will differ from published values calculated with source precision. Neither value is a measured habit plane."
+}
