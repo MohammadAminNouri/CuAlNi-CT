@@ -144,9 +144,52 @@ def _load_niti_example() -> None:
         st.session_state.pop(key, None)
 
 
+
+def _render_research_workspace_header() -> None:
+    """Presentation-only research navigation; no material presets or solver data."""
+    st.markdown(
+        """
+        <style>
+          .tf-workspace-hero {
+            padding: 1.7rem 2rem 1.5rem;
+            border: 1px solid rgba(117,161,190,.33);
+            border-radius: 18px;
+            background: linear-gradient(112deg,rgba(29,88,115,.23),rgba(31,55,81,.09) 55%,rgba(24,112,106,.15));
+            margin: .2rem 0 1.4rem;
+          }
+          .tf-workspace-overline {color:#88c5d7; font-size:.78rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase;}
+          .tf-workspace-hero h1 {font-size:clamp(1.7rem,3.4vw,2.8rem)!important;margin:.42rem 0 .55rem!important;line-height:1.13;}
+          .tf-workspace-hero p {color:inherit;opacity:.9;font-size:1.06rem!important;max-width:57rem;margin:.4rem 0 1rem;}
+          .tf-workspace-meta {display:flex;gap:.45rem;flex-wrap:wrap;}
+          .tf-workspace-meta span {font-size:.78rem;line-height:1.5;padding:.28rem .68rem;border-radius:999px;border:1px solid rgba(136,173,190,.33);}
+          [data-testid="stTabs"] [role="tablist"] {gap:.6rem;flex-wrap:wrap;border-bottom:1px solid rgba(125,149,164,.3);}
+          [data-testid="stTabs"] button[role="tab"] {border:1px solid rgba(116,147,164,.34);border-radius:.7rem .7rem 0 0;padding:.8rem 1.08rem; min-height:3.1rem;}
+          [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {background:rgba(45,129,145,.13);border-bottom:3px solid #67bcb6;font-weight:800;}
+          div[data-testid="stVerticalBlockBorderWrapper"] {border-radius:14px;}
+          .tf-workspace-step {color:#83b8cb;font-weight:800;letter-spacing:.05em;}
+          @media(max-width:700px){.tf-workspace-hero{padding:1.25rem;}[data-testid="stTabs"] button[role="tab"]{font-size:.83rem; padding:.6rem .7rem;}}
+        </style>
+        <section class="tf-workspace-hero">
+          <div class="tf-workspace-overline">Crystallographic research workbench</div>
+          <h1>Twin Family Explorer</h1>
+          <p>Define crystallographic states, calculate compatible twin and habit-plane branches,
+          then critically assess their numerical and experimental evidence.</p>
+          <div class="tf-workspace-meta">
+            <span>Calculated from your inputs</span>
+            <span>Full branch genealogy</span>
+            <span>2H / M18R evidence audit</span>
+            <span>Experimental status: not established</span>
+          </div>
+        </section>
+        """, unsafe_allow_html=True,
+    )
+
 def main() -> None:
-    st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="collapsed")
+    st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="expanded")
     with st.sidebar:
+        st.markdown("**Twin Family Explorer**")
+        st.caption("Research workspace · scientific solver")
+        st.divider()
         st.subheader("Display preferences")
         appearance = st.radio("Appearance", ("Dark", "Light", "High contrast"), horizontal=False, key="tf_appearance_v8", help="Choose what is easiest to read. This never changes the scientific result.")
         font_scale = st.radio("Text size", ("Standard", "Large"), key="tf_font_scale_v8", horizontal=True)
@@ -154,261 +197,275 @@ def main() -> None:
         st.caption("Display choices are not scientific inputs; no calculation is restarted when you change them.")
     theme = {"Dark": "dark", "Light": "light", "High contrast": "contrast"}[appearance]
     _style(appearance=theme, font_scale=font_scale.lower())
-    st.title("Martensitic Crystallography")
-    st.markdown("**A research workbench for twins, symmetry and habit-plane compatibility**")
-    st.caption("Define the two crystals → Calculate → Explore the genealogy → Inspect verified results")
-
-    existing = st.session_state.get("twin_family_report")
-    st.subheader("Crystallographic inputs")
-    st.caption("Enter or import the two crystal structures and verify their lattice correspondence. No published outputs are used as answers.")
-    from twin_app.p1_ui import render_cualni_reference_guide
-    render_cualni_reference_guide()
-    with st.expander("Crystal parameters and correspondence", expanded=existing is None):
-        source = st.radio(
-            "Input method",
-            ("Published example", "Import CIF structures", "Manual lattice data"),
-            horizontal=True, key="tf_v9_input_method",
-            help="All three methods feed exactly the same scientific solver. A CIF never provides the transformation correspondence automatically.",
-        )
-        imported_spglib = {}
-        if source == "Import CIF structures":
-            st.caption("Import structures to check actual atomic symmetry and optionally fill cell lengths/angles. The correspondence remains your separate input.")
-            left, right = st.columns(2)
-            imported = {}
-            for name, col in (("parent", left), ("product", right)):
-                with col:
-                    uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}")
-                    if uploaded is not None:
-                        try:
-                            parsed = parse_cif(uploaded.getvalue(), filename=uploaded.name)
-                            imported[name] = parsed
-                            st.success(f"{parsed.site_count} expanded unit-cell sites; cell metric validated")
-                            if parsed.symmetry_model:
-                                st.caption(
-                                    "CIF-declared symmetry is checked for internal consistency, "
-                                    "not independently established from diffraction."
-                                )
-                            else:
-                                st.warning(
-                                    "CIF has no declared space group: atom sites are treated "
-                                    "as listed, with no proof that the full unit cell is present."
-                                )
-                            if parsed.has_partial_occupancy:
-                                st.warning(
-                                    "Partial occupancy/disorder found: the cell may be imported, "
-                                    "but atomic symmetry assessment is not supported."
-                                )
+    _render_research_workspace_header()
+    setup_tab, results_tab, evidence_tab = st.tabs((
+        "01  ·  Crystal setup", "02  ·  Twin family & modes", "03  ·  Evidence & Cu–Al–Ni",
+    ))
+    with setup_tab:
+        existing = st.session_state.get("twin_family_report")
+        st.subheader("01  /  Crystal setup")
+        st.caption("Enter or import the two crystal structures and verify their lattice correspondence. No published outputs are used as answers.")
+        with st.expander("Crystal parameters and correspondence", expanded=existing is None):
+            source = st.radio(
+                "Input method",
+                ("NiTi input example", "Import CIF structures", "Manual lattice data"),
+                horizontal=True, key="tf_v9_input_method",
+                help="All three methods feed exactly the same scientific solver. A CIF never provides the transformation correspondence automatically.",
+            )
+            imported_spglib = {}
+            if source == "Import CIF structures":
+                st.caption("Import structures to check actual atomic symmetry and optionally fill cell lengths/angles. The correspondence remains your separate input.")
+                left, right = st.columns(2)
+                imported = {}
+                for name, col in (("parent", left), ("product", right)):
+                    with col:
+                        uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}")
+                        if uploaded is not None:
                             try:
-                                evidence = independent_spglib_check(parsed)
-                            except (RuntimeError, ValueError) as exc:
-                                st.caption(f"Independent symmetry check unavailable: {exc}")
-                            else:
-                                imported_spglib[name] = evidence
-                                st.caption(f"spglib found space group {evidence['international']} ({evidence['number']}), point group {evidence['pointgroup']} at tolerance {evidence['symprec']:.0e}. Verify the conventional setting before selecting it below.")
-                        except ValueError as exc:
-                            st.error(f"Could not read {name} CIF: {exc}")
-            if imported and st.button("Use imported cell parameters", key="tf_v9_use_cif_cells"):
-                # Validate all pending imports before mutating any widget state.
-                # Family-setting constraints may lock b/c/angles, so never
-                # silently overwrite an independent CIF cell parameter.
-                incompatible = []
-                for name, parsed in imported.items():
-                    chosen_family = st.session_state.get(
-                        f"{name}_family", "cubic" if name == "parent" else "monoclinic"
-                    )
-                    if not cell_compatible_with_family(
-                        parsed.lengths, parsed.angles, chosen_family
-                    ):
-                        incompatible.append(f"{name}: {chosen_family} conventional setting")
-                if incompatible:
-                    st.error(
-                        "Nothing was imported. The selected crystal system would alter "
-                        "the supplied CIF cell. Choose the matching system/setting "
-                        "and import again: " + "; ".join(incompatible)
-                    )
-                else:
-                    display_unit = st.session_state.get("twin_length_unit", "angstrom")
+                                parsed = parse_cif(uploaded.getvalue(), filename=uploaded.name)
+                                imported[name] = parsed
+                                st.success(f"{parsed.site_count} expanded unit-cell sites; cell metric validated")
+                                if parsed.symmetry_model:
+                                    st.caption(
+                                        "CIF-declared symmetry is checked for internal consistency, "
+                                        "not independently established from diffraction."
+                                    )
+                                else:
+                                    st.warning(
+                                        "CIF has no declared space group: atom sites are treated "
+                                        "as listed, with no proof that the full unit cell is present."
+                                    )
+                                if parsed.has_partial_occupancy:
+                                    st.warning(
+                                        "Partial occupancy/disorder found: the cell may be imported, "
+                                        "but atomic symmetry assessment is not supported."
+                                    )
+                                try:
+                                    evidence = independent_spglib_check(parsed)
+                                except (RuntimeError, ValueError) as exc:
+                                    st.caption(f"Independent symmetry check unavailable: {exc}")
+                                else:
+                                    imported_spglib[name] = evidence
+                                    st.caption(f"spglib found space group {evidence['international']} ({evidence['number']}), point group {evidence['pointgroup']} at tolerance {evidence['symprec']:.0e}. Verify the conventional setting before selecting it below.")
+                            except ValueError as exc:
+                                st.error(f"Could not read {name} CIF: {exc}")
+                if imported and st.button("Use imported cell parameters", key="tf_v9_use_cif_cells"):
+                    # Validate all pending imports before mutating any widget state.
+                    # Family-setting constraints may lock b/c/angles, so never
+                    # silently overwrite an independent CIF cell parameter.
+                    incompatible = []
                     for name, parsed in imported.items():
-                        converted_lengths = convert_cell_lengths(
-                            parsed.lengths, from_unit="angstrom", to_unit=display_unit
+                        chosen_family = st.session_state.get(
+                            f"{name}_family", "cubic" if name == "parent" else "monoclinic"
                         )
-                        for label, value in zip(
-                            ("a", "b", "c", "alpha", "beta", "gamma"),
-                            converted_lengths + parsed.angles,
+                        if not cell_compatible_with_family(
+                            parsed.lengths, parsed.angles, chosen_family
                         ):
-                            st.session_state[f"{name}_{label}"] = value
-                    st.rerun()
-        elif source == "Published example":
-            st.caption("NiTi B2→B19′ is preloaded as an editable input example. You can replace every value. Literature twin results are not loaded.")
-        else:
-            st.caption("Enter both crystal metrics and an exact invertible correspondence; select point groups in their conventional settings.")
-        st.button("Restore published NiTi crystal inputs", on_click=_load_niti_example, help="Restores the input lattice and correspondence only. It does not load calculated or published twin results.")
-
-        try:
-            length_unit = st.selectbox(
-                "Lattice length unit",
-                ("angstrom", "nanometer", "picometer", "micrometer", "meter"),
-                key="twin_length_unit",
-            )
-            previous_unit = st.session_state.get("tf_v9_last_unit", length_unit)
-            if previous_unit != length_unit:
-                for role in ("parent", "product"):
-                    labels = ("a", "b", "c")
-                    keys = tuple(f"{role}_{label}" for label in labels)
-                    if all(key in st.session_state for key in keys):
-                        new_lengths = convert_cell_lengths(
-                            tuple(st.session_state[key] for key in keys),
-                            from_unit=previous_unit, to_unit=length_unit,
+                            incompatible.append(f"{name}: {chosen_family} conventional setting")
+                    if incompatible:
+                        st.error(
+                            "Nothing was imported. The selected crystal system would alter "
+                            "the supplied CIF cell. Choose the matching system/setting "
+                            "and import again: " + "; ".join(incompatible)
                         )
-                        for key, value in zip(keys, new_lengths):
-                            st.session_state[key] = value
-            st.session_state["tf_v9_last_unit"] = length_unit
-            parent_ui = render_phase_input(
-                prefix="parent", heading="Parent crystal A", role="parent", length_unit=length_unit,
-                default_family="cubic", default_point_group="m-3m", defaults=NITI_PARENT,
-            )
-            st.divider()
-            product_ui = render_phase_input(
-                prefix="product", heading="Product crystal M", role="product", length_unit=length_unit,
-                default_family="monoclinic", default_point_group="2/m", defaults=NITI_PRODUCT,
-            )
-            st.divider()
-            # Independent structure symmetry is advisory, never an override of
-            # explicitly entered point-group and correspondence conventions.
-            for role, selected_phase in (("parent", parent_ui.phase), ("product", product_ui.phase)):
-                evidence = imported_spglib.get(role)
-                if evidence and evidence["pointgroup"].replace(" ", "") != selected_phase.point_group.replace(" ", ""):
-                    st.warning(
-                        f"{role.capitalize()} point-group mismatch: CIF atoms suggest "
-                        f"{evidence['pointgroup']}, but the calculation is set to "
-                        f"{selected_phase.point_group}. Resolve the conventional setting before trusting the result."
-                    )
-                elif evidence:
-                    st.caption(
-                        f"{role.capitalize()} declared class agrees with the independent CIF-derived class. "
-                        "Confirm the crystal-axis setting separately."
-                    )
-            correspondence_ui = render_correspondence_input(
-                prefix="correspondence", default_rows=NITI_CORRESPONDENCE,
-            )
-            weak_basis_ui = render_weak_basis_input()
+                    else:
+                        display_unit = st.session_state.get("twin_length_unit", "angstrom")
+                        for name, parsed in imported.items():
+                            converted_lengths = convert_cell_lengths(
+                                parsed.lengths, from_unit="angstrom", to_unit=display_unit
+                            )
+                            for label, value in zip(
+                                ("a", "b", "c", "alpha", "beta", "gamma"),
+                                converted_lengths + parsed.angles,
+                            ):
+                                st.session_state[f"{name}_{label}"] = value
+                        st.rerun()
+            elif source == "NiTi input example":
+                st.caption("NiTi B2→B19′ is preloaded as an editable input example. You can replace every value. Literature twin results are not loaded.")
+            else:
+                st.caption("Enter both crystal metrics and an exact invertible correspondence; select point groups in their conventional settings.")
+            st.button("Reset to NiTi example inputs", on_click=_load_niti_example, help="Restores the input lattice and correspondence only. It does not load calculated or published twin results.")
 
-            transformation = TransformationInput.from_rows(
-                "A_to_M", parent_ui.phase.phase_id, product_ui.phase.phase_id,
-                correspondence_ui.canonical_rows, label="Entered lattice correspondence",
-            )
-            request = CalculationRequest(
-                project_id="twin_family_workbench", title="Crystal twin transformation",
-                parent=parent_ui.phase, product=product_ui.phase, transformation=transformation,
-                notes="Crystallography derived only from entered parent/product metrics and correspondence.",
-            )
-            payload = request.to_project_payload()
-            # Entered values, literature presets and CIF uploads are not
-            # automatically *measured by this user*. Keep the backend adapter
-            # untouched; adjust provenance for this standalone UI only.
-            for phase_record in payload["phases"]:
-                phase_record["provenance"] = {
-                    "status": "UNVERIFIED",
-                    "notes": (
-                        f"Standalone UI input route: {source}. Physical source, "
-                        "measurement conditions and uncertainties are not independently verified."
-                    ),
-                }
-            for transformation_record in payload["transformations"]:
-                transformation_record["provenance"] = {
-                    "status": "UNVERIFIED",
-                    "notes": (
-                        "Entered crystallographic correspondence. Not independently "
-                        "validated against a measured orientation relationship."
-                    ),
-                }
-        except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
-            st.warning("One input is incomplete or incompatible. Fix it before calculation.")
-            with st.expander("Which input failed?", expanded=False):
-                st.code(f"{type(exc).__name__}: {exc}")
-            return
-
-    signature = _fingerprint({"project": payload, "weak_basis": _basis_payload(weak_basis_ui)})
-    previous = st.session_state.get("twin_family_result_signature")
-    if previous is not None and previous != signature:
-        st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
-
-    if st.button("Calculate physical twinning modes and habit planes", type="primary", use_container_width=True):
-        st.session_state.pop("twin_family_report", None)
-        st.session_state.pop("twin_mode_catalogue", None)
-        st.session_state.pop("twin_family_result_signature", None)
-        try:
-            with st.spinner("Calculating exact symmetry and compatible twin interfaces…"):
-                report = build_twin_family_report(
-                    payload, transformation.transformation_id,
-                    product_node_basis=weak_basis_ui.basis,
+            try:
+                length_unit = st.selectbox(
+                    "Lattice length unit",
+                    ("angstrom", "nanometer", "picometer", "micrometer", "meter"),
+                    key="twin_length_unit",
                 )
-                # Presentation-only structural/provenance audit. The scientific
-                # engine and its independent matrix certifier remain untouched.
-                validate_report_integrity(report)
-                catalogue = build_mode_catalogue(report, payload)
-        except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
-            st.error(f"Calculation could not finish: {exc}")
-        except Exception as exc:
-            st.error("Calculation failed. No partial or invented result will be shown.")
-            with st.expander("Technical error", expanded=False):
-                st.code("".join(traceback.format_exception(exc)))
-        else:
-            st.session_state.pop("twin_tree_family_view", None)
-            st.session_state.pop("twin_selected_couple", None)
-            st.session_state.pop("tf_selected_couple_v6", None)
-            st.session_state.pop("tf_selected_couple_v8", None)
-            st.session_state.pop("tf_text_finder_v8", None)
-            st.session_state.pop("tf_nav_epoch_p0b2", None)
-            for saved_key in list(st.session_state):
-                if saved_key == "ct_physical_mode" or saved_key.startswith(("ct_type_", "ct_entry_", "ct_ux_")):
-                    st.session_state.pop(saved_key, None)
-            st.session_state["twin_mode_catalogue"] = catalogue
-            st.session_state["twin_family_report"] = report
-            st.session_state["twin_family_result_signature"] = signature
+                previous_unit = st.session_state.get("tf_v9_last_unit", length_unit)
+                if previous_unit != length_unit:
+                    for role in ("parent", "product"):
+                        labels = ("a", "b", "c")
+                        keys = tuple(f"{role}_{label}" for label in labels)
+                        if all(key in st.session_state for key in keys):
+                            new_lengths = convert_cell_lengths(
+                                tuple(st.session_state[key] for key in keys),
+                                from_unit=previous_unit, to_unit=length_unit,
+                            )
+                            for key, value in zip(keys, new_lengths):
+                                st.session_state[key] = value
+                st.session_state["tf_v9_last_unit"] = length_unit
+                parent_ui = render_phase_input(
+                    prefix="parent", heading="Parent crystal A", role="parent", length_unit=length_unit,
+                    default_family="cubic", default_point_group="m-3m", defaults=NITI_PARENT,
+                )
+                st.divider()
+                product_ui = render_phase_input(
+                    prefix="product", heading="Product crystal M", role="product", length_unit=length_unit,
+                    default_family="monoclinic", default_point_group="2/m", defaults=NITI_PRODUCT,
+                )
+                st.divider()
+                # Independent structure symmetry is advisory, never an override of
+                # explicitly entered point-group and correspondence conventions.
+                for role, selected_phase in (("parent", parent_ui.phase), ("product", product_ui.phase)):
+                    evidence = imported_spglib.get(role)
+                    if evidence and evidence["pointgroup"].replace(" ", "") != selected_phase.point_group.replace(" ", ""):
+                        st.warning(
+                            f"{role.capitalize()} point-group mismatch: CIF atoms suggest "
+                            f"{evidence['pointgroup']}, but the calculation is set to "
+                            f"{selected_phase.point_group}. Resolve the conventional setting before trusting the result."
+                        )
+                    elif evidence:
+                        st.caption(
+                            f"{role.capitalize()} declared class agrees with the independent CIF-derived class. "
+                            "Confirm the crystal-axis setting separately."
+                        )
+                correspondence_ui = render_correspondence_input(
+                    prefix="correspondence", default_rows=NITI_CORRESPONDENCE,
+                )
+                weak_basis_ui = render_weak_basis_input()
 
-    report = st.session_state.get("twin_family_report")
-    if report is not None and st.session_state.get("twin_family_result_signature") == signature:
-        catalogue = st.session_state.get("twin_mode_catalogue")
-        if catalogue is None:
-            st.warning("Stored report predates the physical-mode catalogue; recalculate to validate mode mapping.")
-            return
-        render_mode_report(catalogue, report)
-        from twin_app.p1_ui import render_p1_symmetry_orbit_panel
-        render_p1_symmetry_orbit_panel(report, payload, signature)
-        with st.expander("Export reproducible scientific report", expanded=False):
-            st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
-            record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
-            record["physical_mode_catalogue"] = {
-                "derivation": "parent metric-symmetry orbits of actual stretch-variant pairs; no reference outputs loaded",
-                "modes": [
-                    {
-                        "mode_id": m.mode_id,
-                        "symmetry_equivalent_stretch_pairs": m.stretch_pairs,
-                        "shear_magnitude": m.shear,
-                        "verified_types_and_unresolved": m.types,
-                        "source_records": [
-                            {"operator_family": e.operator_family,
-                             "pair_id": e.pair.pair_id,
-                             "construction_id": e.construction.construction_id,
-                             "classification": e.construction.classification,
-                             "classification_status": e.construction.classification_status}
-                            for e in m.entries
-                        ],
+                transformation = TransformationInput.from_rows(
+                    "A_to_M", parent_ui.phase.phase_id, product_ui.phase.phase_id,
+                    correspondence_ui.canonical_rows, label="Entered lattice correspondence",
+                )
+                request = CalculationRequest(
+                    project_id="twin_family_workbench", title="Crystal twin transformation",
+                    parent=parent_ui.phase, product=product_ui.phase, transformation=transformation,
+                    notes="Crystallography derived only from entered parent/product metrics and correspondence.",
+                )
+                payload = request.to_project_payload()
+                # Entered values, literature presets and CIF uploads are not
+                # automatically *measured by this user*. Keep the backend adapter
+                # untouched; adjust provenance for this standalone UI only.
+                for phase_record in payload["phases"]:
+                    phase_record["provenance"] = {
+                        "status": "UNVERIFIED",
+                        "notes": (
+                            f"Standalone UI input route: {source}. Physical source, "
+                            "measurement conditions and uncertainties are not independently verified."
+                        ),
                     }
-                    for m in catalogue.modes
-                ],
-                "incompatible_pair_orbits": catalogue.incompatible_pair_orbits,
-            }
-            st.download_button(
-                "Download complete analysis as JSON",
-                data=json.dumps(record, indent=2, default=str),
-                file_name="twin_family_research_record.json",
-                mime="application/json",
-                key="tf_export_v8",
-            )
-    else:
-        st.caption("Calculate to create the full twin-family genealogy. The solver does not use published result tables as answers.")
+                for transformation_record in payload["transformations"]:
+                    transformation_record["provenance"] = {
+                        "status": "UNVERIFIED",
+                        "notes": (
+                            "Entered crystallographic correspondence. Not independently "
+                            "validated against a measured orientation relationship."
+                        ),
+                    }
+            except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
+                st.warning("One input is incomplete or incompatible. Fix it before calculation.")
+                with st.expander("Which input failed?", expanded=False):
+                    st.code(f"{type(exc).__name__}: {exc}")
+                return
+
+        signature = _fingerprint({"project": payload, "weak_basis": _basis_payload(weak_basis_ui)})
+        previous = st.session_state.get("twin_family_result_signature")
+        if previous is not None and previous != signature:
+            st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
+
+        if st.button("Calculate physical twinning modes and habit planes", type="primary", use_container_width=True):
+            st.session_state.pop("twin_family_report", None)
+            st.session_state.pop("twin_mode_catalogue", None)
+            st.session_state.pop("twin_family_result_signature", None)
+            try:
+                with st.spinner("Calculating exact symmetry and compatible twin interfaces…"):
+                    report = build_twin_family_report(
+                        payload, transformation.transformation_id,
+                        product_node_basis=weak_basis_ui.basis,
+                    )
+                    # Presentation-only structural/provenance audit. The scientific
+                    # engine and its independent matrix certifier remain untouched.
+                    validate_report_integrity(report)
+                    catalogue = build_mode_catalogue(report, payload)
+            except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
+                st.error(f"Calculation could not finish: {exc}")
+            except Exception as exc:
+                st.error("Calculation failed. No partial or invented result will be shown.")
+                with st.expander("Technical error", expanded=False):
+                    st.code("".join(traceback.format_exception(exc)))
+            else:
+                st.session_state.pop("twin_tree_family_view", None)
+                st.session_state.pop("twin_selected_couple", None)
+                st.session_state.pop("tf_selected_couple_v6", None)
+                st.session_state.pop("tf_selected_couple_v8", None)
+                st.session_state.pop("tf_text_finder_v8", None)
+                st.session_state.pop("tf_nav_epoch_p0b2", None)
+                for saved_key in list(st.session_state):
+                    if saved_key == "ct_physical_mode" or saved_key.startswith(("ct_type_", "ct_entry_", "ct_ux_")):
+                        st.session_state.pop(saved_key, None)
+                st.session_state["twin_mode_catalogue"] = catalogue
+                st.session_state["twin_family_report"] = report
+                st.session_state["twin_family_result_signature"] = signature
+                st.success("Calculation finished. Open the Twin family & modes tab to inspect every calculated branch.")
+
+    with results_tab:
+        st.subheader("02  /  Calculated twin-family genealogy")
+        report = st.session_state.get("twin_family_report")
+        if report is not None and st.session_state.get("twin_family_result_signature") == signature:
+            catalogue = st.session_state.get("twin_mode_catalogue")
+            if catalogue is None:
+                st.warning("Stored report predates the physical-mode catalogue; recalculate to validate mode mapping.")
+                return
+            st.markdown("### Calculated inventory")
+            summary_a, summary_b, summary_c = st.columns(3)
+            summary_a.metric("Physical mode orbits", len(catalogue.modes))
+            summary_b.metric("Source families", len(report.families))
+            summary_c.metric("Incompatible pair orbits", len(catalogue.incompatible_pair_orbits))
+            st.caption("Counts are calculated from this report; they are not literature-expected answers.")
+            st.warning("Numerical compatibility is not independent experimental validation of any 2H or M18R specimen.")
+            render_mode_report(catalogue, report)
+            from twin_app.p1_ui import render_p1_symmetry_orbit_panel
+            render_p1_symmetry_orbit_panel(report, payload, signature)
+            with st.expander("Export reproducible scientific report", expanded=False):
+                st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
+                record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
+                record["physical_mode_catalogue"] = {
+                    "derivation": "parent metric-symmetry orbits of actual stretch-variant pairs; no reference outputs loaded",
+                    "modes": [
+                        {
+                            "mode_id": m.mode_id,
+                            "symmetry_equivalent_stretch_pairs": m.stretch_pairs,
+                            "shear_magnitude": m.shear,
+                            "verified_types_and_unresolved": m.types,
+                            "source_records": [
+                                {"operator_family": e.operator_family,
+                                 "pair_id": e.pair.pair_id,
+                                 "construction_id": e.construction.construction_id,
+                                 "classification": e.construction.classification,
+                                 "classification_status": e.construction.classification_status}
+                                for e in m.entries
+                            ],
+                        }
+                        for m in catalogue.modes
+                    ],
+                    "incompatible_pair_orbits": catalogue.incompatible_pair_orbits,
+                }
+                st.download_button(
+                    "Download complete analysis as JSON",
+                    data=json.dumps(record, indent=2, default=str),
+                    file_name="twin_family_research_record.json",
+                    mime="application/json",
+                    key="tf_export_v8",
+                )
+        else:
+            st.caption("Calculate to create the full twin-family genealogy. The solver does not use published result tables as answers.")
+    with evidence_tab:
+        st.subheader("03  /  Experimental evidence and source integrity")
+        st.caption("Compare independent measurements only after predictions and complete solver inputs are frozen. No benchmark answer is fed back into the solver.")
+        from twin_app.p1_ui import render_cualni_reference_guide
+        render_cualni_reference_guide()
 
 
 if __name__ == "__main__":
