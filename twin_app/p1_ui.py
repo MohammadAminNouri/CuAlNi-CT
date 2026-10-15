@@ -26,6 +26,8 @@ def render_cualni_reference_guide():
                     st.caption('A real correspondence and symmetry operators must be transformed with the same basis matrix; this is NOT the 18R structure by implication.')
         st.warning('A CIF or lattice metric does not establish the correspondence C, the transformation OR, exact atom-site structure, or measured habit plane. Do not claim experimental validation from these values alone.')
 
+    render_blind_evidence_comparison_panel()
+
 
 def render_p1_source_evidence(entry,report):
     """One predictable science panel adjacent to numerical source results."""
@@ -102,3 +104,66 @@ def render_p1_symmetry_orbit_panel(report,project_payload,signature):
             st.download_button('Export symmetry orbits, full provenance (JSON)',json.dumps(result,indent=2,default=str),
                 file_name='cualni_p1_macroscopic_orbits.json',mime='application/json',
                 key='p1_export_orbits_'+signature[:20])
+
+
+
+def render_blind_evidence_comparison_panel():
+    """Explicit, opt-in source-external comparison; no inferred reference data.
+
+    All uploaded JSON files are session-scoped. Computed comparisons are tied
+    to the hash of their exact current input bytes; no stale success display.
+    """
+    with st.expander('Research audit · compare independently measured 2H/M18R twin/habit geometry', expanded=False):
+        st.warning('This is NOT a physical-validation certificate. Freeze complete predicted candidates before accessing specimen measurements. Two-dimensional EBSD surface traces do not determine 3D habit planes.')
+        st.caption('Provide three JSON files: frozen prediction set (with solver SHA and crystal-input SHA), independent specimen evidence, and frame geometry. They must refer to the same specimen and explicitly indexed phase. Read docs/validation/BLIND_2H_18R_PROTOCOL.md.')
+        files = [
+            st.file_uploader('Frozen solver predictions (.json)', type=['json'], key='blind_predictions'),
+            st.file_uploader('Independent measured interfaces (.json)', type=['json'], key='blind_observations'),
+            st.file_uploader('Specimen metrics and frame transforms (.json)', type=['json'], key='blind_frames'),
+        ]
+        if not all(f is not None for f in files):
+            st.info('No comparison performed. Measurements are never substituted with the published reference-cell table.')
+            return
+        from hashlib import sha256
+        signature = sha256(b'\x00BLIND\x00'.join(f.getvalue() for f in files)).hexdigest()
+        key = 'p1_blind_external_comparison'
+        if st.button('Calculate all candidate residuals (no experimental certification)', key='blind_compare_action'):
+            try:
+                from .p1_blind_validation import compare_blind_interfaces
+                prediction, evidence, geometry = [
+                    json.loads(f.getvalue().decode('utf-8')) for f in files
+                ]
+                result = compare_blind_interfaces(
+                    prediction, evidence,
+                    parent_metric=geometry['parent_metric'],
+                    product_metric=geometry.get('product_metric'),
+                    product_to_parent_rotation=geometry.get('product_to_parent_rotation'),
+                    parent_to_sample_rotation=geometry.get('parent_to_sample_rotation'),
+                    null_trials=4096,
+                )
+                st.session_state[key] = {'signature': signature, 'result': result}
+            except (ValueError, TypeError, KeyError, ArithmeticError) as exc:
+                st.session_state.pop(key, None)
+                st.error('Evidence comparison rejected: ' + str(exc))
+        cached = st.session_state.get(key)
+        if cached is None or cached['signature'] != signature:
+            st.caption('No current, valid comparison to display.')
+            return
+        result = cached['result']
+        st.warning('GEOMETRIC ASSESSMENT ONLY. Independent experimental authentication, 3D observability, phase assignment and blind preregistration are not established here.')
+        st.caption('Matching predictions cannot identify a physical variant or certify lattice correspondence by themselves. Interpret null values only under the declared isotropic hypothetical model.')
+        st.dataframe([{
+            'observation': r['observation_id'],
+            'kind': r['interface_kind'],
+            'dimensionality': r['geometry_dimension'],
+            'nearest branch': r['nearest_candidate'],
+            'angle (deg)': r['angle_deg'],
+            'uncertainty (deg)': r['angular_uncertainty_deg'],
+            'matching branches': r['matching_candidate_count'],
+            'all searched': r['compared_candidates'],
+            'isotropic-null fraction': r['isotropic_null_chance_at_observed_best_angle'],
+        } for r in result['observations']], use_container_width=True)
+        st.download_button('Download complete residuals, alternatives and limitations',
+                           json.dumps(result, indent=2),
+                           file_name='cualni_blind_geometry_assessment_NOT_VALIDATED.json',
+                           mime='application/json', key='blind_export_current')
