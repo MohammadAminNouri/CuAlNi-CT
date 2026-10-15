@@ -35,6 +35,7 @@ jobs:
         run: |
           python -m pytest -vv -x --tb=short \
             tests/twin_app/test_cualni_blind_metric_2026.py \
+            tests/twin_app/test_cualni_blind_roots_2026.py \
             tests/twin_app/test_cualni_two_phase_adversarial_2026.py \
             tests/twin_app/test_p1_contracts.py \
             tests/twin_app/test_p1_closure_negative_2026.py
