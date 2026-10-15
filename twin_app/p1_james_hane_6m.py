@@ -89,3 +89,64 @@ def six_m_compatibility_james_hane(*, parent_do3_a0: float, a_6m: float,
         "source_correspondence_not_loaded": True,
         "experimental_verification": "NOT_ESTABLISHED",
     }
+
+
+def cube_edge_stretch_james_hane(*, parent_do3_a0: float,
+                                  a_6m: float,b_6m: float,c_6m: float,
+                                  theta_6m_deg: float):
+    """Eq (10) of James-Hane: computed U1 tensor (cube-edge geometry).
+
+    Returns a Cartesian stretch matrix in the SOURCE'S cubic gauge, NOT a
+    full atomic correspondence, an EBSD orientation relationship or a twin.
+    In particular, this must not be substituted for an unknown experimental C.
+    """
+    from math import sin,cos,radians
+    import numpy as np
+    a0=_positive("DO3 parent a0",parent_do3_a0)
+    a=_positive("6M a",a_6m)
+    b=_positive("6M b",b_6m)
+    c=_positive("6M c",c_6m)
+    theta=float(theta_6m_deg)
+    if not isfinite(theta) or not 0<theta<180:
+        raise LiteratureMetricError("6M monoclinic angle invalid")
+    alpha=sqrt(2)*a/a0
+    beta=b/a0
+    gamma=sqrt(2)*c/(3*a0)
+    sine=sin(radians(theta));cosine=cos(radians(theta))
+    length=sqrt(alpha**2+gamma**2+2*alpha*gamma*sine)
+    rho=(alpha**2+gamma**2+2*alpha*gamma*(sine+cosine))/(2*length)
+    sigma=(alpha**2-gamma**2)/(2*length)
+    tau=(alpha**2+gamma**2+2*alpha*gamma*(sine-cosine))/(2*length)
+    U=np.array(((beta,0.,0.),(0.,rho,sigma),(0.,sigma,tau)),dtype=float)
+    if np.linalg.eigvalsh(U)[0] <= 0:
+        raise LiteratureMetricError("Calculated source-gauge stretch is not positive definite")
+    return U
+
+
+def proper_cubic_stretch_orbit(U,*,atol=1e-10):
+    """Calculate the proper cubic parent conjugacy orbit, without preset counts.
+
+    Finite cubic rotations act on the *same* source-gauge stretch. The number of
+    physically different tensor variants is derived; no answer table is used.
+    """
+    from itertools import permutations,product
+    import numpy as np
+    X=np.asarray(U,float)
+    if X.shape!=(3,3) or not np.isfinite(X).all() or not np.allclose(X,X.T,atol=1e-13,rtol=0):
+        raise LiteratureMetricError("Finite symmetric 3x3 stretch required")
+    if np.linalg.eigvalsh(X)[0]<=0:
+        raise LiteratureMetricError("Proper cubic orbit requires a positive stretch")
+    if not np.isfinite(atol) or not 0<atol<=1e-5:
+        raise LiteratureMetricError("Invalid equality tolerance")
+    unique=[]
+    for ordering in permutations(range(3)):
+        for signs in product((-1,1),repeat=3):
+            Q=np.zeros((3,3))
+            for row,column in enumerate(ordering):
+                Q[row,column]=signs[row]
+            if round(np.linalg.det(Q))!=1:
+                continue
+            V=Q@X@Q.T
+            if not any(np.linalg.norm(V-old,ord="fro") <= atol for old in unique):
+                unique.append(V)
+    return tuple(unique)

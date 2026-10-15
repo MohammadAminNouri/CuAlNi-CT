@@ -127,3 +127,61 @@ def test_close_to_orthorhombic_is_still_monoclinic_in_metric():
     G=gram((4.430,5.330,12.79,90.,90.00001,90.))
     assert np.linalg.norm(G-np.diag(np.diag(G)))>0
     assert np.linalg.eigvalsh(G)[0]>0
+
+
+def test_james_hane_eq10_source_derived_cube_edge_tensor_matches_eq25():
+    from twin_app.p1_james_hane_6m import cube_edge_stretch_james_hane
+    c=next(x for x in INPUTS if x["id"]=="CuAlNi_DO3_6M")
+    compat=six_m_compatibility_james_hane(
+        parent_do3_a0=c["a0"],a_6m=c["a"],c_6m=c["c"],
+        theta_6m_deg=c["theta_measured"])
+    measured=cube_edge_stretch_james_hane(
+        parent_do3_a0=c["a0"],a_6m=c["a"],b_6m=c["b"],
+        c_6m=c["c"],theta_6m_deg=c["theta_measured"])
+    theoretical=cube_edge_stretch_james_hane(
+        parent_do3_a0=c["a0"],a_6m=c["a"],b_6m=c["b"],
+        c_6m=c["c"],theta_6m_deg=compat["nearest_branch_compatible_theta_deg"])
+    assert abs(np.linalg.eigvalsh(theoretical)[1]-1) < 3e-12
+    # Do not silently replace measured inputs with exact-compatible synthetic ones.
+    assert abs(np.linalg.eigvalsh(measured)[1]-1) > 1e-4
+    assert np.linalg.eigvalsh(measured)[0]>0
+
+
+@pytest.mark.parametrize("case",INPUTS,ids=lambda x:x["id"])
+def test_cube_edge_volume_constrained_by_source_lattice_not_lookup(case):
+    from twin_app.p1_james_hane_6m import cube_edge_stretch_james_hane
+    import math
+    U=cube_edge_stretch_james_hane(
+        parent_do3_a0=case["a0"],a_6m=case["a"],b_6m=case["b"],
+        c_6m=case["c"],theta_6m_deg=case["theta_measured"])
+    alpha=math.sqrt(2)*case["a"]/case["a0"]
+    beta=case["b"]/case["a0"]
+    gamma=math.sqrt(2)*case["c"]/(3*case["a0"])
+    expected_volume=alpha*beta*gamma*math.sin(math.radians(case["theta_measured"]))
+    assert abs(np.linalg.det(U)-expected_volume)<2e-12
+
+
+def test_cube_edge_twelve_variants_generated_by_parent_group_not_preloaded():
+    from twin_app.p1_james_hane_6m import cube_edge_stretch_james_hane,proper_cubic_stretch_orbit
+    c=next(x for x in INPUTS if x["id"]=="CuAlNi_DO3_6M")
+    U=cube_edge_stretch_james_hane(
+        parent_do3_a0=c["a0"],a_6m=c["a"],b_6m=c["b"],
+        c_6m=c["c"],theta_6m_deg=c["theta_measured"])
+    variants=proper_cubic_stretch_orbit(U)
+    # 12 is HELD OUT from James-Hane Eq (10), NOT inserted into orbit generator.
+    assert len(variants)==12
+    source_spectrum=np.linalg.eigvalsh(U)
+    assert all(np.allclose(np.linalg.eigvalsh(X),source_spectrum,atol=2e-12)
+               for X in variants)
+    assert all(abs(np.linalg.det(X)-np.linalg.det(U))<2e-12
+               for X in variants)
+
+
+def test_non_general_6m_source_law_is_not_a_substitute_for_2h():
+    from twin_app.p1_james_hane_6m import cube_edge_stretch_james_hane
+    # Distinct reported 2H data are not a source-compatible 6M representation.
+    sample=CELLS["CuAlNi_2H_diffraction_reported"]
+    assert sample.phase=="gamma1_prime_2H"
+    assert sample.point_group=="mmm"
+    assert sample.cell_setting.lower().startswith("orthorhombic")
+    # No physical transformation result is computed from this reference.
