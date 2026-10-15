@@ -48,14 +48,34 @@ def validate_experimental_evidence(provenance:Mapping[str,Any]) -> ExperimentalE
     if not isinstance(observations,list) or not observations:
         raise ExperimentalEvidenceIncomplete('At least one independent measured interface plane is required')
     for index,entry in enumerate(observations):
-        if not isinstance(entry,dict) or any(k not in entry for k in ('normal','reference_frame','uncertainty_deg')):
-            raise ExperimentalEvidenceIncomplete(f'Interface #{index} lacks normal/frame/uncertainty')
-        normal=np.asarray(entry['normal'],dtype=float)
+        if not isinstance(entry,dict) or 'uncertainty_deg' not in entry:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index} lacks measured frame/coordinates/uncertainty')
+        # Accept the canonical comparison schema (frame, coordinates) and the
+        # historical evidence schema (reference_frame, normal), but never let
+        # inconsistent duplicate fields silently pick one representation.
+        frame=entry.get('frame',entry.get('reference_frame'))
+        coords=entry.get('coordinates',entry.get('normal'))
+        if frame is None or coords is None:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index} lacks measured frame/coordinates')
+        if 'frame' in entry and 'reference_frame' in entry and entry['frame'] != entry['reference_frame']:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index} has contradictory frames')
+        if 'coordinates' in entry and 'normal' in entry and not np.array_equal(np.asarray(entry['coordinates']),np.asarray(entry['normal'])):
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index} has contradictory coordinates')
+        # 2D traces cannot masquerade as 3D interface normals here.
+        permitted=('parent_cartesian','parent_reciprocal_miller','product_cartesian',
+                   'product_reciprocal_miller','sample_plane_normal_cartesian')
+        if frame not in permitted:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index}: explicit 3D crystallographic frame required, not a surface trace')
+        if frame.startswith('sample_') and 'parent_to_sample_rotation' not in provenance:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index}: measured parent-to-sample rotation required')
+        if frame.startswith('product_') and 'martensite_metric' not in provenance and 'reciprocal_miller' in frame:
+            raise ExperimentalEvidenceIncomplete(f'Interface #{index}: product metric required for reciprocal Miller plane')
+        normal=np.asarray(coords,dtype=float)
         uncertainty=float(entry['uncertainty_deg'])
         if normal.shape!=(3,) or not np.isfinite(normal).all() or np.linalg.norm(normal)<=0:
             raise ValueError(f'Invalid measured interface #{index}')
-        if not (0<uncertainty<=90):
-            raise ValueError(f'Unphysical uncertainty for interface #{index}')
+        if not np.isfinite(uncertainty) or not (0<uncertainty<=45):
+            raise ValueError(f'Unphysical angular uncertainty for interface #{index}')
     # This verifies EVIDENCE STRUCTURE ONLY, not truth of an external reference!
     # Dataset corroboration must be conducted independently before claiming
     # experimental agreement. There is deliberately no 'certified' status here.
