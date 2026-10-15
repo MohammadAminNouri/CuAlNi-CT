@@ -54,6 +54,8 @@ def proper_cartesian_group(parent_metric,lattice_operations,*,tol=1e-8):
 
 
 def _orbit_labels(tensors, group, *,rtol=1e-7):
+    if not np.isfinite(rtol) or not 0<rtol<=1e-3:
+        raise EvidenceError("Orbit relative tolerance must be positive and finite")
     x=[np.asarray(t,float) for t in tensors]
     for t in x:
         if t.shape!=(3,3) or not np.isfinite(t).all():raise EvidenceError("Invalid rank-one tensor")
@@ -64,12 +66,22 @@ def _orbit_labels(tensors, group, *,rtol=1e-7):
         return i
     for i in range(len(x)):
         for j in range(i+1,len(x)):
-            tol=rtol*max(1.,np.linalg.norm(x[i]),np.linalg.norm(x[j]))
+            # Do not apply an absolute unit-scale tolerance to sub-1
+            # shear tensors: e.g. 1e-8 and zero are physically distinct.
+            tol=rtol*max(1e-14,np.linalg.norm(x[i]),np.linalg.norm(x[j]))
             if any(np.linalg.norm(q@x[i]@q.T-x[j])<=tol for q in group):
                 a,b=root(i),root(j)
                 if a!=b:parent[max(a,b)]=min(a,b)
     groups={}
     for i in range(len(x)):groups.setdefault(root(i),[]).append(i)
+    # Single-link tolerance chaining is NOT a certified equivalence relation:
+    # if A≈B, B≈C but A not≈C, refuse to merge them as one physical orbit.
+    for members in groups.values():
+        for ii,i in enumerate(members):
+            for j in members[ii+1:]:
+                tol=rtol*max(1e-14,np.linalg.norm(x[i]),np.linalg.norm(x[j]))
+                if not any(np.linalg.norm(q@x[i]@q.T-x[j])<=tol for q in group):
+                    raise EvidenceError("Numerically ambiguous orbit: non-transitive tensor equivalence")
     return list(groups.values())
 
 

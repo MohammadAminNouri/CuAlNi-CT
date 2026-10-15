@@ -72,3 +72,20 @@ def test_valid_covariance_is_not_rejected_by_symmetry_gate():
                                      solver,n_samples=2,seed=5)
     assert out["covariance_symmetry_relative_residual"]==0
     assert out["status"]=="FULL_SOURCE_INVENTORY_STABLE_CONDITIONAL_ON_C"
+
+
+def test_micro_shear_tensors_do_not_merge_under_unit_scale_tolerance():
+    from twin_app.p1_evidence import _orbit_labels
+    z=np.zeros((3,3))
+    tiny=np.zeros((3,3));tiny[0,0]=1e-8
+    groups=_orbit_labels([z,tiny],[np.eye(3)])
+    assert len(groups)==2
+
+
+def test_orbit_tolerance_chaining_does_not_merge_distinct_physical_tensors():
+    from twin_app.p1_evidence import _orbit_labels, EvidenceError
+    a=np.eye(3)
+    b=a*(1+0.6e-7)
+    c=a*(1+1.2e-7)
+    with pytest.raises(EvidenceError,match="non-transitive"):
+        _orbit_labels([a,b,c],[np.eye(3)])
