@@ -123,7 +123,8 @@ def propagate_metric_uncertainty(spec:Mapping, solver:Callable,*,n_samples:int,s
             shear_ranges[str(key)]={'baseline':origin['shear'],'p02_5':float(np.percentile(values,2.5)),
                                     'p97_5':float(np.percentile(values,97.5)),
                                     'range_max_minus_min':float(np.ptp(values))}
-    return {'status':'FULL_SOURCE_INVENTORY_STABLE_CONDITIONAL_ON_C' if stable and tracked and classification_stable and not failures else
+    return {'status':'NO_BASELINE_TWIN_BRANCHES_UNCERTAINTY_NOT_ESTIMABLE' if not baseline else
+                    'FULL_SOURCE_INVENTORY_STABLE_CONDITIONAL_ON_C' if stable and tracked and classification_stable and not failures else
                     'INCONCLUSIVE_BRANCH_SWITCHING_OR_FAILED_SAMPLES',
             'parameter_names':names,'distribution_assumption':'USER_DECLARED_GAUSSIAN_COVARIANCE',
             'seed':seed,'requested_samples':n_samples,'successful_samples':len(outputs),

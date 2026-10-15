@@ -71,7 +71,7 @@ def test_valid_covariance_is_not_rejected_by_symmetry_gate():
     out=propagate_metric_uncertainty(_uncertainty_model(covariance),
                                      solver,n_samples=2,seed=5)
     assert out["covariance_symmetry_relative_residual"]==0
-    assert out["status"]=="FULL_SOURCE_INVENTORY_STABLE_CONDITIONAL_ON_C"
+    assert out["status"]=="NO_BASELINE_TWIN_BRANCHES_UNCERTAINTY_NOT_ESTIMABLE"
 
 
 def test_micro_shear_tensors_do_not_merge_under_unit_scale_tolerance():
