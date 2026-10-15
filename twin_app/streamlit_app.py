@@ -201,6 +201,12 @@ def main() -> None:
     setup_tab, results_tab, evidence_tab = st.tabs((
         "01  ·  Crystal setup", "02  ·  Twin family & modes", "03  ·  Evidence & Cu–Al–Ni",
     ))
+
+    with evidence_tab:
+        st.subheader("03  /  Experimental evidence and source integrity")
+        st.caption("Compare independent measurements only after predictions and complete solver inputs are frozen. No benchmark answer is fed back into the solver.")
+        from twin_app.p1_ui import render_cualni_reference_guide
+        render_cualni_reference_guide()
     with setup_tab:
         existing = st.session_state.get("twin_family_report")
         st.subheader("01  /  Crystal setup")
@@ -461,12 +467,6 @@ def main() -> None:
                 )
         else:
             st.caption("Calculate to create the full twin-family genealogy. The solver does not use published result tables as answers.")
-    with evidence_tab:
-        st.subheader("03  /  Experimental evidence and source integrity")
-        st.caption("Compare independent measurements only after predictions and complete solver inputs are frozen. No benchmark answer is fed back into the solver.")
-        from twin_app.p1_ui import render_cualni_reference_guide
-        render_cualni_reference_guide()
-
 
 if __name__ == "__main__":
     main()
