@@ -89,3 +89,11 @@ def test_orbit_tolerance_chaining_does_not_merge_distinct_physical_tensors():
     c=a*(1+1.2e-7)
     with pytest.raises(EvidenceError,match="non-transitive"):
         _orbit_labels([a,b,c],[np.eye(3)])
+
+
+def test_null_correspondence_source_does_not_claim_documented_experiment():
+    spec=_two_h()
+    spec["correspondence_M_from_A"]=[["1","0","0"],["0","1","0"],["0","0","1"]]
+    spec["correspondence_source"]=None
+    audit=check_cualni_specimen(spec)
+    assert audit["evidence_status"]=="C_UNVERIFIED"

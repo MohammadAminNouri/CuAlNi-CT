@@ -1,8 +1,16 @@
 {
+  "schema": "cualni-independent-evidence-registry-v1",
   "schema_version": 1,
   "scope": "publicly verified bibliographic/abstract-level evidence registry — NOT numerical benchmarks",
   "as_of_utc": "2026-10-15",
+  "purpose": "Source-reported independent observations, NOT solver input, calibration, nor proof of specimen-specific matching.",
   "rule": "Never load observed values into prediction solver or infer correspondence C from phase labels and unrelated lattice metrics.",
+  "rules": [
+    "No source record may be passed into the solver as a correspondence, orientation matrix or predicted twin/habit answer.",
+    "Martensite-martensite twin planes are not austenite-martensite habit planes.",
+    "Records from distinct compositions/specimens cannot be merged as a specimen-matched benchmark.",
+    "If paired lattice metrics, exact C, indexed variant frame, uncertainty and observed plane are missing, report NOT_COMPARABLE rather than match."
+  ],
   "sources": [
     {
       "doi": "10.1016/S0968-4328(99)00060-8",
@@ -41,10 +49,90 @@
       "numerical_certification": "NOT_ELIGIBLE"
     }
   ],
+  "records": [
+    {
+      "id": "chen_2000_cualni_2h_twin",
+      "alloy": "Cu-Al-Ni",
+      "doi": "10.1016/S0968-4328(99)00060-8",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/10568227/",
+      "experiment": "EBSD",
+      "phase": "gamma1_prime_2H",
+      "interface_type": "martensite_martensite_twin",
+      "measured_plane_families_product_miller": [
+        "{121}",
+        "{101}"
+      ],
+      "variant_pairs": {
+        "A/C and B/D": "{121}",
+        "A/D and B/C": "{101}"
+      },
+      "reported_parent_product_direction_family": "[010]_2H // <001>_parent",
+      "reported_basal_plane_origin": "2H basal plane from {110}_parent",
+      "observed_uncertainty_deg": null,
+      "same_specimen_parent_product_metrics": null,
+      "source_exact_correspondence_C": null,
+      "measured_pair_resolved_OR_matrix": null,
+      "comparison_ready": false,
+      "not_comparable_reason": "Only qualitative twin-plane families and OR correspondences accessible; no complete paired C, indexed branch/source gauge, numeric measurement uncertainty."
+    },
+    {
+      "id": "sari_aksoy_2006_cualni_both_phases",
+      "alloy": "Cu-11.92wt%Al-3.78wt%Ni",
+      "doi": "10.1016/j.jallcom.2005.09.049",
+      "url": "https://www.sciencedirect.com/science/article/pii/S0925838805015008",
+      "experiment": "TEM diffraction; heat treatment comparison",
+      "phase": "gamma1_prime_2H and beta1_prime_M18R",
+      "interface_type": null,
+      "observed_stacking_sequences": [
+        "2H",
+        "M18R"
+      ],
+      "observed_M18R_monoclinic_beta_near_90_deg": true,
+      "observed_uncertainty_deg": null,
+      "same_specimen_parent_product_metrics": null,
+      "source_exact_correspondence_C": null,
+      "measured_pair_resolved_OR_matrix": null,
+      "comparison_ready": false,
+      "not_comparable_reason": "Phase-specific structural evidence; no full indexed same-specimen twin/habit and correspondence record in accessible source."
+    },
+    {
+      "id": "no_caillard_sanjuan_2009_cualni_TEM",
+      "alloy": "Cu-13.70wt%Al-5.00wt%Ni",
+      "doi": "10.1016/j.actamat.2008.10.017",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S1359645408007660",
+      "experiment": "In-situ TEM during transformation",
+      "phase": "martensite and parent",
+      "interface_type": "austenite_martensite_habit and martensite_martensite_twin",
+      "observed_interface_count": 9,
+      "published_interface_normals_in_accessible_excerpt": null,
+      "observed_uncertainty_deg": null,
+      "same_specimen_parent_product_metrics": null,
+      "source_exact_correspondence_C": null,
+      "measured_pair_resolved_OR_matrix": null,
+      "comparison_ready": false,
+      "not_comparable_reason": "Paper reports nine OR/habit/interface observations, but complete indexed planes and paired C unavailable from accessible abstract."
+    },
+    {
+      "id": "zhang_1999_cross_alloy_18r",
+      "alloy": "Cu-Zn-Al, 20.4 wt% Zn and 5.6 wt% Al (NOT Cu-Al-Ni)",
+      "doi": "10.1016/S1359-6454(99)00064-6",
+      "url": "https://lbmd.coe.pku.edu.cn/PDF/1999ActaMater-1.pdf",
+      "experiment": "Cu-Zn-Al TEM and WLR numerical analysis",
+      "phase": "M18R in Cu-Zn-Al",
+      "interface_type": "martensite_martensite_twin and austenite_martensite_habit",
+      "has_published_wlr_habit_table": true,
+      "reference_metrics_from_other_cu_zn_al_specimen": true,
+      "comparison_ready": false,
+      "not_comparable_reason": "Different alloy (Cu-Zn-Al), and authors reused lattice metrics from another Cu-Zn-Al specimen. Cross-alloy mathematical benchmark only, never experimental Cu-Al-Ni proof.",
+      "source_exact_correspondence_C": null,
+      "measured_pair_resolved_OR_matrix": null
+    }
+  ],
   "distinctions": [
     "2H gamma1' is an orthorhombic martensite structure in the stated conventional setting; do not infer from composition alone.",
     "CuAlNi beta1' can have modified monoclinic 18R stacking; a reduced 6M crystallographic representation must not be identified by name alone with a measured conventional 18R cell.",
     "Observed 2D traces provide only surface intersections and do not determine full 3D habit/twin plane inclinations.",
     "A phase-indexing or diffraction identification paper is not necessarily a quantified twin/habit geometry benchmark."
-  ]
+  ],
+  "qualification": "Bibliographic source evidence only; not automatically loaded into solver predictions. Specimen-specific quantitative 2H/M18R twin and habit experimental validation NOT ESTABLISHED."
 }

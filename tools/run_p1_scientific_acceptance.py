@@ -19,6 +19,8 @@ from twin_app.p1_cualni import CELLS,gram,check_cualni_specimen,CrystalInputErro
 from twin_app.p1_numerics import stretch_from_metrics_independent,root_oracle,symmetry_preserving_sensitivity
 from twin_app.p1_evidence import report_orbits,compare_observed_planes,EvidenceError,branch_evidence_status
 from twin_app.p1_ensemble import propagate_metric_uncertainty
+from twin_app.p1_interface_validation import (
+    compare_specimen_interfaces, InterfaceAuditError)
 from app.application import LatticeInput,PhaseInput,TransformationInput,CalculationRequest
 from twin_app.scientific_engine import build_twin_family_report
 from cualni_cryst.project_io import project_from_dict
@@ -94,19 +96,12 @@ def run_specimen(path,*,uncertainty_samples=0):
     payload=generate_payload(spec)
     result,report,Ga,Gm=analyze_report(payload)
     result['cualni_input_audit']=validity
-    evidence=spec.get('observed_interface_planes',[])
-    if evidence:
-        R=spec.get('measured_OR_M_cart_to_A_cart')
-        candidates=[h.habit_normal_parent_cartesian for f in report.families
-                     for p in f.pair_records for c in p.constructions for h in c.habit_solutions]
-        results=[]
-        for observation in evidence:
-            try:
-                results.append(compare_observed_planes(candidates,observation,
-                    parent_metric=Ga,product_metric=Gm,OR_M_cart_to_A_cart=R))
-            except EvidenceError as e:results.append({'status':'OBSERVATION_NOT_COMPARABLE','reason':str(e)})
-        result['observed_plane_geometry']=results
-    else:result['observed_plane_geometry']='NO_INDEPENDENT_OBSERVATIONS'
+    # Interface classification is mandatory. Twin planes are NOT A/M habits.
+    # Ambiguous or cross-specimen observations fail closed, not swallowed as
+    # a near-matching geometric experiment.
+    result['typed_interface_geometry']=compare_specimen_interfaces(
+        report,spec,Ga,Gm)
+    result['observed_plane_geometry']='DEPRECATED_USE_TYPED_INTERFACE_GEOMETRY'
     if uncertainty_samples:
         uq=spec.get('metric_uncertainty_model')
         if not isinstance(uq,dict):
