@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
+      # Standalone tools/ scripts need the repository root for app/ imports.
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
       OPENBLAS_NUM_THREADS: "1"
       OMP_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
