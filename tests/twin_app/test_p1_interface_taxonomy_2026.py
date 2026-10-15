@@ -151,3 +151,42 @@ def test_missing_or_false_or_reference_prevents_product_habit_comparison(invalid
                     coordinates=[0.,0.,1.],
                     measured_OR_M_cart_to_A_cart=np.eye(3).tolist(),
                     OR_observation_reference=invalid_ref))
+
+
+def test_actual_specimen_runner_routes_twin_to_twin_not_habit(monkeypatch,tmp_path):
+    # End-to-end CLI-layer routing, without loading experimental answers or
+    # launching an expensive nonlinear crystallographic report.
+    from tools import run_p1_scientific_acceptance as runner
+    import json
+    monkeypatch.setattr(runner,"check_cualni_specimen",
+                        lambda spec:{"phase":"synthetic_2H",
+                                     "accepted_as_physical_prediction":False})
+    monkeypatch.setattr(runner,"generate_payload",lambda spec:{"synthetic":True})
+    monkeypatch.setattr(runner,"analyze_report",
+                        lambda payload:({},report(),np.eye(3),G))
+    payload={"specimen_id":"mock_specimen_2H",
+             "correspondence_M_from_A":[["1","0","0"],["0","1","0"],["0","0","1"]],
+             "observed_interface_planes":[twin(),habit()]}
+    path=tmp_path/"research-specimen.json"
+    path.write_text(json.dumps(payload))
+    result=runner.run_specimen(path)
+    a=result["typed_interface_geometry"]
+    assert [r["interface_type"] for r in a["observations"]]==[
+        "martensite_martensite_twin","austenite_martensite_habit"]
+    assert all(r["geometric_comparison"]["angle_deg"]<1e-9 for r in a["observations"])
+    assert result["material_status"]=="EXPLORATORY_PREDICTIONS_CONDITIONAL_ON_INPUT_CORRESPONDENCE_NOT_CERTIFIED"
+    assert a["independently_validated"] is False
+
+def test_actual_specimen_runner_rejects_ambiguous_interface(monkeypatch,tmp_path):
+    from tools import run_p1_scientific_acceptance as runner
+    import json
+    monkeypatch.setattr(runner,"check_cualni_specimen",lambda spec:{})
+    monkeypatch.setattr(runner,"generate_payload",lambda spec:{})
+    monkeypatch.setattr(runner,"analyze_report",lambda payload:({},report(),np.eye(3),G))
+    s={"specimen_id":"mock_specimen_2H",
+       "correspondence_M_from_A":[["1","0","0"],["0","1","0"],["0","0","1"]],
+       "observed_interface_planes":[twin(interface_type=None)]}
+    path=tmp_path/"ambiguous.json"
+    path.write_text(json.dumps(s))
+    with pytest.raises(InterfaceAuditError,match="AMBIGUOUS_INTERFACE"):
+        runner.run_specimen(path)
