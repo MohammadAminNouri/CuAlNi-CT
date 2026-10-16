@@ -200,11 +200,11 @@ def main() -> None:
     _render_research_workspace_header()
     # Optional source/evidence inspection is always available, including when
     # the entered crystal parameters are incomplete or inconsistent.
-    with st.expander("Cu–Al–Ni experimental references (optional)", expanded=False):
-        st.subheader("Independent evidence · Cu–Al–Ni")
-        st.caption("Compare independent measurements only after predictions and complete solver inputs are frozen. No benchmark answer is fed back into the solver.")
-        from twin_app.p1_ui import render_cualni_reference_guide
-        render_cualni_reference_guide()
+    # The reference guide already owns its optional expanders. Wrapping it
+    # in another expander would create invalid nested Streamlit containers.
+    st.caption("Cu–Al–Ni independent evidence and source references (optional)")
+    from twin_app.p1_ui import render_cualni_reference_guide
+    render_cualni_reference_guide()
 
     # One linear scientific workflow: enter parameters, press Calculate once,
     # then inspect the full result genealogy directly below.
