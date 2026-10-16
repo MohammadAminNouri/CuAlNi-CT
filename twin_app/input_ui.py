@@ -55,28 +55,31 @@ def _point_group_metadata() -> tuple[dict[str, object], ...]:
     return point_group_table()
 
 
-def _locked_number(label: str, value: float, *, key: str, angle: bool = False) -> float:
-    st.session_state[key] = float(value)
+def _locked_number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
+    # Derived lattice constraints are displayed, never edited or persisted as
+    # independent widget state. Include the exact value in the widget identity
+    # so a change in the controlling length cannot display a stale locked value.
     kwargs: dict[str, object] = {
         "label": label,
         "value": float(value),
         "disabled": True,
-        "key": key,
-        "format": "%.8f",
+        "key": f"{key}_{float(value).hex()}",
+        "format": "%.8e" if length_unit == "meter" and not angle else "%.8f",
     }
     if angle:
         kwargs.update(min_value=0.000001, max_value=179.999999)
     else:
         kwargs.update(min_value=1.0e-12)
-    return float(st.number_input(**kwargs))
+    st.number_input(**kwargs)
+    return float(value)
 
 
-def _number(label: str, value: float, *, key: str, angle: bool = False) -> float:
+def _number(label: str, value: float, *, key: str, angle: bool = False, length_unit: str | None = None) -> float:
     kwargs: dict[str, object] = {
         "label": label,
         "value": float(value),
         "key": key,
-        "format": "%.8f",
+        "format": "%.8e" if length_unit == "meter" and not angle else "%.8f",
     }
     if angle:
         kwargs.update(min_value=0.000001, max_value=179.999999)
@@ -169,9 +172,26 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
             st.caption(limitation)
             with st.expander("3D geometry in the entered cell", expanded=False):
                 from .point_group_visualizer import cell_basis, make_operation_scene
+                from .operation_witness import operation_witness
                 B = cell_basis(*[float(v) for v in cell])
-                fig = make_operation_scene(B, op.kind, op.axis_or_plane)
-                st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False, "scrollZoom": False})
+                witness = operation_witness(B, op.matrix)
+                fig = make_operation_scene(
+                    B, op.kind, op.axis_or_plane, operation_matrix=op.matrix
+                )
+                st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "scrollZoom": False})
+                st.caption(
+                    "Blue/orange arrows: one generic test direction before/after "
+                    "the exact selected point-group operation; not a measured vector. "
+                    f"Relative metric-length residual: {witness.relative_metric_residual:.2e}. "
+                    "The vectors share one illustrative display scale."
+                )
+                if op.axis_or_plane is None or not (
+                    "rotation" in op.kind or "mirror" in op.kind
+                ):
+                    st.info(
+                        "A dedicated axis/plane 3D symmetry overlay is not implemented for this operation. "
+                        "The before/after arrows still show its exact coordinate action."
+                    )
                 st.caption("Geometry only: this is not a stereographic projection, EBSD pattern, or physical twin prediction.")
             with st.expander("Show exact coordinate matrix and numerical check", expanded=False):
                 st.code("\n".join("[ " + "  ".join(row) + " ]" for row in op.matrix), language="text")
@@ -228,17 +248,17 @@ def render_phase_input(
     st.markdown("**Conventional cell**")
     lengths = st.columns(3)
     with lengths[0]:
-        a = _number("a", a0, key=f"{prefix}_a")
+        a = _number("a", a0, key=f"{prefix}_a", length_unit=length_unit)
     with lengths[1]:
         if family in {"cubic", "tetragonal", "hexagonal", "trigonal"}:
-            b = _locked_number("b", a, key=f"{prefix}_b_locked_{family}")
+            b = _locked_number("b", a, key=f"{prefix}_b_locked_{family}", length_unit=length_unit)
         else:
-            b = _number("b", b0, key=f"{prefix}_b")
+            b = _number("b", b0, key=f"{prefix}_b", length_unit=length_unit)
     with lengths[2]:
         if family == "cubic":
-            c = _locked_number("c", a, key=f"{prefix}_c_locked_{family}")
+            c = _locked_number("c", a, key=f"{prefix}_c_locked_{family}", length_unit=length_unit)
         else:
-            c = _number("c", c0, key=f"{prefix}_c")
+            c = _number("c", c0, key=f"{prefix}_c", length_unit=length_unit)
 
     angles = st.columns(3)
     with angles[0]:
@@ -298,62 +318,155 @@ def render_correspondence_input(
     *,
     prefix: str = "correspondence",
     default_rows: Sequence[Sequence[str]] = (
-        ("1", "0", "0"),
-        ("0", "1", "0"),
-        ("0", "0", "1"),
+        ("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"),
     ),
 ) -> CorrespondenceUIResult:
-    st.subheader("Lattice correspondence")
-    st.caption("This 3×3 matrix tells which parent crystal directions map to which product directions. It does not represent a symmetry operation.")
-    choice = st.radio(
-        "Which way are the crystal directions mapped?",
-        ("A → M", "M → A"),
-        horizontal=True,
-        key=f"{prefix}_direction_choice",
-        help=(
-            "Choose the direction of the matrix you are entering. The scientific backend always "
-            "receives the canonical A → M action. A reverse matrix is inverted exactly."
-        ),
-    )
-    direction = "A_TO_M" if choice == "A → M" else "M_TO_A"
-    arrow, equation = displayed_relation(direction)
-    st.markdown(f"**{arrow}**")
-    st.caption(equation)
+    """Compact, auditable Cayron parent→daughter rational-coordinate correspondence.
 
+    Only the exact C returned from this function enters the crystallographic solver.
+    The probe, inverse and optional 3D views are explanatory and read-only.
+    """
+    from .correspondence_explorer import (
+        calculate_action, images_of_parent_basis, vector_text,
+    )
+
+    st.subheader("1 · Correspondence: which daughter coordinates match each parent direction?")
+    st.latex(r"[\mathbf u]_{B_c^{\gamma}}=C_c^{\alpha\rightarrow\gamma}[\mathbf u]_{B_c^{\alpha}}")
+    st.caption("Parent α (austenite) → daughter γ (martensite). **C maps coordinates**, "
+               "not a physical rotation, orientation relationship or deformation F.")
+    with st.expander("What exactly do the rows and columns mean?", expanded=False):
+        st.write("Each **column** tells where one parent crystal basis vector maps in daughter "
+                 "direct coordinates. Each **row** is a daughter coordinate component. "
+                 "Enter exact integers or rational fractions p/q, such as `1/2` or `-1/2`.")
+        st.write("The crystal lattice metrics are independent inputs. "
+                 "Coordinate components from different bases must not be used to infer a Cartesian angle.")
+
+    baseline = tuple(tuple(str(v) for v in row) for row in default_rows)
+    keys = tuple(tuple(f"{prefix}_A_TO_M_{i}_{j}" for j in range(3)) for i in range(3))
+
+    def restore_starting_matrix() -> None:
+        # This is solely a user-requested restoration of the original INPUT preset,
+        # never a hardcoded numerical scientific answer or classification.
+        for i in range(3):
+            for j in range(3):
+                st.session_state[keys[i][j]] = baseline[i][j]
+
+    st.markdown("**Edit the exact 3 × 3 matrix C**")
+    st.caption("Columns: parent a, b, c → · Rows: daughter a, b, c ↓")
+    header = st.columns([0.75, 1, 1, 1], gap="small")
+    for col, title in zip(header, ("**M ↓ / A →**", "**aₐ**", "**bₐ**", "**cₐ**")):
+        with col:
+            st.markdown(title)
     rows: list[list[str]] = []
-    for i in range(3):
-        cols = st.columns(3)
-        row: list[str] = []
+    for i, label in enumerate(("**aₘ**", "**bₘ**", "**cₘ**")):
+        columns = st.columns([0.75, 1, 1, 1], gap="small")
+        with columns[0]:
+            st.markdown(label)
+        row = []
         for j in range(3):
-            with cols[j]:
-                row.append(
-                    st.text_input(
-                        f"C{i + 1}{j + 1}",
-                        value=str(default_rows[i][j]),
-                        key=f"{prefix}_{direction}_{i}_{j}",
-                        label_visibility="collapsed",
-                    )
-                )
+            with columns[j + 1]:
+                row.append(st.text_input(
+                    f"Daughter {i+1}, parent {j+1}",
+                    value=baseline[i][j],
+                    key=keys[i][j], label_visibility="collapsed",
+                ))
         rows.append(row)
 
-    canonical = canonical_correspondence_rows(rows, direction=direction)
-    preview = preview_correspondence(rows, direction=direction)
-    st.markdown("**How this matrix maps the parent basis**")
-    for parent_axis, product_coords in preview.basis_mappings:
-        st.markdown(f"**{parent_axis}** → **{product_coords}**")
-    st.caption("Every column is one parent basis direction expressed in product coordinates. This is a lattice correspondence, not a rigid rotation or an orientation relationship.")
-    st.caption(f"Exact correspondence determinant: {preview.determinant} (nonzero = invertible).")
-    with st.expander("Show the exact canonical A → M matrix sent to the solver", expanded=False):
-        st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
-        if direction == "M_TO_A":
-            st.caption("The displayed matrix is the exact symbolic inverse of the entered M → A matrix.")
-    return CorrespondenceUIResult(
-        canonical_rows=canonical,
-        input_direction=direction,
-        display_arrow=arrow,
-        display_equation=equation,
-    )
+    # An accidental input change previously produced nine different NiTi-like
+    # modes while the user believed they were viewing the published NiTi preset.
+    # Highlight any departure from the starting correspondence without claiming
+    # that the edited matrix is necessarily scientifically invalid.
+    changed = [(i, j) for i in range(3) for j in range(3)
+               if str(rows[i][j]).strip() != baseline[i][j]]
+    if changed:
+        cells = ", ".join(f"C{i+1}{j+1}" for i, j in changed)
+        st.warning(f"**Edited correspondence ({len(changed)} entries: {cells}).** "
+                   "These results will NOT necessarily reproduce the starting published example. "
+                   "This may be intentional for a different transformation.")
+        st.button("Restore starting correspondence entries", key=f"{prefix}_restore_C",
+                  on_click=restore_starting_matrix, width="content")
+    try:
+        canonical = canonical_correspondence_rows(rows, direction="A_TO_M")
+        C = exact_matrix(canonical)
+    except (ValueError, TypeError, ZeroDivisionError) as exc:
+        st.error(f"Correspondence is not usable: {exc}")
+        st.stop()
+        raise AssertionError("unreachable")
 
+    st.caption(f"Exact rational C accepted · determinant = {C.det()} · invertible")
+    st.markdown("**Try a parent direction → see its daughter coordinates**")
+    choice = st.selectbox(
+        "Parent direction",
+        ("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]", "Custom [u,v,w]"),
+        key=f"{prefix}_probe_choice",
+    )
+    axes = (("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"))
+    if choice == "Custom [u,v,w]":
+        fields = st.columns(3, gap="small")
+        parent_vector = tuple(
+            fields[k].text_input(label, value=v, key=f"{prefix}_probe_{k}")
+            for k, (label, v) in enumerate(zip(("u (parent)", "v (parent)", "w (parent)"), ("1", "1", "0")))
+        )
+    else:
+        parent_vector = axes[("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]").index(choice)]
+
+    try:
+        action = calculate_action(canonical, parent_vector)
+    except (TypeError, ValueError, ZeroDivisionError) as exc:
+        st.error(f"Invalid direction: {exc}; enter rational integers or p/q fractions.")
+    else:
+        st.markdown(f"**Parent {vector_text(action.parent)}  →  Daughter {vector_text(action.daughter)}**")
+        st.latex(sp.latex(C) + r"\," + sp.latex(sp.Matrix(action.parent)) + "=" + sp.latex(sp.Matrix(action.daughter)))
+
+        with st.expander("More coordinate mappings and optional 3D drawings", expanded=False):
+            st.caption("For the three basis axes (each vector is a COLUMN of C):")
+            actions = images_of_parent_basis(canonical)
+            for label, obj in zip(("aₐ", "bₐ", "cₐ"), actions):
+                st.write(f"{label} → daughter {vector_text(obj.daughter)}")
+            st.caption("These components are expressed on **separate coordinate axes**. "
+                       "They cannot be compared as common-frame Cartesian vectors.")
+            if st.checkbox("Show 3D coordinate-space sketches", value=False,
+                           key=f"{prefix}_show_coordinate_arrows"):
+                import plotly.graph_objects as go
+
+                def arrow_figure(values: Sequence[sp.Rational], title: str):
+                    coords = [float(v) for v in values]
+                    limit = 1.2 * max(1.0, *(abs(v) for v in coords))
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter3d(
+                        x=[0, coords[0]], y=[0, coords[1]], z=[0, coords[2]],
+                        mode="lines+markers", line=dict(color="#38bdf8", width=8),
+                        marker=dict(size=4, color="#38bdf8"), showlegend=False,
+                    ))
+                    fig.update_layout(height=260, margin=dict(l=0, r=0, t=12, b=0),
+                        scene=dict(xaxis=dict(title="u", range=[-limit,limit]),
+                                   yaxis=dict(title="v", range=[-limit,limit]),
+                                   zaxis=dict(title="w", range=[-limit,limit]),
+                                   aspectmode="cube"))
+                    return fig
+
+                left, right = st.columns(2)
+                with left:
+                    st.caption("Parent direct-coordinate components")
+                    st.plotly_chart(arrow_figure(action.parent, "Parent"),
+                                    width="stretch", key=f"{prefix}_plot_parent")
+                with right:
+                    st.caption("Daughter direct-coordinate components")
+                    st.plotly_chart(arrow_figure(action.daughter, "Daughter"),
+                                    width="stretch", key=f"{prefix}_plot_daughter")
+                st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
+
+    with st.expander("Expert details: exact C, inverse and determinant", expanded=False):
+        st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
+        st.write(f"det(C) = {C.det()}")
+        st.code(str(C.inv()), language="text")
+        st.caption("C.inv() is the exact reverse coordinate mapping. It is not another independently measured correspondence.")
+
+    arrow, equation = displayed_relation("A_TO_M")
+    return CorrespondenceUIResult(
+        canonical_rows=canonical, input_direction="A_TO_M",
+        display_arrow=arrow, display_equation=equation,
+    )
 
 def _standard_basis(name: str) -> sp.Matrix:
     half = sp.Rational(1, 2)

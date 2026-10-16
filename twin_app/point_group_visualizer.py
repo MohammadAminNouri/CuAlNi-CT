@@ -22,7 +22,9 @@ def cell_basis(a: float, b: float, c: float, alpha: float, beta: float, gamma: f
     cx = c * cos(be)
     cy = c * (cos(al) - cos(be)*cos(ga)) / sg
     cz2 = c*c-cx*cx-cy*cy
-    if cz2 <= 1e-15:
+    # The previous absolute 1e-15 threshold rejected valid Angstrom-scale
+    # cells supplied in metres. Judge degeneracy relative to cell size.
+    if not np.isfinite(cz2) or cz2 <= 1e-12 * c * c:
         raise ValueError("Cell angles do not define a positive-volume lattice")
     B = np.array([[a,b*cos(ga),cx],[0.,b*sg,cy],[0.,0.,sqrt(cz2)]], dtype=float)
     if float(np.linalg.det(B)) <= 0:
@@ -59,6 +61,7 @@ def make_operation_scene(
     axis_or_plane: tuple[int,int,int] | None,
     *,
     theme: str = "dark",
+    operation_matrix: tuple[tuple[str, str, str], ...] | None = None,
 ) -> Any:
     import plotly.graph_objects as go
     B = np.asarray(basis,dtype=float)
@@ -88,7 +91,31 @@ def make_operation_scene(
             r=length*.62
             vertices=np.array([center+r*(sx*u+sy*v) for sx,sy in [(-1,-1),(1,-1),(1,1),(-1,1)]])
             fig.add_trace(go.Mesh3d(x=vertices[:,0],y=vertices[:,1],z=vertices[:,2],i=[0,0],j=[1,2],k=[2,3],opacity=.48,color="#75b7ef",name="Mirror plane (hkl)",showlegend=True))
+    # Independent exact G action: unlike a plane/axis sketch this works for
+    # identity, inversion and improper operators too. Draw a fixed generic
+    # direct-space probe before/after operation, scaled together for clarity.
+    if operation_matrix is not None:
+        from .operation_witness import operation_witness
+        witness = operation_witness(B, operation_matrix)
+        centre = B @ np.array([0.5, 0.5, 0.5], dtype=float)
+        original = np.asarray(witness.before_cartesian, dtype=float)
+        transformed = np.asarray(witness.after_cartesian, dtype=float)
+        common_scale = (0.65 * float(np.max(np.linalg.norm(B, axis=0))) /
+                        max(float(np.linalg.norm(original)), np.finfo(float).tiny))
+        for vector, label, color in (
+            (original, "Before symmetry operation", "#5c85ad"),
+            (transformed, "After symmetry operation", "#e8aa60"),
+        ):
+            endpoint = centre + common_scale * vector
+            fig.add_trace(go.Scatter3d(
+                x=[centre[0], endpoint[0]],
+                y=[centre[1], endpoint[1]],
+                z=[centre[2], endpoint[2]],
+                mode="lines+markers", name=label,
+                line=dict(width=8, color=color), marker=dict(size=4, color=color),
+                showlegend=True,
+            ))
     bg="#101922" if theme!="light" else "#ffffff"
     color="#f1f5f8" if theme!="light" else "#19354b"
-    fig.update_layout(height=320,margin=dict(l=3,r=3,t=4,b=4),paper_bgcolor=bg,scene=dict(bgcolor=bg,xaxis=dict(visible=False),yaxis=dict(visible=False),zaxis=dict(visible=False),aspectmode="data",camera=dict(eye=dict(x=1.6,y=1.5,z=1.4))),legend=dict(font=dict(color=color),x=0,y=1),font=dict(color=color),showlegend=data is not None)
+    fig.update_layout(height=320,margin=dict(l=3,r=3,t=4,b=4),paper_bgcolor=bg,scene=dict(bgcolor=bg,xaxis=dict(visible=False),yaxis=dict(visible=False),zaxis=dict(visible=False),aspectmode="data",camera=dict(eye=dict(x=1.6,y=1.5,z=1.4))),legend=dict(font=dict(color=color),x=0,y=1),font=dict(color=color),showlegend=(data is not None or operation_matrix is not None))
     return fig

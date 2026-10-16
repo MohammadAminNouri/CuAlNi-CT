@@ -1192,6 +1192,48 @@ def build_twin_family_report(
             "is not inferred from point-group symmetry."
         )
 
+    # Classify only symmetry-transportable, physically identical twin branches.
+    # This preserves both solutions, every habit result and direct provenance.
+    from twin_app.symmetry_completion import complete_classifications_by_symmetry
+    families, completion_audit = complete_classifications_by_symmetry(
+        families,
+        parent_metric=parent_metric,
+        parent_group=parent_group,
+        stretch_variants={int(v.index) + 1: v.U for v in ptmc.variants},
+        tolerance=max(float(policy.rank_one) * 10.0, 1e-8),
+    )
+    if completion_audit.transported_branches:
+        warnings.append(
+            f"{completion_audit.transported_branches} twin branches classified "
+            "by proved parent-symmetry transport, not by separate direct CT cross-locks; "
+            "their individual evidence appears in classification_status."
+        )
+    # P0: never force generic rank-one interfaces into classical twin labels.
+    # Exhaustively screen supplied parent twofold symmetries; preserve every
+    # physical solution and append explicit mathematical proof provenance.
+    from twin_app.p0_classification import screen_unclassified_report
+    families, classical_guard = screen_unclassified_report(
+        families,
+        parent_metric=parent_metric,
+        parent_group=parent_group,
+        stretch_variants={int(v.index) + 1: v.U for v in ptmc.variants},
+        tolerance=max(float(policy.rank_one) * 10.0, 1e-8),
+    )
+    if classical_guard.nonconventional_proved_count:
+        warnings.append(
+            f"{classical_guard.nonconventional_proved_count} mathematically compatible "
+            "rank-one branches are PROVED NOT CONVENTIONAL under supplied parent "
+            "twofold symmetries. They are retained with exact tensor and habit "
+            "solutions, excluded from Type-I/II/Compound mode counts, and NOT "
+            "claimed to be experimentally observed or symmetry-generic twins."
+        )
+    if classical_guard.unresolved_with_twofold_count:
+        warnings.append(
+            f"{classical_guard.unresolved_with_twofold_count} branches have a "
+            "parent twofold but still lack enough direct Type-I/II/Compound "
+            "evidence. They remain explicitly unresolved."
+        )
+
     return TwinFamilyReport(
         transformation_id=transformation_id,
         parent_phase_id=parent.phase_id,

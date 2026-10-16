@@ -304,6 +304,11 @@ def test_compound_pair_crosslock_uses_both_discrete_routes(published_case):
                     )
                     <= expected["abs_tol"]
                 ):
+                    if construction.classification_status.startswith("symmetry-transported"):
+                        assert not construction.classical_system_ids
+                        assert construction.discrete_plane_angle_deg is None
+                        assert construction.discrete_direction_angle_deg is None
+                        continue
                     routes = {
                         rep.route
                         for system_id in construction.classical_system_ids

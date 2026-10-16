@@ -70,6 +70,44 @@ def validate_metric_parameters(
     volume = float(np.prod(l) * np.sqrt(float(np.linalg.det(gram_normalized))))
     return volume, float(eig[-1] / eig[0])
 
+def cell_compatible_with_family(
+    lengths: Sequence[float], angles_deg: Sequence[float], family: str,
+    *, relative_length_tolerance: float = 1.0e-6,
+    angle_tolerance_deg: float = 1.0e-3,
+) -> bool:
+    """Reject imports that a selected conventional family would silently clamp.
+
+    This is a *geometry* guard, not an inference of atomistic point-group
+    symmetry or of the transformation correspondence.
+    """
+    validate_metric_parameters(lengths, angles_deg)
+    if relative_length_tolerance < 0 or angle_tolerance_deg < 0:
+        raise ValueError("Cell comparison tolerances must be nonnegative")
+    a, b, c = (float(x) for x in lengths)
+    alpha, beta, gamma = (float(x) for x in angles_deg)
+
+    def same(x: float, y: float) -> bool:
+        return abs(x - y) <= relative_length_tolerance * max(abs(x), abs(y))
+
+    def near(x: float, angle: float) -> bool:
+        return abs(x - angle) <= angle_tolerance_deg
+
+    right = near(alpha, 90.0) and near(beta, 90.0) and near(gamma, 90.0)
+    if family == "triclinic":
+        return True
+    if family == "monoclinic":  # built-in unique-b setting
+        return near(alpha, 90.0) and near(gamma, 90.0)
+    if family == "orthorhombic":
+        return right
+    if family == "tetragonal":
+        return right and same(a, b)
+    if family in ("hexagonal", "trigonal"):  # hexagonal axes only
+        return same(a, b) and near(alpha, 90.0) and near(beta, 90.0) and near(gamma, 120.0)
+    if family == "cubic":
+        return right and same(a, b) and same(b, c)
+    raise ValueError(f"Unknown crystal family: {family!r}")
+
+
 _LENGTH_IN_ANGSTROM = {
     "angstrom": 1.0,
     "nanometer": 10.0,

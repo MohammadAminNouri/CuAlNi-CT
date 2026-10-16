@@ -4,12 +4,18 @@ on:
   push:
   pull_request:
 
+# Superseded commits should not consume matrix runners for hours.
+# Keep push and PR checks separate so both contexts retain their checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         python-version:
           - "3.11"
@@ -35,6 +41,11 @@ jobs:
           cache-dependency-path: |
             pyproject.toml
             requirements.txt
+
+      # Catch stale source-integrity hashes before installing dependencies or
+      # spending 30–40 minutes on the scientific test suite.
+      - name: Verify tracked source manifest (fast preflight)
+        run: python tools/rebuild_twin_manifest.py --check
 
       - name: Upgrade packaging tools
         run: |
@@ -83,7 +94,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest -vv
+          python -m pytest -q --tb=short --maxfail=1
 
       - name: Run symbolic reference
         run: |

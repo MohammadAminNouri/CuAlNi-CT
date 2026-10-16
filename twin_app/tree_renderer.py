@@ -52,7 +52,10 @@ def _named_value(label: str, symbol: str, meaning: str, value: str) -> None:
     )
 
 
-def _habit_branches(construction: PairTwinConstruction, *, all_solutions: tuple | None = None) -> None:
+def _habit_branches(
+    construction: PairTwinConstruction, *, all_solutions: tuple | None = None,
+    scope_key: str = "",
+) -> None:
     st.markdown("#### Austenite–martensite compatibility")
     if construction.continuum_fraction:
         st.markdown('<div class="tf-banner tf-banner-exact"><strong>Continuous compatible family</strong> · No unique discrete habit plane.</div>', unsafe_allow_html=True)
@@ -71,7 +74,7 @@ def _habit_branches(construction: PairTwinConstruction, *, all_solutions: tuple 
     st.caption("Choose ONE habit orientation below. λ is the other martensite variant's fraction; b includes magnitude and direction; m is a Cartesian unit normal, NOT Miller indices.")
     if not alternatives:
         return
-    habit_key = f"tf_v9_habit_{construction.construction_id}"
+    habit_key = f"tf_v9_habit_{scope_key}_{construction.construction_id}"
     options = tuple(range(len(alternatives)))
     if st.session_state.get(habit_key) not in options:
         st.session_state[habit_key] = 0
@@ -151,7 +154,7 @@ def _selected_details(node: CoupleNode) -> None:
                 if st.button(
                     "Currently selected" if active else f"Inspect {interface.label}",
                     key=f"tf_v91_select_{node.key}_{i}",
-                    use_container_width=True,
+                    width="stretch",
                     disabled=active,
                 ):
                     st.session_state[choice_key] = interface.label
@@ -184,17 +187,59 @@ def _selected_details(node: CoupleNode) -> None:
         _named_value("Twin plane", "K₁", "Which plane can separate the two martensite variants; product-crystal (hkl)", _vec(branch.twin_plane_product_crystal, plane=True))
     with columns[2]:
         _named_value("Shear direction", "η₁", "Crystal direction associated with the twin shear; product-crystal [uvw]", _vec(branch.shear_direction_product_crystal))
-    _habit_branches(branch, all_solutions=selected_interface.all_habit_solutions)
+    _habit_branches(
+        branch, all_solutions=selected_interface.all_habit_solutions,
+        scope_key=f"{node.key}:{selected_interface.label}",
+    )
     with st.expander("Scientific verification and full coordinates", expanded=False):
         st.markdown("**Exact twin equation**")
         st.latex(r"R_t U_j-U_i=a\otimes n")
         a, n = normalized_rank_one(branch.a_parent_cartesian, branch.n_parent_cartesian)
         st.code(f"a = {_vec(a)}  · parent Cartesian\nn = {_vec(n)}  · unit normal, parent Cartesian", language="text")
         st.write("Classification check:", branch.classification_status)
+        st.markdown("**Independent evidence and provenance**")
+        st.caption(
+            "A missing residual means that independent comparison was not available "
+            "for this branch; it is never replaced by zero. Type-II conjugate "
+            "K₂/η₂ are not compared to physical K₁/η₁."
+        )
+        st.code(
+            "CT classical system IDs: " + (
+                ", ".join(branch.classical_system_ids) or "none cross-locked"
+            ) + "\n"
+            "Ball–James/PTMC independent outer-product residual: " + (
+                _fmt(branch.independent_outer_product_residual, 9)
+                if branch.independent_outer_product_residual is not None
+                else "not evaluated"
+            ) + "\n"
+            "Independent twin-shear relative residual: " + (
+                _fmt(branch.independent_shear_relative_residual, 9)
+                if branch.independent_shear_relative_residual is not None
+                else "not evaluated"
+            ) + "\n"
+            "Discrete Type-I plane-angle residual (deg): " + (
+                _fmt(branch.discrete_plane_angle_deg, 9)
+                if branch.discrete_plane_angle_deg is not None
+                else "not evaluated / provenance route"
+            ) + "\n"
+            "Discrete Type-I shear-direction angle residual (deg): " + (
+                _fmt(branch.discrete_direction_angle_deg, 9)
+                if branch.discrete_direction_angle_deg is not None
+                else "not evaluated / provenance route"
+            ) + "\n"
+            "Discrete symmetry vs rank-one shear relative residual: " + (
+                _fmt(branch.discrete_shear_relative_residual, 9)
+                if branch.discrete_shear_relative_residual is not None
+                else "not evaluated"
+            ),
+            language="text",
+        )
         st.caption(f"Twin rank-one residual {_fmt(branch.rank_one_residual, 9)} · proper rotation residual {_fmt(branch.rotation_residual, 9)}")
         st.markdown("**Exact A/M compatibility equation**")
         st.latex(r"R_h(U_i+\lambda a\otimes n)-I=b\otimes m")
-        for sol in branch.habit_solutions:
+        # Every physically distinct solution consolidated into this interface
+        # must remain accessible in the expert/coordinate residual view.
+        for sol in selected_interface.all_habit_solutions:
             st.code(
                 f"λ={_fmt(sol.other_variant_volume_fraction, 9)}; branch {sol.habit_branch:+d}\n"
                 f"m in parent reciprocal coordinates = {_vec(sol.habit_plane_parent_crystal, plane=True)}\n"
@@ -223,14 +268,24 @@ def render_report(report: TwinFamilyReport, *, theme: str = "dark", density: str
     st.caption("All families belong to one transformation. Expand the couples for the full genealogy; select a node to inspect its result below.")
     lookup = {node.key: node for node in tree_layout(report).couples}
     state_key = "tf_selected_couple_v8"
+    # Native finder and custom iframe are two controls for one selection. A
+    # new component key after a programmatic change discards stale iframe
+    # widget values without dropping any scientific report or family node.
+    epoch_key = "tf_nav_epoch_p0b2"
+    if st.session_state.get(epoch_key) is None:
+        st.session_state[epoch_key] = 0
     if st.session_state.get(state_key) not in lookup:
         st.session_state[state_key] = first_interpretable_couple(model)
     default = st.session_state[state_key]
     if summary["couples_with_habit"]:
         if st.button("Show a couple with an exact habit plane", key="tf_go_to_habit_v8", help="Selects an already calculated compatible couple. Does not recompute results."):
             st.session_state[state_key] = first_interpretable_couple(model)
+            st.session_state[epoch_key] += 1
             default = st.session_state[state_key]
-    selected = render_navigator(model, selected=default, theme=theme, density=density, key="tf_browser_family_tree_v8")
+    selected = render_navigator(
+        model, selected=default, theme=theme, density=density,
+        key=f"tf_browser_family_tree_v8_epoch_{st.session_state[epoch_key]}",
+    )
     if selected is not None and selected != st.session_state[state_key]:
         st.session_state[state_key] = selected
     if (st.session_state.get("tf_text_finder_v8") not in lookup or
@@ -240,6 +295,7 @@ def render_report(report: TwinFamilyReport, *, theme: str = "dark", density: str
         choice = st.session_state.get("tf_text_finder_v8")
         if choice in lookup:
             st.session_state[state_key] = choice
+            st.session_state[epoch_key] += 1
     with st.expander("Find a couple by name (text and keyboard alternative)", expanded=False):
         st.selectbox(
             "Calculated correspondence couple",
