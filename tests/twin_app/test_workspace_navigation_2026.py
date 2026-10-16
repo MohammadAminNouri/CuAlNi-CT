@@ -1,6 +1,5 @@
 """Accessibility and scientific contract for the single-path Twin App workspace."""
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 
@@ -18,7 +17,7 @@ def test_single_linear_workflow_and_optional_references():
     assert "st.tabs(" not in source
     assert "01  /  Crystal setup" in source
     assert "02  /  Calculated twin-family genealogy" in source
-    assert "Cu–Al–Ni experimental references (optional)" in source
+    assert "Cu–Al–Ni independent evidence and source references (optional)" in source
     assert source.index("01  /  Crystal setup") < source.index("02  /  Calculated twin-family genealogy")
     assert "Twin Family Explorer" in source
     assert "Restore published NiTi crystal inputs" in source
@@ -37,24 +36,12 @@ def test_scientific_data_flow_and_result_freshness():
 
 def test_evidence_available_before_input_validation_without_solver_contamination():
     source, main = _main()
-    evidence = next(node for node in ast.walk(main)
-                    if isinstance(node, ast.With)
-                    and any(isinstance(item.context_expr, ast.Call)
-                        and isinstance(item.context_expr.func, ast.Attribute)
-                        and item.context_expr.func.attr == "expander"
-                        and item.context_expr.args
-                        and isinstance(item.context_expr.args[0], ast.Constant)
-                        and "Cu–Al–Ni experimental references" in item.context_expr.args[0].value
-                        for item in node.items))
-    names = {n.id for n in ast.walk(evidence) if isinstance(n, ast.Name)}
-    assert "render_cualni_reference_guide" in names
-    assert "build_twin_family_report" not in names
-    assert "payload" not in names
-    input_header = next(node for node in ast.walk(main)
-                        if isinstance(node, ast.Call)
-                        and isinstance(node.func, ast.Attribute)
-                        and node.func.attr == "subheader"
-                        and node.args
-                        and isinstance(node.args[0], ast.Constant)
-                        and node.args[0].value == "01  /  Crystal setup")
-    assert evidence.lineno < input_header.lineno
+    evidences = [node for node in ast.walk(main)
+                if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "render_cualni_reference_guide"]
+    assert len(evidences) == 1
+    assert source.index("render_cualni_reference_guide()") < source.index("01  /  Crystal setup")
+    assert source.index("render_cualni_reference_guide()") < source.index("build_twin_family_report(")
+    # The guide itself manages its own expanders; never nest another one around it.
+    assert 'with st.expander("Cu–Al–Ni experimental references (optional)"' not in source
