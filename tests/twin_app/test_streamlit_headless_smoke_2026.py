@@ -13,4 +13,4 @@ def test_deployed_entrypoint_renders_accessible_linear_workflow():
     headings = [h.value for h in app.subheader]
     assert "01  /  Crystal setup" in headings
     assert "02  /  Calculated twin-family genealogy" in headings
-    assert any("Cu–Al–Ni experimental references" in e.label for e in app.get("expander"))
+    assert any("Cu–Al–Ni · phase/setting reference" in e.label for e in app.get("expander"))
