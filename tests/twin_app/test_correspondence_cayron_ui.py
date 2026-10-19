@@ -22,12 +22,14 @@ def test_noninvertible_correspondence_rejected():
         exact_matrix((("1", "0", "0"),("0", "1", "0"),("0", "0", "0")))
 
 
-def test_public_correspondence_input_has_only_explicit_parent_to_daughter_mapping():
+def test_exact_cayron_ui_has_two_routes_and_left_to_right_arrows():
     from twin_app.input_ui import render_correspondence_input
     import inspect
     source = inspect.getsource(render_correspondence_input)
-    assert 'direction="A_TO_M"' in source
-    assert 'st.latex(' in source
-    assert 'C_c' in source
-    assert 'p/q' in source
-    assert 'st.radio(' not in source
+    assert "Three paired lattice vectors" in source
+    assert "Exact rational 3 × 3 matrix" in source
+    assert "A → M" in source and "M → A" in source
+    assert "calculate_from_paired_vectors" in source
+    assert "calculate_action(entered_matrix, parent_vector)" in source
+    assert "entered_matrix_from_canonical(canonical, direction=direction)" in source
+    assert "arrow, equation = displayed_relation(direction)" in source

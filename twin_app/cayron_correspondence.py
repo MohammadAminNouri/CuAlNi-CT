@@ -84,6 +84,27 @@ def calculate_from_paired_vectors(
     return PairedSupercell(_rows(P), _rows(Q), _rows(D), canonical, direction)
 
 
+def entered_matrix_from_canonical(
+    canonical_rows: Sequence[Sequence[object]], *, direction: str
+) -> MatrixRows:
+    """Exact matrix acting SOURCE -> DESTINATION in the selected direction."""
+    C = exact_matrix(canonical_rows)
+    if direction == "A_TO_M":
+        return _rows(C)
+    if direction == "M_TO_A":
+        return _rows(C.inv())
+    raise ValueError("Direction must be A_TO_M or M_TO_A")
+
+
+def direction_labels(direction: str) -> tuple[str, str]:
+    """Left-side source and right-side destination for both directions."""
+    if direction == "A_TO_M":
+        return "Parent A", "Product M"
+    if direction == "M_TO_A":
+        return "Product M", "Parent A"
+    raise ValueError("Direction must be A_TO_M or M_TO_A")
+
+
 def seed_paired_vectors(
     canonical_rows: Sequence[Sequence[object]], *, direction: str
 ) -> tuple[tuple[str, str, str], tuple[str, str, str]]:
@@ -92,13 +113,7 @@ def seed_paired_vectors(
     Identity source vectors are a convenient exact basis, not an assertion that
     those are the shortest physical lattice vectors or that centering is known.
     """
-    C = exact_matrix(canonical_rows)
-    if direction == "A_TO_M":
-        D = C
-    elif direction == "M_TO_A":
-        D = C.inv()
-    else:
-        raise ValueError("Direction must be A_TO_M or M_TO_A")
+    D = exact_matrix(entered_matrix_from_canonical(canonical_rows, direction=direction))
     identity = tuple(",".join(str(sp.eye(3)[i, j]) for i in range(3)) for j in range(3))
     images = tuple(",".join(str(D[i, j]) for i in range(3)) for j in range(3))
     return identity, images

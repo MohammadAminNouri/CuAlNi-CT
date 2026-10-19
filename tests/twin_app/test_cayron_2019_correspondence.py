@@ -89,9 +89,9 @@ def test_no_unverified_correspondence_inferred_from_lattice_metrics():
     assert "Three paired lattice vectors" in ui
     assert "Exact rational 3 × 3 matrix" in ui
     assert "calculate_from_paired_vectors(" in ui
-    assert "C_{M\\leftarrow A}" in ui
-    assert "calculate_action(canonical, parent_vector)" in ui
-    assert "plane_image(canonical" in ui
+    assert "C_{A\\to M}" in ui
+    assert "calculate_action(entered_matrix, parent_vector)" in ui
+    assert "plane_image(entered_matrix" in ui
     assert "source_name, destination_name" in ui
     backend = (root / "twin_app" / "cayron_correspondence.py").read_text()
     assert "Q * P.inv()" in backend

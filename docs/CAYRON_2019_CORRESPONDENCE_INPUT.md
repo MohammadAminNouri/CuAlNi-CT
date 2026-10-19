@@ -53,3 +53,12 @@ canonical C; it does not replace a valid user input with the NiTi example.
 Invalid or singular inputs fail before running the scientific backend.
 The existing interactive direct-space vector action and report export remain
 source-preserving. Input previews show the actual C sent to the solver.
+
+## Bidirectional display and evidence conservation
+
+In both entry formats the SOURCE is on the LEFT, the DESTINATION is on the RIGHT,
+and the UI presents an explicit rightward arrow. A → M previews the canonical C;
+M → A previews C⁻¹ with rightward source-to-destination semantics. The backend
+retains the exact canonical forward C. Reciprocal planes follow D⁻ᵀ for the
+selected input-direction D. Switching display format preserves any originally
+entered paired supercell representatives when the canonical mapping is unchanged.
