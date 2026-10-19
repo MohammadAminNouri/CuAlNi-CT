@@ -92,3 +92,45 @@ def test_true_rank_one_simple_shear_continuum_survives_independent_check():
 def test_true_invariant_plane_is_not_a_near_unit_dilation(dilatation, expected):
     from cualni_cryst.ptmc_adapter import _is_true_invariant_plane
     assert _is_true_invariant_plane(dilatation) is expected
+
+
+def test_verified_classical_label_cannot_bypass_parent_symmetry_gate():
+    from dataclasses import dataclass
+    from twin_app.p0_classification import screen_unclassified_report
+
+    @dataclass(frozen=True)
+    class Branch:
+        classification: str = "Type I"
+
+    @dataclass(frozen=True)
+    class Pair:
+        stretch_i: int = 1
+        stretch_j: int = 2
+        pair_id: str = "U1-U2"
+        constructions: tuple = (Branch(),)
+
+    @dataclass(frozen=True)
+    class Family:
+        pair_records: tuple = (Pair(),)
+
+    U = _generic_stretch()
+    mirror = np.diag((-1.0, 1.0, 1.0))
+    stretch = {1: U, 2: mirror @ U @ mirror.T}
+
+    # A fabricated prior "Type I" label is not its own symmetry proof.
+    with pytest.raises(ValueError, match="contradicts all available parent"):
+        screen_unclassified_report(
+            (Family(),), parent_metric=np.eye(3),
+            parent_group=(np.eye(3),),
+            stretch_variants=stretch,
+        )
+
+    # A supplied mirror prevents *exclusion*, but does not independently
+    # certify that a proposed twin classification is correct.
+    families, audit = screen_unclassified_report(
+        (Family(),), parent_metric=np.eye(3),
+        parent_group=(np.eye(3), mirror),
+        stretch_variants=stretch,
+    )
+    assert audit.conventional_count == 1
+    assert families[0].pair_records[0].constructions[0].classification == "Type I"
