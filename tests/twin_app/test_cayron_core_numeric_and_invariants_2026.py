@@ -39,7 +39,7 @@ def test_independent_exact_parent_and_product_basis_changes_preserve_C_metric():
     u=sp.Matrix([2,3,5]); h=sp.Matrix([7,11,13])
     assert (P.T*h).dot(P.inv()*u)==h.dot(u)
     assert Cp*(P.inv()*u)==Q.inv()*C*u
-    assert sp.simplify(Cp.inv().T*(P.T*h)-Q.T*C.inv().T*h)==sp.zeros(3)
+    assert sp.simplify(Cp.inv().T*(P.T*h)-Q.T*C.inv().T*h)==sp.zeros(3, 1)
 
 
 @pytest.mark.parametrize("file",[
