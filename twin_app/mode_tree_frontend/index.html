@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Physical twinning-mode tree</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,Arial,sans-serif;--bg:#0f1a24;--surface:#192938;--selected:#243f52;--fg:#eff6fb;--muted:#c4d3de;--border:#637d90;--line:#809aad;--focus:#e6f6ff;--mode:#65a6ff;--i:#31cfba;--ii:#b19aff;--compound:#f7c765}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:transparent;color:var(--fg);font-size:15px}
+body{padding:5px 3px 8px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+button[aria-pressed=true]{outline:2px solid var(--focus);outline-offset:2px;background:var(--selected)}
+button:disabled{cursor:default}
+.shell{border:1px solid var(--border);background:var(--bg);border-radius:14px;overflow:hidden}
+.head{padding:15px 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.title{font-size:17px;font-weight:760}
+.description{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.45}
+.tools{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:0 18px 13px}
+.search,.jump{background:var(--surface);border:1px solid var(--border);border-radius:9px;min-height:40px;padding:6px 10px}
+.search{flex:1 1 200px;max-width:300px}.jump{max-width:350px;flex:1 1 190px}
+.scroll-btn{min-height:40px;min-width:40px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-weight:730}
+.counter{font-size:13px;color:var(--muted)}
+.root-wrap{display:flex;align-items:center;flex-direction:column}
+.root{border:2px solid var(--mode);border-radius:12px;background:#152d46;padding:10px 20px;font-weight:760;text-align:center;min-height:47px}
+.root small{display:block;font-weight:500;color:var(--muted);margin-top:3px;font-size:12px}
+.root-stem{height:21px;width:2px;background:var(--line)}
+.viewport{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:var(--line) var(--bg);padding:0 11px 20px;border-bottom:1px solid var(--border)}
+.track{display:flex;gap:16px;width:max-content;min-width:100%;align-items:stretch;padding:22px 15px 2px;position:relative}
+/* A real continuous horizontal bus joins the modes, with a vertical drop for each. */
+.track::before{content:"";position:absolute;left:161px;right:161px;top:0;border-top:2px solid var(--line)}
+.mode-col{width:306px;flex:none;position:relative;padding-top:10px;display:flex;flex-direction:column;align-items:stretch;gap:0}
+.mode-col::before{content:"";position:absolute;left:50%;top:-22px;height:32px;border-left:2px solid var(--line)}
+.mode-head{background:#18314b;border:2px solid var(--mode);border-radius:11px;padding:10px 11px;text-align:left;min-height:69px;display:flex;flex-direction:column;gap:5px}
+.mode-head strong{font-size:16px}.mode-head small{color:var(--muted);font-size:12px;line-height:1.3}
+.mode-col[data-chosen=true] .mode-head{box-shadow:0 0 0 2px var(--mode)}
+.type-stem{height:19px;border-left:2px solid var(--line);align-self:center}
+.type-fork{position:relative;display:flex;justify-content:center;gap:8px;padding-top:20px}
+.type-fork[data-count="2"]::before,.type-fork[data-count="3"]::before{content:"";position:absolute;top:0;left:25%;right:25%;border-top:2px solid var(--line)}
+.type-fork::after{content:"";position:absolute;top:0;left:50%;height:20px;border-left:2px solid var(--line)}
+.type{position:relative;flex:1;min-width:0;min-height:91px;background:var(--surface);border:2px solid var(--border);border-bottom:5px solid var(--kind);border-radius:10px;padding:11px 7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center}
+.type::before{content:"";position:absolute;left:50%;top:-19px;height:18px;border-left:2px solid var(--line)}
+.type strong{font-size:13px;line-height:1.15}.type small{font-size:11px;color:var(--muted);line-height:1.3}
+.type[data-kind="Type I"]{--kind:var(--i)}.type[data-kind="Type II"]{--kind:var(--ii)}.type[data-kind="Compound"]{--kind:var(--compound)}
+.type[aria-pressed=true]{border-color:var(--kind);outline:2px solid var(--focus);outline-offset:2px}
+.mode-col[hidden]{display:none}
+.legend{padding:11px 17px;display:flex;gap:9px 20px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:6px}.swatch{width:13px;height:13px;border-radius:3px;background:var(--swatch)}
+.selected-path{font-size:13px;padding:11px 17px 13px;border-top:1px solid var(--border);background:rgba(101,166,255,.06);display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.arrow{color:var(--muted)}.selected-path strong{color:var(--fg)}.path-type{border-left:4px solid var(--path);padding:3px 6px;font-weight:740}
+.empty{padding:24px;color:var(--muted);text-align:center}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+body.light{color-scheme:light;--bg:#fff;--surface:#eff5fa;--selected:#dff0fe;--fg:#152d3a;--muted:#334e5b;--border:#7493a5;--line:#647d8e;--focus:#175695;--mode:#246bc3;--i:#087a68;--ii:#6846b4;--compound:#865b00}
+body.light .root{background:#e7f2ff}body.light .mode-head{background:#eaf3ff}
+body.contrast{color-scheme:dark;--bg:#050505;--surface:#131313;--selected:#222;--fg:#fff;--muted:#fff;--border:#fafafa;--line:#fff;--focus:#fff;--mode:#9bd1ff;--i:#adffe1;--ii:#dcc5ff;--compound:#ffe1a0}
+body.contrast .root{background:#151515}body.contrast .mode-head{background:#171717}
+body.large{font-size:17px}body.large .mode-head strong{font-size:18px}body.large .type strong{font-size:15px}
+body.compact .mode-col{width:270px}body.compact .type{min-height:73px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+@media(max-width:680px){.head{padding:12px}.tools{padding:0 12px 10px}.mode-col{width:268px}.track{gap:12px}.track::before{left:145px;right:145px}}
+</style></head>
+<body>
+<div class="shell" id="shell" aria-label="Calculated physical twinning modes">
+  <div class="head"><div><div class="title">Calculated twinning-mode tree</div><div class="description">Follow one connected branch: Transformation → Mode → Verified twin type → numerical results below</div></div><span id="count" class="counter"></span></div>
+  <div class="tools"><input id="search" class="search" type="search" placeholder="Find Mode A, Compound, shear…" aria-label="Find a calculated physical mode"><select id="jump" class="jump" aria-label="Jump to a calculated mode"></select><button id="scroll-left" class="scroll-btn" type="button" aria-label="Scroll to earlier modes">←</button><button id="scroll-right" class="scroll-btn" type="button" aria-label="Scroll to later modes">→</button></div>
+  <div class="root-wrap"><div id="root" class="root">Austenite A → Martensite M<small>Exact symmetry-derived physical modes</small></div><div class="root-stem" aria-hidden="true"></div></div>
+  <div class="viewport" id="viewport" role="region" tabindex="0" aria-label="Scrollable connected mode and twin type tree"><div class="track" id="track"></div></div>
+  <div class="legend" aria-label="Twin type color key"><span class="legend-item"><i class="swatch" style="--swatch:var(--mode)"></i>Mode</span><span class="legend-item"><i class="swatch" style="--swatch:var(--i)"></i>Type I</span><span class="legend-item"><i class="swatch" style="--swatch:var(--ii)"></i>Type II</span><span class="legend-item"><i class="swatch" style="--swatch:var(--compound)"></i>Compound</span><span>Colored borders aid scanning; text labels carry the meaning.</span></div>
+  <div class="selected-path" aria-live="polite" id="selected-path"></div>
+</div><div id="announce" role="status" aria-live="polite" class="sr-only"></div>
+<script>
+'use strict';
+const byId=id=>document.getElementById(id);
+const graph=byId('track'); const viewport=byId('viewport');const search=byId('search');const jump=byId('jump');
+let model={root:'Austenite A → Martensite M',modes:[]};let selected={mode:null,type:null};let initialized=false;
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
+function send(type,fields){if(window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type,...fields},'*');}
+function setHeight(){send('streamlit:setFrameHeight',{height:Math.ceil(document.body.scrollHeight+6)});}
+function updateSelection(mode,type,notify){
+ const found=model.modes.find(m=>m.id===mode);if(!found||!found.types.some(t=>t.id===type))return;
+ selected={mode,type};
+ jump.value=mode;
+ graph.querySelectorAll('.mode-col').forEach(column=>{const chosen=column.dataset.mode===mode;column.dataset.chosen=String(chosen);column.querySelector('.mode-head').setAttribute('aria-pressed',String(chosen));column.querySelectorAll('.type').forEach(node=>node.setAttribute('aria-pressed',String(chosen&&node.dataset.type===type)));});
+ const path=byId('selected-path');path.replaceChildren();path.append(el('strong','',found.label),el('span','arrow','→'));
+ const term=found.types.find(t=>t.id===type);const leaf=el('span','path-type',term.label);leaf.style.setProperty('--path',({'Type I':'var(--i)','Type II':'var(--ii)','Compound':'var(--compound)'})[type]);path.append(leaf,el('span','arrow','→'),el('span','',`s = ${found.shear}  ·  K₁, η₁ and habits in the results panel below`));
+ byId('announce').textContent=`Selected ${found.label}, ${type}. The calculated interface and habit solutions are shown below the tree.`;
+ if(notify)send('streamlit:setComponentValue',{dataType:'json',value:{mode,type}});
+}
+function choose(mode,type){updateSelection(mode,type,true);}
+function render(){
+ const oldScroll=viewport.scrollLeft;graph.replaceChildren();
+ byId('root').firstChild.textContent=model.root||'Austenite A → Martensite M';
+ byId('count').textContent=`${model.modes.length} verified physical modes`;
+ jump.replaceChildren();
+ for(const mode of model.modes){
+   const opt=el('option','',`${mode.label} · s=${mode.shear}`);opt.value=mode.id;jump.append(opt);
+   const column=el('section','mode-col');column.dataset.mode=mode.id;column.setAttribute('aria-label',`${mode.label}, ${mode.types.length} verified twin types`);
+   const head=el('button','mode-head');head.type='button';head.setAttribute('aria-label',`Select ${mode.label}; shear ${mode.shear}`);
+   head.append(el('strong','',mode.label),el('small','',`s = ${mode.shear} · ${mode.pairs} symmetry-related pairs`));
+   head.addEventListener('click',()=>choose(mode.id,mode.types[0].id));column.append(head);
+   column.append(el('div','type-stem'));const fork=el('div','type-fork');fork.dataset.count=String(mode.types.length);
+   for(const t of mode.types){const b=el('button','type');b.type='button';b.dataset.type=t.id;b.dataset.kind=t.id;
+     b.setAttribute('aria-label',`${mode.label}: ${t.label}. Verified ${t.verifiedPairs} of ${t.totalPairs} variant pairs. ${t.hasHabit?'Compatible A/M habits calculated':'No discrete A/M habit for this branch'}.`);
+     b.append(el('strong','',t.label),el('small','',`${t.verifiedPairs}/${t.totalPairs} pairs`));
+     b.addEventListener('click',()=>choose(mode.id,t.id));fork.append(b);
+   }
+   column.append(fork);graph.append(column);
+ }
+ jump.value=selected.mode||'';
+ updateSelection(selected.mode,selected.type,false);
+ if(!initialized){initialized=true;const c=Array.from(graph.children).find(n=>n.dataset.mode===selected.mode);if(c)c.scrollIntoView({block:'nearest',inline:'center'});}else{viewport.scrollLeft=oldScroll;}
+ applyFilter(); requestAnimationFrame(setHeight);
+}
+function applyFilter(){const needle=search.value.toLowerCase().trim();let visible=0;
+ graph.querySelectorAll('.mode-col').forEach((c,i)=>{const m=model.modes[i];const text=`${m.label} ${m.shear} ${m.types.map(t=>t.label).join(' ')}`.toLowerCase();const match=!needle||text.includes(needle);c.hidden=!match;if(match)visible++;});
+ byId('count').textContent=needle?`${visible} of ${model.modes.length} modes match`:`${model.modes.length} verified physical modes`;
+ requestAnimationFrame(setHeight);
+}
+search.addEventListener('input',applyFilter);
+jump.addEventListener('change',()=>{const m=model.modes.find(x=>x.id===jump.value);if(!m)return;choose(m.id,m.types[0].id);const col=Array.from(graph.children).find(n=>n.dataset.mode===m.id);if(col)col.scrollIntoView({inline:'center',block:'nearest',behavior:'auto'});});
+byId('scroll-left').addEventListener('click',()=>viewport.scrollBy({left:-520,behavior:'auto'}));
+byId('scroll-right').addEventListener('click',()=>viewport.scrollBy({left:520,behavior:'auto'}));
+graph.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+ const items=Array.from(graph.querySelectorAll('button')).filter(b=>!b.closest('[hidden]'));
+ let i=items.indexOf(document.activeElement);if(i<0)return;
+ event.preventDefault();i=event.key==='Home'?0:event.key==='End'?items.length-1:Math.max(0,Math.min(items.length-1,i+(event.key==='ArrowLeft'?-1:1)));
+ items[i].focus();items[i].scrollIntoView({inline:'nearest',block:'nearest'});
+});
+function applyArgs(args){if(!args||!args.model||!Array.isArray(args.model.modes))return;
+ document.body.className=[args.theme==='light'?'light':args.theme==='contrast'?'contrast':'',args.density==='compact'?'compact':'',args.fontScale==='large'?'large':''].filter(Boolean).join(' ');
+ model=args.model;const wanted=args.selected||{};
+ if(model.modes.some(m=>m.id===wanted.mode&&m.types.some(t=>t.id===wanted.type)))selected={mode:wanted.mode,type:wanted.type};
+ else if(model.modes.length)selected={mode:model.modes[0].id,type:model.modes[0].types[0].id};
+ render();
+}
+window.__testModeGraph=applyArgs;
+window.addEventListener('message',e=>{const msg=e.data||{};if(msg.type==='streamlit:render')applyArgs(msg.args||{});});
+window.addEventListener('load',()=>{send('streamlit:componentReady',{apiVersion:1});setHeight();});
+new ResizeObserver(()=>requestAnimationFrame(setHeight)).observe(document.body);
+</script></body></html>

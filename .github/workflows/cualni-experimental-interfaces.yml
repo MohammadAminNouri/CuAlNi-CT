@@ -1,0 +1,60 @@
+name: Cu-Al-Ni experimental interface taxonomy and source audit
+
+on:
+  push:
+    branches:
+      - "audit/p1-experimental-interface-audit-*"
+      - "audit/p1-closure-*"
+  pull_request:
+    branches:
+      - "feature/twin-family-tree-app-v1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strict-interface-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Verify scientific manifest
+        run: python tools/rebuild_twin_manifest.py --check
+      - name: Run experimental interface falsification and existing numerical checks
+        run: |
+          python -m pytest -q -x --tb=short \
+            tests/twin_app/test_p1_interface_taxonomy_2026.py \
+            tests/twin_app/test_cualni_blind_metric_2026.py \
+            tests/twin_app/test_cualni_blind_roots_2026.py \
+            tests/twin_app/test_cualni_two_phase_adversarial_2026.py \
+            tests/twin_app/test_p1_contracts.py \
+            tests/twin_app/test_p1_closure_negative_2026.py
+      - name: Require independently supported complete experimental comparison
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("data/benchmarks/cualni_experimental_evidence_registry_2026.json").read_text())
+          assert len(d["records"]) >= 4
+          for r in d["records"]:
+              assert r["comparison_ready"] is False
+              assert r["source_exact_correspondence_C"] is None
+              assert r["measured_pair_resolved_OR_matrix"] is None
+          assert "Cu-Zn-Al" in d["records"][-1]["alloy"]
+          print("PASS: no fabricated 2H/M18R experimental certification or Cu-Zn-Al cross-alloy transfer")
+          PY

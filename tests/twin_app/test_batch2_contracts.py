@@ -35,7 +35,30 @@ def test_new_app_contains_no_material_answer_lookup_and_no_named_theorist():
 
 def test_streamlit_ui_is_linear_and_user_triggered():
     text = (PRODUCTION / "streamlit_app.py").read_text(encoding="utf-8")
-    assert "Calculate twin families and habit planes" in text
+    # Require a real user-triggered calculation, independent of button wording.
+    import ast
+    module = ast.parse(text)
+    triggers = [
+        node for node in ast.walk(module)
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.Call)
+        and isinstance(node.test.func, ast.Attribute)
+        and isinstance(node.test.func.value, ast.Name)
+        and node.test.func.value.id == "st"
+        and node.test.func.attr == "button"
+        and any(
+            isinstance(child, ast.Call)
+            and isinstance(child.func, ast.Name)
+            and child.func.id == "build_twin_family_report"
+            for statement in node.body
+            for child in ast.walk(statement)
+        )
+    ]
+    assert len(triggers) == 1, "Expected one manual calculation button"
+    label = triggers[0].test.args[0]
+    assert isinstance(label, ast.Constant)
+    assert isinstance(label.value, str)
+    assert "calculat" in label.value.lower()
     assert "st.tabs(" not in text
     assert "animation-duration: 0s" in text
     assert "transition-duration: 0s" in text
