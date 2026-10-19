@@ -39,6 +39,8 @@ class TwofoldScreen:
     tolerance: float
     parent_mirror_count: int = 0
     matching_mirror_indices: tuple[int, ...] = ()
+    nearest_mirror_mapping_error: float | None = None
+    nearest_symmetry_mapping_error: float | None = None
 
     @property
     def conventional_symmetry_excluded(self) -> bool:
@@ -46,8 +48,9 @@ class TwofoldScreen:
 
     @property
     def conventional_twofold_excluded(self) -> bool:
-        # Compatibility alias for existing consumers; reflects BOTH symmetry routes.
-        return self.conventional_symmetry_excluded
+        # The name refers strictly to proper twofolds, NOT to mirrors.
+        # Use conventional_symmetry_excluded when screening classical routes.
+        return not self.mapping_twofold_indices
 
 
 def screen_parent_twofold(
@@ -78,6 +81,7 @@ def screen_parent_twofold(
     qualifying: list[int] = []
     mirrors_matching: list[int] = []
     errors: list[float] = []
+    mirror_errors: list[float] = []
     twofolds = 0
     mirrors = 0
     for index, operation in enumerate(parent_group):
@@ -101,7 +105,7 @@ def screen_parent_twofold(
         else:
             mirrors += 1
         error = _rel(Q @ left @ Q.T, right)
-        errors.append(error)
+        (errors if proper_twofold else mirror_errors).append(error)
         if error <= tolerance:
             (qualifying if proper_twofold else mirrors_matching).append(index)
     return TwofoldScreen(
@@ -110,6 +114,8 @@ def screen_parent_twofold(
         nearest_mapping_error=min(errors, default=None), tolerance=tolerance,
         parent_mirror_count=mirrors,
         matching_mirror_indices=tuple(mirrors_matching),
+        nearest_mirror_mapping_error=min(mirror_errors, default=None),
+        nearest_symmetry_mapping_error=min(errors + mirror_errors, default=None),
     )
 
 
@@ -162,6 +168,8 @@ def screen_unclassified_report(
                     "matching_twofold_indices": list(screen.mapping_twofold_indices),
                     "matching_mirror_indices": list(screen.matching_mirror_indices),
                     "nearest_twofold_mapping_error": screen.nearest_mapping_error,
+                    "nearest_mirror_mapping_error": screen.nearest_mirror_mapping_error,
+                    "nearest_symmetry_mapping_error": screen.nearest_symmetry_mapping_error,
                     "tolerance": tolerance,
                     "conclusion": "conventional_parent_mirror_and_twofold_excluded"
                     if screen.conventional_symmetry_excluded else
