@@ -618,8 +618,9 @@ def solve_affine_ptmc_parameters(
         raise ValueError("rank_one_increment must have numerical rank one")
     if dilatational_factor <= 0.0 or not np.isfinite(dilatational_factor):
         raise ValueError("dilatational_factor must be finite and positive")
-    if polynomial_tolerance <= 0.0 or middle_stretch_tolerance <= 0.0:
-        raise ValueError("PTMC numerical tolerances must be positive")
+    if (not np.isfinite(polynomial_tolerance) or polynomial_tolerance <= 0.0
+            or not np.isfinite(middle_stretch_tolerance) or middle_stretch_tolerance <= 0.0):
+        raise ValueError("PTMC numerical tolerances must be finite and positive")
     if domain is not None:
         lower, upper = map(float, domain)
         if not np.isfinite(lower) or not np.isfinite(upper) or lower > upper:
