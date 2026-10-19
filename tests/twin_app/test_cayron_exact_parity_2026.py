@@ -20,7 +20,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _vecs(matrix):
+    """The three COLUMN lattice vectors, for paired-supercell input."""
     return [[str(matrix[i, j]) for i in range(3)] for j in range(3)]
+
+
+def _matrix_rows(matrix):
+    """Actual matrix ROWS, never column vectors, for direct entry."""
+    return [[str(matrix[i, j]) for j in range(3)] for i in range(3)]
 
 
 @pytest.mark.parametrize("benchmark", [
@@ -75,7 +81,7 @@ def test_random_mixed_rational_matrix_and_supercells_are_algebraically_identical
             D = C if direction == "A_TO_M" else C.inv()
             Q = D * P
             result = calculate_from_paired_vectors(_vecs(P), _vecs(Q), direction=direction)
-            direct = canonical_correspondence_rows(_vecs(D), direction=direction)
+            direct = canonical_correspondence_rows(_matrix_rows(D), direction=direction)
             assert result.canonical_M_from_A == direct
             assert exact_matrix(result.canonical_M_from_A) == C
         accepted += 1
@@ -112,3 +118,15 @@ def test_production_layout_uses_source_to_destination_preview_for_both_methods()
     assert "arrow, equation = displayed_relation(direction)" in code
     assert "source_name, destination_name = direction_labels(direction)" in code
     assert "←" not in code[code.index("def render_correspondence_input("):code.index("def _standard_basis(")]
+
+
+def test_asymmetric_matrix_regression_catches_column_row_transpose():
+    C = sp.Matrix([[-sp.Rational(4,7), -sp.Rational(3,4), -2],
+                   [2, sp.Rational(4,3), sp.Rational(6,7)],
+                   [sp.Rational(4,7), sp.Rational(1,2), -sp.Rational(1,2)]])
+    P = sp.Matrix([[1,1,0],[0,1,1],[0,0,1]])
+    paired = calculate_from_paired_vectors(_vecs(P), _vecs(C*P), direction="A_TO_M")
+    direct = canonical_correspondence_rows(_matrix_rows(C), direction="A_TO_M")
+    assert paired.canonical_M_from_A == direct
+    assert exact_matrix(direct) == C
+    assert exact_matrix(direct) != C.T
