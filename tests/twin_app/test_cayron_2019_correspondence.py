@@ -96,3 +96,10 @@ def test_no_unverified_correspondence_inferred_from_lattice_metrics():
     backend = (root / "twin_app" / "cayron_correspondence.py").read_text()
     assert "Q * P.inv()" in backend
     assert "C.inv().T" in backend
+
+
+def test_invalid_editor_switch_returns_to_original_editable_method():
+    source = (Path(__file__).resolve().parents[2] / "twin_app" / "input_ui.py").read_text()
+    assert "st.session_state[method_key] = previous_method" in source
+    assert "st.session_state[dir_key] = (" in source
+    assert "st.warning(st.session_state.pop(warning_key))" in source

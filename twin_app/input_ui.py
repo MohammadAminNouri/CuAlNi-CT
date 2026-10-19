@@ -387,9 +387,15 @@ def render_correspondence_input(
             set_editor(new_method, new_direction, canonical)
             st.session_state.pop(warning_key, None)
         except (ValueError, TypeError, ZeroDivisionError) as exc:
+            # Do not strand the user in a fresh default editor: keep the invalid
+            # draft visible in its original direction/format so it can be fixed.
+            st.session_state[method_key] = previous_method
+            st.session_state[dir_key] = (
+                "A → M" if previous_direction == "A_TO_M" else "M → A"
+            )
             st.session_state[warning_key] = (
-                "The previous correspondence is invalid and could not be converted: "
-                + str(exc) + ". Fix it before calculating."
+                "Cannot convert an invalid correspondence: " + str(exc)
+                + ". Correct the original entries before switching."
             )
 
     st.subheader("Lattice correspondence · Cayron (2019)")
@@ -416,8 +422,7 @@ def render_correspondence_input(
     st.session_state[last_method_key] = method
     st.session_state[last_direction_key] = direction
     if st.session_state.get(warning_key):
-        st.error(st.session_state[warning_key])
-        st.stop()
+        st.warning(st.session_state.pop(warning_key))
 
     with st.expander("Read Cayron's conventions (direct and reciprocal)", expanded=False):
         st.write("Corresponding direct lattice vectors form columns of B_source and B_destination. "
