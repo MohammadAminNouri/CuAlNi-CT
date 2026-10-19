@@ -118,8 +118,8 @@ def analyze_cmc(
     ``M_A^{-1/2}(C^T M_M C)M_A^{-1/2}-I``.  Numerical precision is escalated
     when required; ``tol`` itself is never enlarged.
     """
-    if tol <= 0:
-        raise ValueError("tol must be positive")
+    if not np.isfinite(tol) or tol <= 0:
+        raise ValueError("tol must be finite and positive")
     M_a, M_m, C = _validated_inputs(M_a, M_m, correspondence)
     spec = adaptive_metric_eigensystem(M_a, M_m, C, decision_tol=tol)
     vals = np.asarray(spec.mu - 1.0, dtype=float)
@@ -275,8 +275,8 @@ def habit_planes_from_analysis(
     tol: float,
 ) -> list[np.ndarray]:
     """Construct exact CT habit planes from an already-computed CMC analysis."""
-    if tol <= 0.0:
-        raise ValueError("tol must be positive")
+    if not np.isfinite(tol) or tol <= 0.0:
+        raise ValueError("tol must be finite and positive")
     if not analysis.exact_compatible or analysis.degeneracy_order == 3:
         return []
     M_a = _validated_metric(M_a, "M_a")
