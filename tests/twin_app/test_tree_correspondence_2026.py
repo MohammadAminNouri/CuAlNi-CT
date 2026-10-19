@@ -72,14 +72,59 @@ def test_interactive_mode_tree_renders_solver_modes_and_verified_types():
         assert forbidden not in frontend + component + renderer
 
 
-def test_coordinate_input_has_interactive_probe_without_reversing_mapping():
+def test_coordinate_input_probe_uses_the_actually_selected_source_direction():
+    """The UI probe must act on source->destination, not always canonical A->M."""
     ui = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
-    src = ui[ui.index("def render_correspondence_input("):ui.index("\ndef _standard_basis(")]
-    assert "calculate_action(canonical, parent_vector)" in src
-    assert "images_of_parent_basis(canonical)" in src
+    src = ui[ui.index("def render_correspondence_input("):ui.index("\\ndef _standard_basis(")]
+    # For the M->A input direction the canonical C_(M<-A) must be inverted
+    # BEFORE displaying source->destination probe vectors and reciprocal planes.
+    assert "entered_matrix = entered_matrix_from_canonical(canonical, direction=direction)" in src
+    assert "calculate_action(entered_matrix, parent_vector)" in src
+    assert "images_of_parent_basis(entered_matrix)" in src
+    assert 'plane_image(entered_matrix, ("1", "0", "0"))' in src
     assert "st.plotly_chart(" in src
     assert 'direction="A_TO_M"' in src
+    assert '"M → A": "M_TO_A"' in src
     assert "separate coordinate axes" in src
     assert "C_c" in src
     assert "C.inv()" in src
-    assert "st.radio(" not in src
+    # Radio selectors are intentional for the input *format* and direction.
+    assert "on_change=synchronize_editors" in src
+
+
+def test_exact_vector_plane_and_basis_probe_parity_in_both_directions():
+    """Nontrivial rational shear: A->M and M->A must be true inverses."""
+    from twin_app.cayron_correspondence import (
+        entered_matrix_from_canonical, plane_image,
+    )
+    from twin_app.input_logic import canonical_correspondence_rows, exact_matrix
+
+    canonical = (("1", "1/2", "0"), ("0", "1", "0"), ("0", "0", "1"))
+    a_vector = ("2", "3", "5")
+    m_vector = ("2", "3", "5")
+    C = exact_matrix(canonical)
+
+    for direction, vector in (("A_TO_M", a_vector), ("M_TO_A", m_vector)):
+        rows = entered_matrix_from_canonical(canonical, direction=direction)
+        entered = exact_matrix(rows)
+        expected = C if direction == "A_TO_M" else C.inv()
+
+        assert entered == expected
+        assert exact_matrix(canonical_correspondence_rows(rows, direction=direction)) == C
+        action = calculate_action(rows, vector)
+        assert sp.Matrix(action.daughter) == expected * sp.Matrix([2, 3, 5])
+        basis_images = images_of_parent_basis(rows)
+        for j, item in enumerate(basis_images):
+            assert sp.Matrix(item.daughter) == expected[:, j]
+
+        image = plane_image(rows, ("1", "2", "0"))
+        assert sp.Matrix([sp.Rational(x) for x in image]) == (
+            expected.inv().T * sp.Matrix([1, 2, 0])
+        )
+
+    assert calculate_action(
+        entered_matrix_from_canonical(canonical, direction="A_TO_M"), a_vector
+    ).daughter == (sp.Rational(7, 2), sp.Integer(3), sp.Integer(5))
+    assert calculate_action(
+        entered_matrix_from_canonical(canonical, direction="M_TO_A"), m_vector
+    ).daughter == (sp.Rational(1, 2), sp.Integer(3), sp.Integer(5))
