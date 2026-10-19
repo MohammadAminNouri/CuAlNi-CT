@@ -452,7 +452,7 @@ def render_correspondence_input(
 
     with st.expander("Read Cayron's conventions (direct and reciprocal)", expanded=False):
         st.write("Corresponding direct lattice vectors form columns of B_source and B_destination. "
-                 "C(destination ← source) = B_destination · B_source⁻¹ (Eq. 9). "
+                 "C(source → destination) = B_destination · B_source⁻¹ (Eq. 9). "
                  "For the reverse direction, C is inverted exactly (Eq. 13). "
                  "Miller plane covectors follow C⁻ᵀ (Eq. 11).")
         st.caption("Integers and rational entries p/q are preferred. A typed finite decimal "
