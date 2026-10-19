@@ -46,10 +46,12 @@ def test_ptmc_controls_reject_nonfinite_values_before_inference(field, invalid):
 
 @pytest.mark.parametrize("invalid", INVALID)
 def test_both_ptmc_public_routes_reject_nonfinite_dilatation(invalid):
-    for entry in (analyze_ptmc_twinning, analyze_ptmc_slip):
+    for entry, args in (
+        (analyze_ptmc_twinning, (None, None, np.eye(3), [], [])),
+        (analyze_ptmc_slip, (None, None, np.eye(3), [], [], None)),
+    ):
         with pytest.raises(ValueError, match="dilatational_factor"):
-            entry(None, None, np.eye(3), [], [],
-                  dilatational_factor=invalid)
+            entry(*args, dilatational_factor=invalid)
 
 
 @pytest.mark.parametrize("invalid", INVALID)
