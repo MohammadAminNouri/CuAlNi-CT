@@ -34,15 +34,23 @@ def test_only_verified_types_and_partial_coverage_remain_explicit():
     assert 't.verifiedPairs' in frontend and 't.totalPairs' in frontend
 
 
-def test_restorable_correspondence_does_not_change_solver_answers():
-    src = (ROOT/'twin_app'/'input_ui.py').read_text()
-    fn = src[src.index('def render_correspondence_input('):src.index('\ndef _standard_basis(')]
-    assert 'restore_starting_matrix' in fn
-    assert 'Edited correspondence' in fn
-    assert 'canonical_correspondence_rows(rows, direction="A_TO_M")' in fn
-    assert 'calculate_action(canonical, parent_vector)' in fn
-    assert 'images_of_parent_basis(canonical)' in fn
-    assert 'value=False' in fn  # 3D views optional, not huge default plots
-    assert 'C.inv()' in fn
-    assert 'st.stop()' in fn
-    assert 'st.radio(' not in fn
+def test_restorable_correspondence_preserves_canonical_solver_input():
+    """Restore the baseline without confusing solver C with reverse UI probes."""
+    src = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
+    ast.parse(src)
+    start = src.index("def render_correspondence_input(")
+    end = src.index("def _standard_basis(", start)
+    fn = src[start:end]
+    assert "def restore_starting_correspondence():" in fn
+    assert "set_editor(method, direction, baseline)" in fn
+    assert "Correspondence differs from the starting editable example" in fn
+    assert "canonical_correspondence_rows(typed, direction=direction)" in fn
+    assert "entered_matrix_from_canonical(canonical, direction=direction)" in fn
+    assert "calculate_action(entered_matrix, parent_vector)" in fn
+    assert "images_of_parent_basis(entered_matrix)" in fn
+    assert "canonical_rows=canonical" in fn
+    assert "value=False" in fn  # Optional 3D sketches remain opt-in.
+    assert "C.inv()" in fn
+    assert "st.stop()" in fn
+    # The format and input-direction radio controls are deliberate UI features.
+    assert "on_change=synchronize_editors" in fn
