@@ -612,9 +612,10 @@ def solve_affine_ptmc_parameters(
     singular_values = np.linalg.svd(increment, compute_uv=False)
     if singular_values[0] <= 1.0e-15:
         raise ValueError("rank_one_increment must be nonzero")
-    if max(float(singular_values[1]), float(singular_values[2])) > (
-        1.0e-9 * max(float(singular_values[0]), 1.0)
-    ):
+    # Compare singular values RELATIVE to the increment's own scale.
+    # max(sigma_1, 1) would incorrectly accept a 1e-10*I full-rank
+    # increment as rank one, invalidating the quadratic PTMC assumption.
+    if float(singular_values[1]) > 1.0e-9 * float(singular_values[0]):
         raise ValueError("rank_one_increment must have numerical rank one")
     if dilatational_factor <= 0.0 or not np.isfinite(dilatational_factor):
         raise ValueError("dilatational_factor must be finite and positive")
