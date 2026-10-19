@@ -75,7 +75,9 @@ def test_interactive_mode_tree_renders_solver_modes_and_verified_types():
 def test_coordinate_input_probe_uses_the_actually_selected_source_direction():
     """The UI probe must act on source->destination, not always canonical A->M."""
     ui = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
-    src = ui[ui.index("def render_correspondence_input("):ui.index("\\ndef _standard_basis(")]
+    start = ui.index("def render_correspondence_input(")
+    end = ui.index("def _standard_basis(", start)
+    src = ui[start:end]
     # For the M->A input direction the canonical C_(M<-A) must be inverted
     # BEFORE displaying source->destination probe vectors and reciprocal planes.
     assert "entered_matrix = entered_matrix_from_canonical(canonical, direction=direction)" in src
