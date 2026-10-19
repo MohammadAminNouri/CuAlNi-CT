@@ -535,8 +535,8 @@ def evaluate_cofactor_conditions(
     paper.  The abstract contains an inconsistent plus sign and is not used.
     """
 
-    if tolerance <= 0.0:
-        raise ValueError("tolerance must be positive")
+    if not np.isfinite(tolerance) or tolerance <= 0.0:
+        raise ValueError("tolerance must be finite and positive")
     if fraction_samples < 2:
         raise ValueError("fraction_samples must be >= 2")
 
