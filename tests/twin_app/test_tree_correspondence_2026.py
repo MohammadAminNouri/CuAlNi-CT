@@ -86,7 +86,7 @@ def test_coordinate_input_probe_uses_the_actually_selected_source_direction():
     assert 'direction="A_TO_M"' in src
     assert '"M → A": "M_TO_A"' in src
     assert "separate coordinate axes" in src
-    assert "C_c" in src
+    assert "Exact correspondence sent to the solver" in src
     assert "C.inv()" in src
     # Radio selectors are intentional for the input *format* and direction.
     assert "on_change=synchronize_editors" in src
