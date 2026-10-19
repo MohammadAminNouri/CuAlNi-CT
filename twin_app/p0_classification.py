@@ -145,6 +145,27 @@ def screen_unclassified_report(
             structures = []
             for branch in pair.constructions:
                 if branch.classification in CONVENTIONAL:
+                    # Independently re-screen ALL accepted classical labels.
+                    # A wrong earlier cross-lock must never bypass the final
+                    # necessary parent mirror/twofold check.
+                    if pair.stretch_i is None or pair.stretch_j is None:
+                        raise ValueError("Classical twin lacks indexed stretch pair")
+                    if (pair.stretch_i not in stretch_variants
+                            or pair.stretch_j not in stretch_variants):
+                        raise ValueError("Classical twin has an unknown stretch index")
+                    classical_screen = screen_parent_twofold(
+                        stretch_variants[pair.stretch_i],
+                        stretch_variants[pair.stretch_j],
+                        parent_metric=parent_metric,
+                        parent_group=parent_group,
+                        tolerance=tolerance,
+                    )
+                    if classical_screen.conventional_symmetry_excluded:
+                        raise ValueError(
+                            "Classical Type I/II/Compound claim contradicts all "
+                            "available parent mirror and twofold symmetry witnesses "
+                            f"for {pair.pair_id}; do not report a verified type"
+                        )
                     conventional += 1
                     structures.append(branch)
                     continue
