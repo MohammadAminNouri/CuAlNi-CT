@@ -79,3 +79,13 @@ def test_true_rank_one_simple_shear_continuum_survives_independent_check():
         result = solve_affine_ptmc_parameters(np.eye(3), A, domain=domain)
         assert result.continuum
         assert not result.discrete_roots
+
+@pytest.mark.parametrize("dilatation,expected", [
+    (1.0, True),
+    (1.0 + 1e-9, False),
+    (1.0 - 1e-9, False),
+    (1.1, False),
+])
+def test_true_invariant_plane_is_not_a_near_unit_dilation(dilatation, expected):
+    from cualni_cryst.ptmc_adapter import _is_true_invariant_plane
+    assert _is_true_invariant_plane(dilatation) is expected
