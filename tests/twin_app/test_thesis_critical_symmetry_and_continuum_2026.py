@@ -32,7 +32,10 @@ def test_mirror_only_parent_does_not_falsely_prove_nonconventional_type():
     assert proof.parent_mirror_count == 1
     assert proof.matching_mirror_indices == (1,)
     assert not proof.conventional_symmetry_excluded
-    assert not proof.conventional_twofold_excluded
+    assert proof.conventional_twofold_excluded
+    assert proof.nearest_mapping_error is None  # no proper twofold to compare
+    assert proof.nearest_mirror_mapping_error == pytest.approx(0.0)
+    assert proof.nearest_symmetry_mapping_error == pytest.approx(0.0)
 
 
 def test_no_mirror_or_twofold_remains_screened_conservatively():
