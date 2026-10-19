@@ -286,8 +286,8 @@ class PTMCTwinPlaneInput:
             raise ValueError("Twin plane must be a finite nonzero (hkl)")
         if self.base_variant_index is not None and self.base_variant_index < 0:
             raise ValueError("base_variant_index must be >= 0")
-        if self.plane_tolerance_deg <= 0.0:
-            raise ValueError("plane_tolerance_deg must be positive")
+        if not np.isfinite(self.plane_tolerance_deg) or self.plane_tolerance_deg <= 0.0:
+            raise ValueError("plane_tolerance_deg must be finite and positive")
 
 
 @dataclass(frozen=True)
@@ -584,6 +584,23 @@ def _stable_quadratic_roots(
         return (0.5 * (roots[0] + roots[1]),)
     return tuple(roots)
 
+
+
+def _validate_ptmc_public_controls(
+    *, dilatational_factor: float, algebraic_tolerance: float,
+    eigenvalue_tolerance: float, middle_stretch_tolerance: float,
+    polynomial_tolerance: float,
+) -> None:
+    """Fail before symmetry/eigenvalue work if any physical control is invalid."""
+    for name, value in (
+        ("dilatational_factor", dilatational_factor),
+        ("algebraic_tolerance", algebraic_tolerance),
+        ("eigenvalue_tolerance", eigenvalue_tolerance),
+        ("middle_stretch_tolerance", middle_stretch_tolerance),
+        ("polynomial_tolerance", polynomial_tolerance),
+    ):
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
 
 
 def _is_true_invariant_plane(dilatational_factor: float) -> bool:
@@ -1286,8 +1303,13 @@ def analyze_ptmc_twinning(
 
     if twin_plane is not None and twin_pair is not None:
         raise ValueError("Supply at most one of twin_plane or twin_pair")
-    if dilatational_factor <= 0.0:
-        raise ValueError("dilatational_factor must be positive")
+    _validate_ptmc_public_controls(
+        dilatational_factor=dilatational_factor,
+        algebraic_tolerance=algebraic_tolerance,
+        eigenvalue_tolerance=eigenvalue_tolerance,
+        middle_stretch_tolerance=middle_stretch_tolerance,
+        polynomial_tolerance=polynomial_tolerance,
+    )
 
     parent_metric = parent_lattice.metric()
     product_metric = product_lattice.metric()
@@ -1500,6 +1522,13 @@ def analyze_ptmc_slip(
 ) -> PTMCReport:
     """Enumerate classical slip-PTMC solutions for the supplied product slip system."""
 
+    _validate_ptmc_public_controls(
+        dilatational_factor=dilatational_factor,
+        algebraic_tolerance=algebraic_tolerance,
+        eigenvalue_tolerance=eigenvalue_tolerance,
+        middle_stretch_tolerance=middle_stretch_tolerance,
+        polynomial_tolerance=polynomial_tolerance,
+    )
     parent_metric = parent_lattice.metric()
     product_metric = product_lattice.metric()
     parent_symmetry = _validated_operations(
