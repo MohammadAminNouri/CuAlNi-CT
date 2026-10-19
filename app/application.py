@@ -179,8 +179,8 @@ class PhaseInput:
             "cell": self.lattice.to_payload(),
             "point_group": point_group,
             "provenance": {
-                "status": "USER_MEASURED",
-                "notes": "Entered through the CuAlNi-CT public workbench.",
+                "status": "UNVERIFIED",
+                "notes": "User-entered crystallographic input; not independently source-verified or measured by this app.",
             },
         }
 
@@ -239,8 +239,8 @@ class TransformationInput:
                 "Entered explicitly by the user; no correspondence was inferred."
             ),
             "provenance": {
-                "status": "USER_MEASURED",
-                "notes": "User-entered transformation relation.",
+                "status": "UNVERIFIED",
+                "notes": "User-entered correspondence; neither experimentally verified nor inferred from phase labels.",
             },
         }
 

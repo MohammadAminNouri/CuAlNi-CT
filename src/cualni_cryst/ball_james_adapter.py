@@ -64,9 +64,14 @@ def _validated_invertible(matrix: Array, *, name: str) -> Array:
     value = np.asarray(matrix, dtype=float)
     if value.shape != (3, 3) or not np.all(np.isfinite(value)):
         raise ValueError(f"{name} must be a finite 3x3 matrix")
-    determinant = float(np.linalg.det(value))
-    if abs(determinant) <= 1.0e-14:
+    # Invertibility is scale-relative: a well-conditioned 1e-6*I has det 1e-18.
+    largest = float(np.max(np.abs(value)))
+    if largest == 0.0:
         raise ValueError(f"{name} must be invertible")
+    singular_values = np.linalg.svd(value / largest, compute_uv=False)
+    if (not np.isfinite(singular_values).all()
+            or singular_values[-1] <= 1.0e-12 * singular_values[0]):
+        raise ValueError(f"{name} is numerically singular or ill-conditioned")
     return value
 
 

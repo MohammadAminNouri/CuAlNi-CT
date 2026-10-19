@@ -530,6 +530,12 @@ def render_correspondence_input(
             st.stop()
 
     C = exact_matrix(canonical)
+    from .numeric_domain import validate_solver_correspondence
+    try:
+        validate_solver_correspondence(C)
+    except ValueError as exc:
+        st.error(f"Unsafe numerical correspondence: {exc}")
+        st.stop()
     if canonical != baseline:
         st.info("Correspondence differs from the starting editable example. "
                 "The calculation will use only these explicitly entered directions.")
