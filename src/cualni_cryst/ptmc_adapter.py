@@ -586,6 +586,16 @@ def _stable_quadratic_roots(
 
 
 
+def _is_true_invariant_plane(dilatational_factor: float) -> bool:
+    """Only delta=1 describes an undilated invariant plane.
+
+    A numerically near-unit Bowles–Mackenzie plane is still dilated.
+    """
+    if not np.isfinite(dilatational_factor) or dilatational_factor <= 0.0:
+        raise ValueError("dilatational_factor must be finite and positive")
+    return float(dilatational_factor) == 1.0
+
+
 def _verify_continuum_middle_stretch(
     base: Array,
     increment: Array,
@@ -1116,7 +1126,7 @@ def _habit_solution_from_predeformation(
                 dilatational_factor=float(dilatational_factor),
                 # A uniformly dilated plane is NOT literally invariant when
                 # delta differs from one, however small the difference.
-                true_invariant_plane=(dilatational_factor == 1.0),
+                true_invariant_plane=_is_true_invariant_plane(dilatational_factor),
                 pre_shape_deformation=np.asarray(F_pre, dtype=float),
                 habit_rotation=habit.rotation,
                 macroscopic_deformation=shape_deformation,
