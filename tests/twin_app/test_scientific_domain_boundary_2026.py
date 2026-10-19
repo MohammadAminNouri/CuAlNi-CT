@@ -67,3 +67,12 @@ def test_independent_numerical_adapters_use_scale_relative_invertibility(validat
 def test_reject_nonfinite_maximum_condition():
     with pytest.raises(ValueError):
         validate_solver_correspondence(sp.eye(3),maximum_condition=float("nan"))
+
+
+def test_cli_generated_phases_and_templates_remain_unverified():
+    from cualni_cryst.project_io import generic_template, _phase_payload
+    template = generic_template()
+    assert all(p["provenance"]["status"] == "UNVERIFIED" for p in template["phases"])
+    fresh = _phase_payload("p", "3 3 3 90 90 90", "m-3m", "angstrom")
+    assert fresh["provenance"]["status"] == "UNVERIFIED"
+    assert "no independent measurement" in fresh["provenance"]["notes"]
