@@ -35,7 +35,7 @@ def _validated_inputs(
     M_m: np.ndarray,
     correspondence: Correspondence,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
+    C = correspondence.to_float64_checked()
     return validate_metric_pencil_inputs(M_a, M_m, C)
 
 

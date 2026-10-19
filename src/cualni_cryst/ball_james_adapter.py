@@ -967,7 +967,7 @@ class BallJamesCrystalInput:
     @staticmethod
     def _correspondence_array(value: Correspondence | Array) -> Array:
         if isinstance(value, Correspondence):
-            return np.asarray(value.C_M_from_A, dtype=float)
+            return value.to_float64_checked()
         return _validated_invertible(value, name="correspondence")
 
     @staticmethod
@@ -1094,7 +1094,7 @@ class BallJamesAdapter:
         proper_product = sum(
             float(np.linalg.det(operation)) > 0.0 for operation in product_symmetry
         )
-        C = np.asarray(self.transformation.correspondence.C_M_from_A, dtype=float)
+        C = self.transformation.correspondence.to_float64_checked()
         return analyze_ball_james(
             self.parent.lattice.metric(),
             self.product.lattice.metric(),

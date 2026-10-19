@@ -397,7 +397,7 @@ def _projective_coefficients(vector: Array, *, tolerance: float = 1.0e-14) -> Ar
 def _correspondence_array(value: Correspondence | Array) -> Array:
     if isinstance(value, Correspondence):
         return _validated_invertible(
-            np.asarray(value.C_M_from_A, dtype=float),
+            value.to_float64_checked(),
             name="correspondence",
         )
     return _validated_invertible(value, name="correspondence")

@@ -39,7 +39,7 @@ def stretch_from_metrics(
     The equation is unchanged.  Arithmetic precision is escalated when the
     metric pencil is close to the compatibility boundary or badly conditioned.
     """
-    C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
+    C = correspondence.to_float64_checked()
     return adaptive_symmetric_whitened_stretch(
         M_a,
         M_m,
@@ -85,7 +85,7 @@ def metric_native_stretch_spectrum(
         (C^T M_M C)v_i=\mu_i M_A v_i,
         \qquad \lambda_i=\sqrt{\mu_i}.
     """
-    C = np.asarray(correspondence.C_m_from_a, dtype=float).reshape(3, 3)
+    C = correspondence.to_float64_checked()
     spec = adaptive_metric_eigensystem(
         M_a,
         M_m,
