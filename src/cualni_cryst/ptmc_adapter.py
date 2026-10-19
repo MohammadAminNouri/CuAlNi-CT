@@ -157,7 +157,11 @@ class PTMCHabitSolution:
 
 @dataclass(frozen=True)
 class PTMCContinuousFamily:
-    """An exact continuum of compatible LIS parameters."""
+    """Numerical continuum candidate certified against the middle-stretch gate.
+
+    This is a tolerance-based certificate, not a symbolic polynomial identity
+    or evidence of specimen-specific experimental compatibility.
+    """
 
     lis_type: str
     base_variant_index: int
@@ -1110,8 +1114,9 @@ def _habit_solution_from_predeformation(
                 parameter_value=float(parameter_value),
                 habit_branch=habit.branch,
                 dilatational_factor=float(dilatational_factor),
-                true_invariant_plane=abs(dilatational_factor - 1.0)
-                <= eigenvalue_tolerance,
+                # A uniformly dilated plane is NOT literally invariant when
+                # delta differs from one, however small the difference.
+                true_invariant_plane=(dilatational_factor == 1.0),
                 pre_shape_deformation=np.asarray(F_pre, dtype=float),
                 habit_rotation=habit.rotation,
                 macroscopic_deformation=shape_deformation,
@@ -1155,8 +1160,9 @@ def _base_notes() -> tuple[str, ...]:
             "correspondence; only the lattice-invariant-shear specification is PTMC-specific."
         ),
         (
-            "All discrete single-shear roots are retained. Exact continuum compatibility is "
-            "reported as a continuum family and is never replaced by an arbitrary sample."
+            "All discrete single-shear roots are retained. A tolerance-supported "
+            "continuum candidate is checked against the middle-stretch condition; "
+            "it is not a symbolic proof of exact compatibility."
         ),
         "No rounded experimental state is silently projected to exact compatibility.",
         (
@@ -1413,8 +1419,10 @@ def analyze_ptmc_twinning(
                         roots.polynomial_verification_residual
                     ),
                     note=(
-                        "Every fraction in [0,1] satisfies the determinant condition. "
-                        "This continuum is not replaced by a finite arbitrary sample."
+                        "Over [0,1], the determinant polynomial is within the "
+                        "stated numerical tolerance and the middle stretch passes "
+                        "the polynomial-extremum screening. This is a numerical "
+                        "continuum candidate, not exact algebraic or experimental proof."
                     ),
                 )
             )
@@ -1578,9 +1586,10 @@ def analyze_ptmc_slip(
                         roots.polynomial_verification_residual
                     ),
                     note=(
-                        "The determinant condition is identically satisfied over the "
-                        "requested slip-shear domain. The family is not sampled as if "
-                        "the samples were exhaustive."
+                        "The determinant condition is satisfied numerically within "
+                        "the stated tolerance over the requested shear domain, and "
+                        "middle-stretch extrema have been screened. Do not interpret "
+                        "the continuum flag as symbolic or experimental proof."
                     ),
                 )
             )
