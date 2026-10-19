@@ -581,6 +581,67 @@ def _stable_quadratic_roots(
     return tuple(roots)
 
 
+
+def _verify_continuum_middle_stretch(
+    base: Array,
+    increment: Array,
+    delta: float,
+    domain: tuple[float, float] | None,
+    tolerance: float,
+) -> None:
+    """Fail closed: det(F.T F-delta² I) identically zero is NOT enough.
+
+    For symmetric B=F.T F-delta² I with det(B)=0, delta is the middle
+    singular value exactly when the product of the two other eigenvalues
+    is non-positive. That product equals the second principal invariant
+    p(x)=sum of the three principal 2x2 minors of B(x). Because F(x) is
+    affine, p is a polynomial of degree <=4. Test its extrema as well as
+    interval endpoints (or its global behaviour for an unbounded domain).
+    We additionally check the physical middle singular value at each
+    extremum, so numerical interpolation cannot silently certify a wrong
+    continuum branch.
+    """
+    from numpy.polynomial import Polynomial
+
+    midpoint = 0.0 if domain is None else 0.5 * (domain[0] + domain[1])
+    scale = 1.0 if domain is None else 0.5 * (domain[1] - domain[0])
+    centered = base + midpoint * increment
+    scaled = scale * increment
+    B0 = centered.T @ centered - (delta * delta) * np.eye(3)
+    B1 = centered.T @ scaled + scaled.T @ centered
+    B2 = scaled.T @ scaled
+    if not all(np.isfinite(v).all() for v in (B0, B1, B2)):
+        raise ValueError("Continuum invariants overflow; numerical proof unavailable")
+    poly = [[Polynomial((B0[i, j], B1[i, j], B2[i, j])) for j in range(3)]
+            for i in range(3)]
+    p = (poly[0][0] * poly[1][1] - poly[0][1] * poly[1][0]
+         + poly[0][0] * poly[2][2] - poly[0][2] * poly[2][0]
+         + poly[1][1] * poly[2][2] - poly[1][2] * poly[2][1])
+    coeff = np.asarray(p.coef, dtype=float)
+    if not np.isfinite(coeff).all():
+        raise ValueError("Continuum polynomial coefficients are non-finite")
+    degree = len(coeff) - 1
+    if domain is None and degree > 0 and (degree % 2 or coeff[-1] > 0.0):
+        raise ValueError("Unbounded PTMC determinant continuum does not establish middle-stretch compatibility")
+
+    points = [0.0] if domain is None else [-1.0, 0.0, 1.0]
+    if degree > 1:
+        for root in p.deriv().roots():
+            if abs(float(np.imag(root))) > 1e-8 * max(1.0, abs(float(np.real(root)))):
+                continue
+            t = float(np.real(root))
+            if domain is None or -1.0 <= t <= 1.0:
+                points.append(t)
+    for t in points:
+        x = midpoint + scale * t
+        middle = _middle_singular_value(base + x * increment)
+        if not np.isfinite(middle) or abs(middle - delta) > tolerance:
+            raise ValueError(
+                "PTMC determinant is a continuum candidate but the middle stretch "
+                f"is not compatible at parameter {x:.9g}: lambda2={middle:.9g}, delta={delta:.9g}"
+            )
+
+
 def solve_affine_ptmc_parameters(
     F0: Array,
     rank_one_increment: Array,
@@ -667,6 +728,10 @@ def solve_affine_ptmc_parameters(
     continuum = max(abs(c0), abs(c1), abs(c2)) <= (
         polynomial_tolerance * coefficient_scale
     )
+    if continuum:
+        _verify_continuum_middle_stretch(
+            base, increment, dilatational_factor, domain, middle_stretch_tolerance
+        )
     roots: list[float] = []
     if not continuum:
         for root in _stable_quadratic_roots(
