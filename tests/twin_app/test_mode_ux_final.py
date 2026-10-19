@@ -161,3 +161,40 @@ def test_ui_is_computed_only_and_never_reintroduces_correspondence_family_tree()
     assert "st.radio(" in renderer  # habits remain selectable in the results pane
     assert "render_mode_tree(graph_model" in renderer
     assert "ct_ux_mode_selection" in renderer
+
+
+def test_proved_symmetry_transport_can_be_displayed_without_claiming_direct_crosslock():
+    status = ("symmetry-transported from directly cross-locked F1:P1:C1; "
+              "G-index 2; ordered stretch and physical rank-one tensor residuals "
+              "1.0e-09, 2.0e-09, 3.0e-09; "
+              "this is NOT an independent discrete cross-lock for the target pair")
+    transported = Entry(Pair(1, 3, 1, 3),
+                        Construction("P1.B1", 1, "Type II", status, ()), "F1")
+    view = build_mode_view(Catalogue((Mode("Mode 1", {"Type II": (transported,)}),)))
+    assert len(view.visible_modes) == 1
+    assert view.visible_modes[0].types[0].label == "Type II"
+    assert view.all_source_record_count == 1
+
+
+@pytest.mark.parametrize("bad_status", [
+    "unresolved: previously cross-locked but no valid current witness",
+    "not cross-locked",
+    "symmetry-transported from directly cross-locked P1 (missing operator proof)",
+])
+def test_unverified_or_incomplete_symmetry_transport_stays_rejected(bad_status):
+    bad = Entry(Pair(1, 3, 1, 3),
+                Construction("P1.B1", 1, "Type I", bad_status, ()), "F1")
+    with pytest.raises(ValueError, match="Unverified"):
+        build_mode_view(Catalogue((Mode("Mode 1", {"Type I": (bad,)}),)))
+
+
+def test_universal_workbench_does_not_show_phase_specific_warnings_by_default():
+    root = Path(__file__).resolve().parents[2] / "twin_app"
+    ui = (root / "streamlit_app.py").read_text(encoding="utf-8")
+    evidence = (root / "p1_ui.py").read_text(encoding="utf-8")
+    assert "2H / M18R evidence audit" not in ui
+    assert "experimental validation of any 2H or M18R specimen" not in ui
+    assert "if show_material_references:" in ui
+    assert "render_cualni_reference_guide()" in ui
+    assert "**4. Cu–Al–Ni and experimental status**" not in evidence
+    assert "cualni_p1_selected_source_evidence.json" not in evidence

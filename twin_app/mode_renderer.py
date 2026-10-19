@@ -106,8 +106,8 @@ def _show_audit(view: ModeView, catalogue: ModeCatalogue, report: TwinFamilyRepo
         st.write(f"All correspondence couples: {catalogue.correspondence_pair_count}")
         st.write(f"Correspondence operator classes (not modes): {report.audit.operator_count}")
         if view.unresolved_record_count:
-            st.warning("Some calculated rank-one geometries are NOT independently classified "
-                       "as Type I, Type II or Compound. They are not promoted to verified choices.")
+            st.warning("Some calculated rank-one geometries lack direct cross-lock or proved symmetry-transport "
+                       "support for Type I, Type II or Compound. They are not promoted to verified choices.")
         st.caption("The complete provenance remains in the exported scientific report. "
                    "Expand here only when checking a specific discrepancy.")
         if st.checkbox("Inspect all unresolved records and correspondence mappings",
@@ -141,7 +141,7 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     st.caption(
         "Select a node in the connected tree. Blue = calculated mode; "
         "teal = Type I; violet = Type II; amber = Compound. "
-        "Only independently verified types are shown. "
+        "Only directly cross-locked or proved symmetry-transported types are shown. "
         "Mode letters are display labels and do not claim equivalence to published mode names."
     )
     st.caption(
@@ -150,8 +150,8 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
         f"{view.unresolved_record_count} unresolved source records are available in the scientific audit."
     )
     if not view.visible_modes:
-        st.info("No independently verified Type I, Type II or Compound twinning mode was "
-                "identified for these inputs. No type is invented.")
+        st.info("No Type I, Type II or Compound twinning mode supported by direct cross-lock "
+                "or proved symmetry transport was identified for these inputs. No type is invented.")
         _show_audit(view, catalogue, report)
         return
 
@@ -208,13 +208,13 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     st.markdown(f"### {selected_mode.display_name} → {twin_type.label} · full numerical result")
     st.caption(
         f"Physical shear of this mode ≈ {_value(selected_mode.shear, 8)} · "
-        f"type independently verified for {twin_type.stretch_couples}/"
+        f"type supported by direct cross-lock or proved symmetry transport for {twin_type.stretch_couples}/"
         f"{selected_mode.symmetry_pairs} symmetry-related stretch pairs. "
         "The tree groups equivalent descriptions; the underlying calculations are preserved."
     )
     if twin_type.stretch_couples < selected_mode.symmetry_pairs:
         st.warning(
-            f"Incomplete symmetry-orbit classification: {twin_type.label} is independently verified "
+            f"Incomplete symmetry-orbit classification: {twin_type.label} has direct or symmetry-transport evidence "
             f"for {twin_type.stretch_couples} of {selected_mode.symmetry_pairs} pairs. "
             "This does not classify the remaining pairs; see scientific audit."
         )

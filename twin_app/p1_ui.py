@@ -55,9 +55,9 @@ def render_p1_source_evidence(entry,report):
             if any(min(v,1-v)<1e-6 for v in fractions):
                 st.warning('Habit fraction near λ=0 or λ=1. Distinct-limit/endpoint interpretation requires additional mathematical care.')
         st.caption('Recorded habit branches are NOT automatically unique macroscopic or microscopic mechanisms. Equivalence requires proper parent-group orbit analysis with the correct metric and source provenance.')
-        st.markdown('**4. Cu–Al–Ni and experimental status**')
-        st.warning('Experimental correspondence, OR, interface indexing and measurement uncertainty have NOT been verified by this calculation. Phase-specific Cu–Al–Ni claims require independently checked evidence.')
-        st.caption('The application never assumes a Cu–Al–Ni correspondence from composition, 2H/18R phase labels or a lattice-parameter table.')
+        st.markdown('**4. Experimental evidence and limitations**')
+        st.warning('Correspondence, orientation relationship, interface indexing and measurement uncertainty have NOT been independently verified against the active specimen by this calculation.')
+        st.caption('This calculation uses the entered crystallographic correspondence and metrics. Source authenticity and experimental observation require independent evidence.')
         st.download_button('Export selected source numerical evidence (JSON)',data=json.dumps({
             'transformation_id':report.transformation_id,
             'source_pair':entry.pair.pair_id,
@@ -70,7 +70,7 @@ def render_p1_source_evidence(entry,report):
             'n_parent_cartesian':list(b.n_parent_cartesian),
             'habit_normals_parent_cartesian':[list(h.habit_normal_parent_cartesian) for h in hs],
             'warning':'Equation checks only; NOT experimentally validated.'},indent=2),
-            file_name='cualni_p1_selected_source_evidence.json',mime='application/json',
+            file_name='twin_selected_source_numerical_evidence.json',mime='application/json',
             key='p1_evidence_'+str(report.transformation_id)+'_'+str(entry.pair.pair_id)+'_'+str(b.branch))
 
 

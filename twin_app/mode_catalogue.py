@@ -19,6 +19,7 @@ from cualni_cryst.lattice import metric_sqrt
 from cualni_cryst.project_io import project_from_dict
 from cualni_cryst.stretch import stretch_from_metrics
 from .scientific_models import TwinFamilyReport, VariantPairRecord, PairTwinConstruction
+from .mode_type_status import supported_classical_type
 
 
 class ModeClassificationError(ValueError):
@@ -55,8 +56,8 @@ class ModeCatalogue:
 
 def _display_type(branch: PairTwinConstruction) -> str:
     if branch.classification in ("Type I", "Type II", "Compound"):
-        if "cross-locked" not in branch.classification_status.lower():
-            raise ModeClassificationError("A claimed twin type has no independent cross-lock")
+        if not supported_classical_type(branch.classification, branch.classification_status):
+            raise ModeClassificationError("A claimed twin type lacks direct cross-lock or proved symmetry-transport evidence")
         return branch.classification
     return "Unresolved"
 
