@@ -735,8 +735,8 @@ def analyze_ball_james(
         "rank_one_tolerance": rank_one_tolerance,
         "cofactor_tolerance": cofactor_tolerance,
     }.items():
-        if value <= 0.0:
-            raise ValueError(f"{name} must be positive")
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
 
     parent = _validated_spd(M_a, name="M_a")
     product = _validated_spd(M_m, name="M_m")
