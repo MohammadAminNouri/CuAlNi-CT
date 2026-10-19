@@ -107,3 +107,19 @@ def test_no_literature_values_in_production_mode_modules():
         text = (root/fname).read_text()
         for prohibited in ('Bhattacharya', '0.2385', '0.2804', '0.3096', '0.1423', 'NiTi', 'CuAlNi'):
             assert prohibited not in text, (fname, prohibited)
+
+
+def test_real_niti_inputs_are_renderable_without_losing_symmetry_transport(computed):
+    from twin_app.mode_view_model import build_mode_view
+    _, report, modes = computed
+    view = build_mode_view(modes)
+    assert len(view.visible_modes) > 0
+    assert view.all_source_record_count == sum(
+        len(pair.constructions)
+        for family in report.families
+        for pair in family.pair_records
+    )
+    assert view.unresolved_record_count == sum(
+        1 for mode in modes.modes for e in mode.entries
+        if e.construction.classification not in ("Type I", "Type II", "Compound")
+    )

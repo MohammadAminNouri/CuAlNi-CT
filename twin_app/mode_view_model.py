@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Any
 
+from .mode_type_status import supported_classical_type
+
 VERIFIED_TYPES = ("Compound", "Type I", "Type II")
 DIAGNOSTIC_TYPE = "Unresolved"
 
@@ -81,7 +83,7 @@ def type_entries(mode: Any, twin_type: str) -> tuple[Any, ...]:
     for e in original:
         c = e.construction
         if twin_type in VERIFIED_TYPES:
-            if str(c.classification) != twin_type or not str(c.classification_status).strip().lower().startswith("cross-locked:"):
+            if str(c.classification) != twin_type or not supported_classical_type(c.classification, c.classification_status):
                 raise ValueError("Unverified type was promoted into verified mode navigation")
         elif twin_type == DIAGNOSTIC_TYPE:
             if str(c.classification) in VERIFIED_TYPES:

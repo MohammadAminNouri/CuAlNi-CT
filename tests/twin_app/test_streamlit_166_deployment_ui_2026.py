@@ -26,10 +26,12 @@ def test_accessible_linear_sections_and_evidence_without_complete_inputs():
     source = APP.read_text(encoding="utf-8")
     ast.parse(source)
     assert "st.tabs(" not in source
-    assert "Cu–Al–Ni independent evidence and source references (optional)" in source
+    assert "Show optional material-specific references" in source
+    assert "if show_material_references:" in source
+    assert "Cu–Al–Ni independent evidence and source references (optional)" not in source
     assert "01  /  Crystal setup" in source
     assert "02  /  Calculated twin-family genealogy" in source
-    assert source.index("Cu–Al–Ni independent evidence and source references (optional)") < source.index("01  /  Crystal setup")
+    assert source.index("if show_material_references:") < source.index("01  /  Crystal setup")
     assert source.index("01  /  Crystal setup") < source.index("02  /  Calculated twin-family genealogy")
     assert "build_twin_family_report(" in source
     assert "render_mode_report(catalogue, report)" in source

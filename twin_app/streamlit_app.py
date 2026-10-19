@@ -177,8 +177,8 @@ def _render_research_workspace_header() -> None:
           <div class="tf-workspace-meta">
             <span>Calculated from your inputs</span>
             <span>Full branch genealogy</span>
-            <span>2H / M18R evidence audit</span>
-            <span>Experimental status: not established</span>
+            <span>Numerical evidence and provenance</span>
+            <span>Experimental validation requires measurements</span>
           </div>
         </section>
         """, unsafe_allow_html=True,
@@ -195,16 +195,21 @@ def main() -> None:
         font_scale = st.radio("Text size", ("Standard", "Large"), key="tf_font_scale_v8", horizontal=True)
         density = st.radio("Tree spacing", ("Comfortable", "Compact"), key="tf_density_v8", horizontal=True)
         st.caption("Display choices are not scientific inputs; no calculation is restarted when you change them.")
+        st.divider()
+        show_material_references = st.checkbox(
+            "Show optional material-specific references", value=False,
+            key="tf_show_material_references",
+            help="Separate reference examples; never alters your active crystal inputs or calculated results.",
+        )
     theme = {"Dark": "dark", "Light": "light", "High contrast": "contrast"}[appearance]
     _style(appearance=theme, font_scale=font_scale.lower())
     _render_research_workspace_header()
-    # Optional source/evidence inspection is always available, including when
-    # the entered crystal parameters are incomplete or inconsistent.
-    # The reference guide already owns its optional expanders. Wrapping it
-    # in another expander would create invalid nested Streamlit containers.
-    st.caption("Cu–Al–Ni independent evidence and source references (optional)")
-    from twin_app.p1_ui import render_cualni_reference_guide
-    render_cualni_reference_guide()
+    # Keep material-specific research guides entirely opt-in: an NiTi or
+    # arbitrary user-input calculation must never inherit Cu-Al-Ni labels.
+    if show_material_references:
+        st.caption("Optional material references (not active inputs or experimental validation)")
+        from twin_app.p1_ui import render_cualni_reference_guide
+        render_cualni_reference_guide()
 
     # One linear scientific workflow: enter parameters, press Calculate once,
     # then inspect the full result genealogy directly below.
@@ -429,7 +434,7 @@ def main() -> None:
         summary_b.metric("Source families", len(report.families))
         summary_c.metric("Incompatible pair orbits", len(catalogue.incompatible_pair_orbits))
         st.caption("Counts are calculated from this report; they are not literature-expected answers.")
-        st.warning("Numerical compatibility is not independent experimental validation of any 2H or M18R specimen.")
+        st.warning("Numerical compatibility is not experimental validation of the entered transformation. Independent specimen-specific phase, correspondence, orientation and interface measurements are required.")
         render_mode_report(catalogue, report)
         from twin_app.p1_ui import render_p1_symmetry_orbit_panel
         render_p1_symmetry_orbit_panel(report, payload, signature)
