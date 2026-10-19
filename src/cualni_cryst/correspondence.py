@@ -111,6 +111,15 @@ class Correspondence:
             for j in range(3):
                 if exact[i, j] != 0 and matrix[i, j] == 0:
                     raise ValueError(f"Correspondence[{i+1},{j+1}] underflows to zero in binary64")
+                if exact[i, j] != 0:
+                    # Nonzero subnormal coefficients can lose multiple digits
+                    # without underflowing all the way to zero.
+                    as_exact_float = sp.Rational(*float(matrix[i, j]).as_integer_ratio())
+                    relative_loss = abs((as_exact_float - exact[i, j]) / exact[i, j])
+                    if relative_loss > sp.Rational(1, 10**12):
+                        raise ValueError(
+                            f"Correspondence[{i+1},{j+1}] loses too much precision in binary64"
+                        )
         scale = float(np.max(np.abs(matrix)))
         if scale == 0.0 or scale > 1.0e100 or scale < 1.0e-100:
             raise ValueError("Correspondence magnitude is outside stable numerical range")

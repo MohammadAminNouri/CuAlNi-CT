@@ -112,3 +112,14 @@ def test_every_core_entrypoint_rejects_silently_truncated_rational_C(matrix):
     ):
         with pytest.raises(ValueError,match="binary64|underflows|overflows"):
             fn()
+
+def test_nonzero_subnormal_fraction_with_large_relative_rounding_loss_fails_closed():
+    C=Correspondence(sp.eye(3) + sp.Rational(1,10**320)*sp.Matrix([[0,1,0],[0,0,0],[0,0,0]]))
+    # 1e-320 survives float conversion, yet is rounded by ~1.1e-5 relative.
+    with pytest.raises(ValueError,match="loses too much precision"):
+        C.to_float64_checked()
+    with pytest.raises(ValueError,match="loses too much precision"):
+        stretch_from_metrics(np.eye(3),np.eye(3),C)
+    assert np.isclose(
+        Correspondence(sp.diag(sp.Rational(1,3),1,1)).to_float64_checked()[0,0],1/3
+    )
