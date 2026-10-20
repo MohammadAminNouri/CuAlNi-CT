@@ -486,7 +486,6 @@ def render_correspondence_input(
         "to directions in the product crystal. Either input method produces "
         "the same exact correspondence matrix."
     )
-    st.latex(r"\mathbf u_{\mathrm{product}}=C_{\mathrm{parent}\rightarrow\mathrm{product}}\,\mathbf u_{\mathrm{parent}}")
     st.caption("This C is NOT the orientation matrix T or the distortion F. "
                "Parent and product indices use their respective conventional crystal bases.")
     method = st.radio(
@@ -503,6 +502,18 @@ def render_correspondence_input(
     )
     direction = directions[direction_label]
     source_name, destination_name = direction_labels(direction)
+    if direction == "A_TO_M":
+        st.latex(
+            r"\mathbf u_{\mathrm{product}}="
+            r"C_{\mathrm{parent}\to\mathrm{product}}"
+            r"\mathbf u_{\mathrm{parent}}"
+        )
+    else:
+        st.latex(
+            r"\mathbf u_{\mathrm{parent}}="
+            r"C_{\mathrm{product}\to\mathrm{parent}}"
+            r"\mathbf u_{\mathrm{product}}"
+        )
     st.caption(f"Reading order: **{source_name} → {destination_name}**. "
                "Source is always on the left, destination on the right.")
     st.session_state[last_method_key] = method
@@ -606,13 +617,44 @@ def render_correspondence_input(
         st.button("Restore starting correspondence", key=f"{prefix}_restore_C",
                   on_click=restore_starting_correspondence)
 
-    st.markdown("**Exact correspondence sent to the solver**")
-    st.latex(r"C_{\mathrm{parent}\rightarrow\mathrm{product}}=" + sp.latex(C))
-    st.caption(f"det(C) = {C.det()} · exact rational, invertible correspondence. "
-               "Reverse entry uses its exact inverse.")
-    st.caption("Algebraic invertibility alone does not prove a physical correspondence.")
     entered_matrix = entered_matrix_from_canonical(canonical, direction=direction)
     D = exact_matrix(entered_matrix)
+    if direction == "M_TO_A":
+        if D * C != sp.eye(3) or C * D != sp.eye(3):
+            raise AssertionError("Reverse editor and canonical solver mapping are not exact inverses")
+        label = r"C_{\mathrm{product}\to\mathrm{parent}}"
+    else:
+        if D != C:
+            raise AssertionError("Forward editor disagrees with canonical solver mapping")
+        label = r"C_{\mathrm{parent}\to\mathrm{product}}"
+    st.markdown(f"**Selected direction: {source_name} → {destination_name}**")
+    st.latex(label + "=" + sp.latex(D))
+    st.caption(
+        f"det(selected matrix) = {D.det()}. This is the exact matrix for the "
+        "direction selected above, including any edits you have made."
+    )
+    if direction == "M_TO_A":
+        st.caption(
+            "The calculation uses the inverse of this matrix to express the "
+            "same transformation from parent to product. Reversing the input "
+            "direction alone must not change the calculated physical result."
+        )
+    with st.expander("Advanced: exact parent-to-product solver matrix", expanded=False):
+        st.latex(r"C_{\mathrm{parent}\to\mathrm{product}}=" + sp.latex(C))
+        st.caption(
+            "The scientific engine always uses this parent-to-product matrix. "
+            "It remains unchanged when you merely reverse the direction of entry, "
+            "because the inverse is computed exactly."
+        )
+        if direction == "M_TO_A":
+            st.latex(
+                r"C_{\mathrm{product}\to\mathrm{parent}}"
+                r"C_{\mathrm{parent}\to\mathrm{product}}=I"
+            )
+        st.caption(
+            f"det(parent-to-product matrix) = {C.det()}. An invertible matrix "
+            "alone does not establish a physically observed correspondence."
+        )
     st.markdown(f"**Interactive vector mapping · {source_name} → {destination_name}**")
     choice = st.selectbox(
         f"Direction in {source_name}",
