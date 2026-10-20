@@ -38,11 +38,22 @@ def build_tree_model(modes: tuple[ModeSummary, ...]) -> dict[str, Any]:
             count = int(twin_type.stretch_couples)
             if count < 1 or count > mode.symmetry_pairs:
                 raise ValueError("Inconsistent verified symmetry-pair coverage")
+            # Count unordered stretch-variant pairs, not experimental twins.
+            # Type I and Type II may apply to the same pair and are not additive.
+            pairs = tuple(sorted({
+                tuple(sorted((int(e.pair.stretch_i), int(e.pair.stretch_j))))
+                for e in twin_type.entries if hasattr(e, "pair")
+            }))
+            if pairs and (len(pairs) != count or
+                          any(a < 1 or b < 1 or a == b for a, b in pairs)):
+                raise ValueError("Displayed pair coverage disagrees with source identities")
+            pair_labels = tuple("U{}–U{}".format(a, b) for a, b in pairs)
             types.append({
                 "id": twin_type.label,
                 "label": twin_type.label,
                 "verifiedPairs": count,
                 "totalPairs": int(mode.symmetry_pairs),
+                "pairLabels": pair_labels,
                 "sources": int(twin_type.source_records),
                 "hasHabit": bool(twin_type.recorded_habit_solutions or twin_type.continuous_families),
                 "habitCount": int(twin_type.recorded_habit_solutions),
