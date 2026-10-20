@@ -142,7 +142,9 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
         "Select a node in the connected tree. Blue = calculated mode; "
         "teal = Type I; violet = Type II; amber = Compound. "
         "Only directly cross-locked or proved symmetry-transported types are shown. "
-        "Mode letters are display labels and do not claim equivalence to published mode names."
+        "Mode letters are display labels, not literature assignments. "
+        "Pair counts measure classification coverage within one symmetry orbit, "
+        "not distinct measured twin interfaces."
     )
     st.caption(
         f"{len(view.visible_modes)} verified modes · {catalogue.mapped_stretch_count} stretch variants · "
@@ -207,11 +209,38 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     st.divider()
     st.markdown(f"### {selected_mode.display_name} → {twin_type.label} · full numerical result")
     st.caption(
-        f"Physical shear of this mode ≈ {_value(selected_mode.shear, 8)} · "
-        f"type supported by direct cross-lock or proved symmetry transport for {twin_type.stretch_couples}/"
-        f"{selected_mode.symmetry_pairs} symmetry-related stretch pairs. "
-        "The tree groups equivalent descriptions; the underlying calculations are preserved."
+        f"Physical shear of this mode ≈ {_value(selected_mode.shear, 8)}. "
+        f"{twin_type.stretch_couples} of {selected_mode.symmetry_pairs} unordered "
+        "stretch-variant pairs in this symmetry orbit have this verified classification. "
+        "These are symmetry-related calculated pairs, not that many separately observed twins."
     )
+    # Verify the numerator against the actual U_i–U_j identities at presentation
+    # time. Different twin types may classify overlapping pairs, so never sum
+    # these pair counts as if they were disjoint physical interfaces.
+    unique_pairs = tuple(sorted({
+        tuple(sorted((int(e.pair.stretch_i), int(e.pair.stretch_j))))
+        for e in twin_type.entries
+    }))
+    if len(unique_pairs) != twin_type.stretch_couples:
+        raise ValueError("Selected type pair count disagrees with calculated U-pair identities")
+    with st.expander("Which stretch-variant pairs are counted? (U indices)", expanded=False):
+        st.write(
+            "Each U index denotes one calculated stretch tensor. A pair Uᵢ–Uⱼ "
+            "is unordered, so U₁–U₂ and U₂–U₁ are the same pair. "
+            "The denominator is the complete parent-symmetry orbit; "
+            "the numerator counts pairs with this particular verified twin type. "
+            "Different types can describe the same pair."
+        )
+        st.code(
+            "  ·  ".join(f"U{a}–U{b}" for a, b in unique_pairs),
+            language="text",
+        )
+        st.caption(
+            f"{len(twin_type.entries)} underlying computed source records support "
+            f"{len(unique_pairs)} distinct stretch pairs for this type. "
+            "The expanded scientific audit retains the precise construction IDs, "
+            "correspondence variants and classification evidence."
+        )
     if twin_type.stretch_couples < selected_mode.symmetry_pairs:
         st.warning(
             f"Incomplete symmetry-orbit classification: {twin_type.label} has direct or symmetry-transport evidence "
