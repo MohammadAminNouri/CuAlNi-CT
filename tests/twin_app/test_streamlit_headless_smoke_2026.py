@@ -43,7 +43,7 @@ def test_switch_exact_correspondence_methods_and_reverse_direction_without_loss(
                           for j in range(3)) for i in range(3))
     assert exact_matrix(forward) == exact_matrix(NITI_CORRESPONDENCE)
 
-    switch("correspondence_direction_choice", "M → A")
+    switch("correspondence_direction_choice", "Product crystal → Parent crystal")
     reverse = tuple(tuple(app.session_state[f"correspondence_M_TO_A_{i}_{j}"]
                           for j in range(3)) for i in range(3))
     assert exact_matrix(reverse) == exact_matrix(NITI_CORRESPONDENCE).inv()
