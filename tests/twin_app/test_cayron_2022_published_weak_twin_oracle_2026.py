@@ -45,13 +45,12 @@ def _vectors_as_columns(M):
 
 
 def test_cayron_2022_exact_supercell_directions_and_reciprocal_planes():
-    # Published paper's explicit inter-correspondence MUST map all listed
-    # direct-lattice directions and covectors without a transpose mix-up.
+    # Cayron's printed inter-correspondence matrix is the authoritative input.\n    # Applying that matrix gives [-1, 1, -2] for [3, 0, -1]; a prose\n    # transcription showing [-1, -1, -2] is inconsistent with this matrix.\n    # Do not change the expected result to make it match that printed sign.
     C = PUBLISHED_C_INT
     assert C.det() == 1
     assert C * AXIS == AXIS
     assert C * sp.Matrix([3, 1, 0]) == sp.Matrix([-1, 2, -1])
-    assert C * sp.Matrix([3, 0, -1]) == sp.Matrix([-1, -1, -2])
+    assert C * sp.Matrix([3, 0, -1]) == sp.Matrix([-1, 1, -2])
     assert 2 * C * sp.Matrix([1, 0, 0]) == sp.Matrix([0, 1, -1])
     assert C.inv().T * PLANE_1 == PLANE_2
     assert (PLANE_1.T * AXIS)[0] == (PLANE_2.T * AXIS)[0] == 0
