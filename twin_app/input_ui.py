@@ -342,6 +342,14 @@ def render_correspondence_input(
     methods = ("Three paired lattice vectors", "Exact rational 3 × 3 matrix")
     directions = {"Parent crystal → Product crystal": "A_TO_M", "Product crystal → Parent crystal": "M_TO_A"}
     dir_key = "correspondence_direction_choice"
+    # Existing Streamlit sessions may still store the old internal A/M labels.
+    # Migrate them before registering the widget, keeping the exact C unchanged.
+    legacy_directions = {
+        "A → M": "Parent crystal → Product crystal",
+        "M → A": "Product crystal → Parent crystal",
+    }
+    if st.session_state.get(dir_key) in legacy_directions:
+        st.session_state[dir_key] = legacy_directions[st.session_state[dir_key]]
 
     def matrix_keys(direction: str):
         return tuple(tuple(f"{prefix}_{direction}_{i}_{j}" for j in range(3)) for i in range(3))
