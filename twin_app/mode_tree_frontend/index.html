@@ -22,26 +22,29 @@ button:disabled{cursor:default}
 .search{flex:1 1 200px;max-width:300px}.jump{max-width:350px;flex:1 1 190px}
 .scroll-btn{min-height:40px;min-width:40px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-weight:730}
 .counter{font-size:13px;color:var(--muted)}
-.root-wrap{display:flex;align-items:center;flex-direction:column}
-.root{border:2px solid var(--mode);border-radius:12px;background:#152d46;padding:10px 20px;font-weight:760;text-align:center;min-height:47px}
-.root small{display:block;font-weight:500;color:var(--muted);margin-top:3px;font-size:12px}
-.root-stem{height:21px;width:2px;background:var(--line)}
-.viewport{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:var(--line) var(--bg);padding:0 11px 20px;border-bottom:1px solid var(--border)}
-.track{display:flex;gap:16px;width:max-content;min-width:100%;align-items:stretch;padding:22px 15px 2px;position:relative}
-/* A real continuous horizontal bus joins the modes, with a vertical drop for each. */
-.track::before{content:"";position:absolute;left:161px;right:161px;top:0;border-top:2px solid var(--line)}
-.mode-col{width:306px;flex:none;position:relative;padding-top:10px;display:flex;flex-direction:column;align-items:stretch;gap:0}
-.mode-col::before{content:"";position:absolute;left:50%;top:-22px;height:32px;border-left:2px solid var(--line)}
-.mode-head{background:#18314b;border:2px solid var(--mode);border-radius:11px;padding:10px 11px;text-align:left;min-height:69px;display:flex;flex-direction:column;gap:5px}
-.mode-head strong{font-size:16px}.mode-head small{color:var(--muted);font-size:12px;line-height:1.3}
+/* Genuine left-to-right scientific genealogy:
+   transformation at LEFT → vertical stack of mode ORBITS → verified twin TYPES at RIGHT.
+   Every branch is connected with visible lines; scrolling is for many modes. */
+.branch-flow{display:flex;align-items:stretch;gap:0;min-width:0;padding:12px 11px 14px}
+.root-wrap{display:flex;align-items:center;flex:none;width:243px;min-width:243px}
+.root{width:208px;flex:none;border:2px solid var(--mode);border-radius:12px;background:#152d46;padding:13px 12px;font-weight:760;text-align:center;min-height:70px;line-height:1.45}
+.root small{display:block;font-weight:500;color:var(--muted);margin-top:5px;font-size:12px}
+.root-stem{height:2px;width:35px;flex:none;background:var(--line)}
+.viewport{flex:1 1 0;min-width:0;max-height:640px;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) var(--bg);border:1px solid var(--border);border-radius:10px}
+.track{display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:max-content;min-width:100%;padding:12px 14px 12px 29px;position:relative}
+.track::before{content:"";position:absolute;left:12px;top:47px;bottom:47px;border-left:2px solid var(--line)}
+.mode-col{width:max-content;min-width:530px;flex:none;position:relative;display:flex;flex-direction:row;align-items:center;gap:0}
+.mode-col::before{content:"";position:absolute;left:-17px;top:50%;width:17px;height:2px;background:var(--line)}
+.mode-head{width:226px;flex:none;background:#18314b;border:2px solid var(--mode);border-radius:11px;padding:11px 13px;text-align:left;min-height:78px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.mode-head strong{font-size:16px}.mode-head small{color:var(--muted);font-size:12px;line-height:1.4}
 .mode-col[data-chosen=true] .mode-head{box-shadow:0 0 0 2px var(--mode)}
-.type-stem{height:19px;border-left:2px solid var(--line);align-self:center}
-.type-fork{position:relative;display:flex;justify-content:center;gap:8px;padding-top:20px}
-.type-fork[data-count="2"]::before,.type-fork[data-count="3"]::before{content:"";position:absolute;top:0;left:25%;right:25%;border-top:2px solid var(--line)}
-.type-fork::after{content:"";position:absolute;top:0;left:50%;height:20px;border-left:2px solid var(--line)}
-.type{position:relative;flex:1;min-width:0;min-height:91px;background:var(--surface);border:2px solid var(--border);border-bottom:5px solid var(--kind);border-radius:10px;padding:11px 7px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center}
-.type::before{content:"";position:absolute;left:50%;top:-19px;height:18px;border-left:2px solid var(--line)}
-.type strong{font-size:13px;line-height:1.15}.type small{font-size:11px;color:var(--muted);line-height:1.3}
+.type-stem{height:2px;width:28px;flex:none;background:var(--line)}
+.type-fork{position:relative;display:flex;flex-direction:row;align-items:stretch;gap:9px;padding:0;min-width:0}
+.type-fork[data-count="2"]::before,.type-fork[data-count="3"]::before{display:none}
+.type-fork::after{display:none}
+.type{position:relative;width:168px;flex:none;min-height:78px;background:var(--surface);border:2px solid var(--border);border-left:5px solid var(--kind);border-radius:10px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
+.type::before{display:none}
+.type strong{font-size:14px;line-height:1.2}.type small{font-size:12px;color:var(--muted);line-height:1.4}
 .type[data-kind="Type I"]{--kind:var(--i)}.type[data-kind="Type II"]{--kind:var(--ii)}.type[data-kind="Compound"]{--kind:var(--compound)}
 .type[aria-pressed=true]{border-color:var(--kind);outline:2px solid var(--focus);outline-offset:2px}
 .mode-col[hidden]{display:none}
@@ -56,16 +59,16 @@ body.light .root{background:#e7f2ff}body.light .mode-head{background:#eaf3ff}
 body.contrast{color-scheme:dark;--bg:#050505;--surface:#131313;--selected:#222;--fg:#fff;--muted:#fff;--border:#fafafa;--line:#fff;--focus:#fff;--mode:#9bd1ff;--i:#adffe1;--ii:#dcc5ff;--compound:#ffe1a0}
 body.contrast .root{background:#151515}body.contrast .mode-head{background:#171717}
 body.large{font-size:17px}body.large .mode-head strong{font-size:18px}body.large .type strong{font-size:15px}
-body.compact .mode-col{width:270px}body.compact .type{min-height:73px}
+body.compact .mode-head{width:192px;min-height:64px}body.compact .type{min-height:64px;width:148px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-@media(max-width:680px){.head{padding:12px}.tools{padding:0 12px 10px}.mode-col{width:268px}.track{gap:12px}.track::before{left:145px;right:145px}}
+@media(max-width:680px){.head{padding:12px}.tools{padding:0 12px 10px}.root-wrap{width:162px;min-width:162px}.root{width:137px;font-size:13px}.root-stem{width:25px}.mode-head{width:178px}.type{width:138px}.branch-flow{padding:8px 5px}.track{gap:10px}}
 </style></head>
 <body>
 <div class="shell" id="shell" aria-label="Calculated physical twinning modes">
-  <div class="head"><div><div class="title">Calculated twinning-mode tree</div><div class="description">Follow one connected branch: Transformation → Mode → Verified twin type → numerical results below</div></div><span id="count" class="counter"></span></div>
-  <div class="tools"><input id="search" class="search" type="search" placeholder="Find Mode A, Compound, shear…" aria-label="Find a calculated physical mode"><select id="jump" class="jump" aria-label="Jump to a calculated mode"></select><button id="scroll-left" class="scroll-btn" type="button" aria-label="Scroll to earlier modes">←</button><button id="scroll-right" class="scroll-btn" type="button" aria-label="Scroll to later modes">→</button></div>
-  <div class="root-wrap"><div id="root" class="root">Austenite A → Martensite M<small>Exact symmetry-derived physical modes</small></div><div class="root-stem" aria-hidden="true"></div></div>
-  <div class="viewport" id="viewport" role="region" tabindex="0" aria-label="Scrollable connected mode and twin type tree"><div class="track" id="track"></div></div>
+  <div class="head"><div><div class="title">Calculated twinning-mode tree</div><div class="description">Read left to right: transformation → symmetry-related mode → verified twin type. Select a type to inspect its calculated interface.</div></div><span id="count" class="counter"></span></div>
+  <div class="tools"><input id="search" class="search" type="search" placeholder="Find Mode A, Compound, shear…" aria-label="Find a calculated physical mode"><select id="jump" class="jump" aria-label="Jump to a calculated mode"></select><button id="scroll-left" class="scroll-btn" type="button" aria-label="Scroll to earlier modes">↑</button><button id="scroll-right" class="scroll-btn" type="button" aria-label="Scroll to later modes">↓</button></div>
+  <div class="branch-flow"><div class="root-wrap"><div id="root" class="root">Parent crystal → Product crystal<small>Calculated transformation</small></div><div class="root-stem" aria-hidden="true"></div></div>
+  <div class="viewport" id="viewport" role="region" tabindex="0" aria-label="Scrollable left-to-right mode and twin type genealogy"><div class="track" id="track"></div></div></div>
   <div class="legend" aria-label="Twin type color key"><span class="legend-item"><i class="swatch" style="--swatch:var(--mode)"></i>Mode</span><span class="legend-item"><i class="swatch" style="--swatch:var(--i)"></i>Type I</span><span class="legend-item"><i class="swatch" style="--swatch:var(--ii)"></i>Type II</span><span class="legend-item"><i class="swatch" style="--swatch:var(--compound)"></i>Compound</span><span>Colored borders aid scanning; text labels carry the meaning.</span></div>
   <div class="selected-path" aria-live="polite" id="selected-path"></div>
 </div><div id="announce" role="status" aria-live="polite" class="sr-only"></div>
@@ -73,7 +76,7 @@ body.compact .mode-col{width:270px}body.compact .type{min-height:73px}
 'use strict';
 const byId=id=>document.getElementById(id);
 const graph=byId('track'); const viewport=byId('viewport');const search=byId('search');const jump=byId('jump');
-let model={root:'Austenite A → Martensite M',modes:[]};let selected={mode:null,type:null};let initialized=false;
+let model={root:'Parent crystal → Product crystal',modes:[]};let selected={mode:null,type:null};let initialized=false;
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=String(text);return e;}
 function send(type,fields){if(window.parent!==window)window.parent.postMessage({isStreamlitMessage:true,type,...fields},'*');}
 function setHeight(){send('streamlit:setFrameHeight',{height:Math.ceil(document.body.scrollHeight+6)});}
@@ -90,26 +93,26 @@ function updateSelection(mode,type,notify){
 function choose(mode,type){updateSelection(mode,type,true);}
 function render(){
  const oldScroll=viewport.scrollLeft;graph.replaceChildren();
- byId('root').firstChild.textContent=model.root||'Austenite A → Martensite M';
+ byId('root').firstChild.textContent=model.root||'Parent crystal → Product crystal';
  byId('count').textContent=`${model.modes.length} verified physical modes`;
  jump.replaceChildren();
  for(const mode of model.modes){
    const opt=el('option','',`${mode.label} · s=${mode.shear}`);opt.value=mode.id;jump.append(opt);
    const column=el('section','mode-col');column.dataset.mode=mode.id;column.setAttribute('aria-label',`${mode.label}, ${mode.types.length} verified twin types`);
    const head=el('button','mode-head');head.type='button';head.setAttribute('aria-label',`Select ${mode.label}; shear ${mode.shear}`);
-   head.append(el('strong','',mode.label),el('small','',`s = ${mode.shear} · ${mode.pairs} symmetry-related pairs`));
+   head.append(el('strong','',mode.label),el('small','',`s = ${mode.shear} · ${mode.pairs} stretch-variant pairs in orbit`));
    head.addEventListener('click',()=>choose(mode.id,mode.types[0].id));column.append(head);
    column.append(el('div','type-stem'));const fork=el('div','type-fork');fork.dataset.count=String(mode.types.length);
    for(const t of mode.types){const b=el('button','type');b.type='button';b.dataset.type=t.id;b.dataset.kind=t.id;
-     b.setAttribute('aria-label',`${mode.label}: ${t.label}. Verified ${t.verifiedPairs} of ${t.totalPairs} variant pairs. ${t.hasHabit?'Compatible A/M habits calculated':'No discrete A/M habit for this branch'}.`);
-     b.append(el('strong','',t.label),el('small','',`${t.verifiedPairs}/${t.totalPairs} pairs`));
+     b.setAttribute('aria-label',`${mode.label}: ${t.label}. Classified ${t.verifiedPairs} of ${t.totalPairs} unordered stretch-variant pairs in this symmetry orbit; not ${t.verifiedPairs} independent experimental twins. ${t.hasHabit?'Compatible A/M habits calculated':'No discrete A/M habit for this branch'}.`);
+     b.append(el('strong','',t.label),el('small','',`${t.verifiedPairs} of ${t.totalPairs} variant pairs`));
      b.addEventListener('click',()=>choose(mode.id,t.id));fork.append(b);
    }
    column.append(fork);graph.append(column);
  }
  jump.value=selected.mode||'';
  updateSelection(selected.mode,selected.type,false);
- if(!initialized){initialized=true;const c=Array.from(graph.children).find(n=>n.dataset.mode===selected.mode);if(c)c.scrollIntoView({block:'nearest',inline:'center'});}else{viewport.scrollLeft=oldScroll;}
+ if(!initialized){initialized=true;const c=Array.from(graph.children).find(n=>n.dataset.mode===selected.mode);if(c)c.scrollIntoView({block:'nearest',inline:'nearest'});}else{viewport.scrollLeft=oldScroll;}
  applyFilter(); requestAnimationFrame(setHeight);
 }
 function applyFilter(){const needle=search.value.toLowerCase().trim();let visible=0;
@@ -118,9 +121,9 @@ function applyFilter(){const needle=search.value.toLowerCase().trim();let visibl
  requestAnimationFrame(setHeight);
 }
 search.addEventListener('input',applyFilter);
-jump.addEventListener('change',()=>{const m=model.modes.find(x=>x.id===jump.value);if(!m)return;choose(m.id,m.types[0].id);const col=Array.from(graph.children).find(n=>n.dataset.mode===m.id);if(col)col.scrollIntoView({inline:'center',block:'nearest',behavior:'auto'});});
-byId('scroll-left').addEventListener('click',()=>viewport.scrollBy({left:-520,behavior:'auto'}));
-byId('scroll-right').addEventListener('click',()=>viewport.scrollBy({left:520,behavior:'auto'}));
+jump.addEventListener('change',()=>{const m=model.modes.find(x=>x.id===jump.value);if(!m)return;choose(m.id,m.types[0].id);const col=Array.from(graph.children).find(n=>n.dataset.mode===m.id);if(col)col.scrollIntoView({inline:'nearest',block:'center',behavior:'auto'});});
+byId('scroll-left').addEventListener('click',()=>viewport.scrollBy({top:-380,behavior:'auto'}));
+byId('scroll-right').addEventListener('click',()=>viewport.scrollBy({top:380,behavior:'auto'}));
 graph.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
  const items=Array.from(graph.querySelectorAll('button')).filter(b=>!b.closest('[hidden]'));
  let i=items.indexOf(document.activeElement);if(i<0)return;
