@@ -321,82 +321,241 @@ def render_correspondence_input(
         ("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"),
     ),
 ) -> CorrespondenceUIResult:
-    """Compact, auditable Cayron parent→daughter rational-coordinate correspondence.
+    """Cayron 2019: paired direct vectors OR exact rational matrix, one solver C.
 
-    Only the exact C returned from this function enters the crystallographic solver.
-    The probe, inverse and optional 3D views are explanatory and read-only.
+    Mode and direction switches carry over the same exact correspondence.
+    The below direction probe always uses canonical C_(M <- A).
     """
     from .correspondence_explorer import (
         calculate_action, images_of_parent_basis, vector_text,
     )
+    from .cayron_correspondence import (
+        calculate_from_paired_vectors, parse_triplet, seed_paired_vectors,
+        plane_image, entered_matrix_from_canonical, direction_labels,
+    )
 
-    st.subheader("1 · Correspondence: which daughter coordinates match each parent direction?")
-    st.latex(r"[\mathbf u]_{B_c^{\gamma}}=C_c^{\alpha\rightarrow\gamma}[\mathbf u]_{B_c^{\alpha}}")
-    st.caption("Parent α (austenite) → daughter γ (martensite). **C maps coordinates**, "
-               "not a physical rotation, orientation relationship or deformation F.")
-    with st.expander("What exactly do the rows and columns mean?", expanded=False):
-        st.write("Each **column** tells where one parent crystal basis vector maps in daughter "
-                 "direct coordinates. Each **row** is a daughter coordinate component. "
-                 "Enter exact integers or rational fractions p/q, such as `1/2` or `-1/2`.")
-        st.write("The crystal lattice metrics are independent inputs. "
-                 "Coordinate components from different bases must not be used to infer a Cartesian angle.")
+    baseline = canonical_correspondence_rows(default_rows, direction="A_TO_M")
+    method_key = f"{prefix}_entry_method"
+    last_method_key = f"{prefix}_last_method"
+    last_direction_key = f"{prefix}_last_direction"
+    warning_key = f"{prefix}_conversion_warning"
+    methods = ("Three paired lattice vectors", "Exact rational 3 × 3 matrix")
+    directions = {"A → M": "A_TO_M", "M → A": "M_TO_A"}
+    dir_key = "correspondence_direction_choice"
 
-    baseline = tuple(tuple(str(v) for v in row) for row in default_rows)
-    keys = tuple(tuple(f"{prefix}_A_TO_M_{i}_{j}" for j in range(3)) for i in range(3))
+    def matrix_keys(direction: str):
+        return tuple(tuple(f"{prefix}_{direction}_{i}_{j}" for j in range(3)) for i in range(3))
 
-    def restore_starting_matrix() -> None:
-        # This is solely a user-requested restoration of the original INPUT preset,
-        # never a hardcoded numerical scientific answer or classification.
-        for i in range(3):
+    def paired_keys(direction: str, end: str):
+        return tuple(f"{prefix}_supercell_{direction}_{end}_{j}" for j in range(3))
+
+    def read_editor(method: str, direction: str):
+        if method == methods[1]:
+            keys = matrix_keys(direction)
+            if all(key in st.session_state for row in keys for key in row):
+                typed = [[st.session_state[key] for key in row] for row in keys]
+                return canonical_correspondence_rows(typed, direction=direction)
+        else:
+            source_keys, dest_keys = paired_keys(direction, "src"), paired_keys(direction, "dst")
+            if all(k in st.session_state for k in (*source_keys, *dest_keys)):
+                src = [parse_triplet(st.session_state[k]) for k in source_keys]
+                dst = [parse_triplet(st.session_state[k]) for k in dest_keys]
+                return calculate_from_paired_vectors(src, dst, direction=direction).canonical_M_from_A
+        return baseline
+
+    def set_editor(method: str, direction: str, canonical):
+        D = exact_matrix(entered_matrix_from_canonical(canonical, direction=direction))
+        if method == methods[1]:
+            keys = matrix_keys(direction)
+            if all(k in st.session_state for row in keys for k in row):
+                try:
+                    prior = canonical_correspondence_rows(
+                        [[st.session_state[k] for k in row] for row in keys],
+                        direction=direction,
+                    )
+                    if prior == canonical:
+                        return  # Retain exact user spellings rather than rewrite them.
+                except (ValueError, TypeError, ZeroDivisionError):
+                    pass
+            for i, row in enumerate(keys):
+                for j, key in enumerate(row):
+                    st.session_state[key] = str(D[i, j])
+        else:
+            sources = paired_keys(direction, "src")
+            destinations = paired_keys(direction, "dst")
+            if all(k in st.session_state for k in (*sources, *destinations)):
+                try:
+                    prior = calculate_from_paired_vectors(
+                        [parse_triplet(st.session_state[k]) for k in sources],
+                        [parse_triplet(st.session_state[k]) for k in destinations],
+                        direction=direction,
+                    ).canonical_M_from_A
+                    if prior == canonical:
+                        return  # Preserve the actual paired-supercell witnesses.
+                except (ValueError, TypeError, ZeroDivisionError):
+                    pass
+            source_seed, dest_seed = seed_paired_vectors(canonical, direction=direction)
+            for key, value in zip(sources, source_seed):
+                st.session_state[key] = value
+            for key, value in zip(destinations, dest_seed):
+                st.session_state[key] = value
+
+    def synchronize_editors():
+        previous_method = st.session_state.get(last_method_key, methods[0])
+        previous_direction = st.session_state.get(last_direction_key, "A_TO_M")
+        new_method = st.session_state.get(method_key, methods[0])
+        new_direction = directions.get(st.session_state.get(dir_key, "A → M"), "A_TO_M")
+        try:
+            canonical = read_editor(previous_method, previous_direction)
+            set_editor(new_method, new_direction, canonical)
+            st.session_state.pop(warning_key, None)
+        except (ValueError, TypeError, ZeroDivisionError) as exc:
+            # Do not strand the user in a fresh default editor: keep the invalid
+            # draft visible in its original direction/format so it can be fixed.
+            st.session_state[method_key] = previous_method
+            st.session_state[dir_key] = (
+                "A → M" if previous_direction == "A_TO_M" else "M → A"
+            )
+            st.session_state[warning_key] = (
+                "Cannot convert an invalid correspondence: " + str(exc)
+                + ". Correct the original entries before switching."
+            )
+
+    st.subheader("Lattice correspondence · Cayron (2019)")
+    st.caption(
+        "Direct-space correspondence: parent A directions become product M directions. "
+        "Enter three matching lattice vectors as in Cayron's supercell construction, "
+        "or enter the exact matrix directly. Both routes preserve rational arithmetic."
+    )
+    st.latex(r"\mathbf u_M=C_{A\to M}\,\mathbf u_A")
+    st.caption("This C is NOT the orientation matrix T or the distortion F. "
+               "Parent and product indices use their respective conventional crystal bases.")
+    method = st.radio(
+        "Input format", methods, horizontal=True, key=method_key,
+        on_change=synchronize_editors,
+        help="Paired vectors: Cayron (2019), Eq. (9). Matrix: exact rational components.",
+    )
+    direction_label = st.radio(
+        "Enter correspondence in direction",
+        ("A → M", "M → A"), horizontal=True, key=dir_key,
+        on_change=synchronize_editors,
+        help="Changing direction computes an exact inverse; it does not infer an orientation relationship.",
+    )
+    direction = directions[direction_label]
+    source_name, destination_name = direction_labels(direction)
+    st.caption(f"Reading order: **{source_name} → {destination_name}**. "
+               "Source is always on the left, destination on the right.")
+    st.session_state[last_method_key] = method
+    st.session_state[last_direction_key] = direction
+    if st.session_state.get(warning_key):
+        st.warning(st.session_state.pop(warning_key))
+
+    with st.expander("Read Cayron's conventions (direct and reciprocal)", expanded=False):
+        st.write("Corresponding direct lattice vectors form columns of B_source and B_destination. "
+                 "C(source → destination) = B_destination · B_source⁻¹ (Eq. 9). "
+                 "For the reverse direction, C is inverted exactly (Eq. 13). "
+                 "Miller plane covectors follow C⁻ᵀ (Eq. 11).")
+        st.caption("Integers and rational entries p/q are preferred. A typed finite decimal "
+                   "is treated as its exact base-10 fraction; 0.3333 does not mean 1/3. "
+                   "Cell parameters, atom positions and point-group settings do not determine C by themselves.")
+
+    if method == methods[0]:
+        st.markdown(f"**Three corresponding direct-space lattice vectors · {source_name} → {destination_name}**")
+        st.caption("Each row is one correspondence; entries are triplets [u,v,w] of exact integers or p/q fractions. "
+                   "Use three linearly independent vectors on each side.")
+        default_source, default_dest = seed_paired_vectors(baseline, direction=direction)
+        guides = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
+        guides[1].markdown(f"**Source · {source_name}**")
+        guides[2].markdown("**→**")
+        guides[3].markdown(f"**Destination · {destination_name}**")
+        source = []
+        destination = []
+        for j, label in enumerate(("u", "v", "w")):
+            cols = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
+            cols[0].markdown(f"**{label}**")
+            src = cols[1].text_input(
+                f"{label} in {source_name}", value=default_source[j],
+                key=paired_keys(direction, "src")[j],
+            )
+            cols[2].markdown("**→**")
+            dst = cols[3].text_input(
+                f"Corresponding {label} in {destination_name}", value=default_dest[j],
+                key=paired_keys(direction, "dst")[j],
+            )
+            source.append(src)
+            destination.append(dst)
+        try:
+            paired = calculate_from_paired_vectors(
+                [parse_triplet(v) for v in source],
+                [parse_triplet(v) for v in destination],
+                direction=direction,
+            )
+            canonical = paired.canonical_M_from_A
+        except (ValueError, TypeError, ZeroDivisionError) as exc:
+            st.error(f"Corresponding vectors cannot define C: {exc}")
+            st.stop()
+        st.latex(
+            r"C_{\mathrm{entered}}= B_{\mathrm{destination}}"
+            r"B_{\mathrm{source}}^{-1}="
+            + sp.latex(exact_matrix(paired.source_to_destination))
+        )
+        st.caption("The column vectors generate the supercell relation. They need not be the shortest "
+                   "primitive vectors; verify centering and actual crystallographic correspondence separately.")
+    else:
+        st.markdown(f"**Exact 3 × 3 correspondence · {source_name} → {destination_name}**")
+        st.caption("Read source (left) → destination (right). Each COLUMN is a "
+                   "source basis vector, with destination components in its rows. "
+                   "Use exact p/q fractions rather than rounded approximations.")
+        D_default = exact_matrix(entered_matrix_from_canonical(baseline, direction=direction))
+        headings = st.columns([0.9, 1, 1, 1])
+        for col, name in zip(headings, ("Component / axis", "a", "b", "c")):
+            col.markdown(f"**{name}**")
+        typed = []
+        for i, label in enumerate(("a", "b", "c")):
+            cols = st.columns([0.9, 1, 1, 1], gap="small")
+            cols[0].markdown(f"**{label}**")
+            row = []
             for j in range(3):
-                st.session_state[keys[i][j]] = baseline[i][j]
-
-    st.markdown("**Edit the exact 3 × 3 matrix C**")
-    st.caption("Columns: parent a, b, c → · Rows: daughter a, b, c ↓")
-    header = st.columns([0.75, 1, 1, 1], gap="small")
-    for col, title in zip(header, ("**M ↓ / A →**", "**aₐ**", "**bₐ**", "**cₐ**")):
-        with col:
-            st.markdown(title)
-    rows: list[list[str]] = []
-    for i, label in enumerate(("**aₘ**", "**bₘ**", "**cₘ**")):
-        columns = st.columns([0.75, 1, 1, 1], gap="small")
-        with columns[0]:
-            st.markdown(label)
-        row = []
-        for j in range(3):
-            with columns[j + 1]:
-                row.append(st.text_input(
-                    f"Daughter {i+1}, parent {j+1}",
-                    value=baseline[i][j],
-                    key=keys[i][j], label_visibility="collapsed",
+                row.append(cols[j + 1].text_input(
+                    f"{source_name} → {destination_name}: destination component {label}, source axis {j+1}",
+                    value=str(D_default[i, j]),
+                    key=matrix_keys(direction)[i][j], label_visibility="collapsed",
+                    max_chars=80,
                 ))
-        rows.append(row)
+            typed.append(row)
+        try:
+            canonical = canonical_correspondence_rows(typed, direction=direction)
+        except (ValueError, TypeError, ZeroDivisionError) as exc:
+            st.error(f"Exact matrix is unusable: {exc}")
+            st.stop()
 
-    # An accidental input change previously produced nine different NiTi-like
-    # modes while the user believed they were viewing the published NiTi preset.
-    # Highlight any departure from the starting correspondence without claiming
-    # that the edited matrix is necessarily scientifically invalid.
-    changed = [(i, j) for i in range(3) for j in range(3)
-               if str(rows[i][j]).strip() != baseline[i][j]]
-    if changed:
-        cells = ", ".join(f"C{i+1}{j+1}" for i, j in changed)
-        st.warning(f"**Edited correspondence ({len(changed)} entries: {cells}).** "
-                   "These results will NOT necessarily reproduce the starting published example. "
-                   "This may be intentional for a different transformation.")
-        st.button("Restore starting correspondence entries", key=f"{prefix}_restore_C",
-                  on_click=restore_starting_matrix, width="content")
+    C = exact_matrix(canonical)
+    from .numeric_domain import validate_solver_correspondence
     try:
-        canonical = canonical_correspondence_rows(rows, direction="A_TO_M")
-        C = exact_matrix(canonical)
-    except (ValueError, TypeError, ZeroDivisionError) as exc:
-        st.error(f"Correspondence is not usable: {exc}")
+        validate_solver_correspondence(C)
+    except ValueError as exc:
+        st.error(f"Unsafe numerical correspondence: {exc}")
         st.stop()
-        raise AssertionError("unreachable")
+    if canonical != baseline:
+        st.info("Correspondence differs from the starting editable example. "
+                "The calculation will use only these explicitly entered directions.")
 
-    st.caption(f"Exact rational C accepted · determinant = {C.det()} · invertible")
-    st.markdown("**Try a parent direction → see its daughter coordinates**")
+    def restore_starting_correspondence():
+        set_editor(method, direction, baseline)
+
+    if canonical != baseline:
+        st.button("Restore starting correspondence", key=f"{prefix}_restore_C",
+                  on_click=restore_starting_correspondence)
+
+    st.markdown("**Exact correspondence sent to the solver**")
+    st.latex(r"C_{A\to M}=" + sp.latex(C))
+    st.caption(f"det(C) = {C.det()} · exact rational GL(3,Q) matrix · "
+               "the reverse mapping is its exact inverse. No decimal conversion.")
+    entered_matrix = entered_matrix_from_canonical(canonical, direction=direction)
+    D = exact_matrix(entered_matrix)
+    st.markdown(f"**Interactive vector mapping · {source_name} → {destination_name}**")
     choice = st.selectbox(
-        "Parent direction",
+        f"Direction in {source_name}",
         ("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]", "Custom [u,v,w]"),
         key=f"{prefix}_probe_choice",
     )
@@ -404,25 +563,25 @@ def render_correspondence_input(
     if choice == "Custom [u,v,w]":
         fields = st.columns(3, gap="small")
         parent_vector = tuple(
-            fields[k].text_input(label, value=v, key=f"{prefix}_probe_{k}")
+            fields[k].text_input(label.replace("parent", source_name), value=v, key=f"{prefix}_probe_{k}")
             for k, (label, v) in enumerate(zip(("u (parent)", "v (parent)", "w (parent)"), ("1", "1", "0")))
         )
     else:
         parent_vector = axes[("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]").index(choice)]
 
     try:
-        action = calculate_action(canonical, parent_vector)
+        action = calculate_action(entered_matrix, parent_vector)
     except (TypeError, ValueError, ZeroDivisionError) as exc:
         st.error(f"Invalid direction: {exc}; enter rational integers or p/q fractions.")
     else:
-        st.markdown(f"**Parent {vector_text(action.parent)}  →  Daughter {vector_text(action.daughter)}**")
-        st.latex(sp.latex(C) + r"\," + sp.latex(sp.Matrix(action.parent)) + "=" + sp.latex(sp.Matrix(action.daughter)))
+        st.markdown(f"**{source_name} {vector_text(action.parent)} → {destination_name} {vector_text(action.daughter)}**")
+        st.latex(sp.latex(D) + r"\," + sp.latex(sp.Matrix(action.parent)) + "=" + sp.latex(sp.Matrix(action.daughter)))
 
         with st.expander("More coordinate mappings and optional 3D drawings", expanded=False):
-            st.caption("For the three basis axes (each vector is a COLUMN of C):")
-            actions = images_of_parent_basis(canonical)
-            for label, obj in zip(("aₐ", "bₐ", "cₐ"), actions):
-                st.write(f"{label} → daughter {vector_text(obj.daughter)}")
+            st.caption(f"For the three source axes in {source_name}, each a COLUMN of the entered matrix:")
+            actions = images_of_parent_basis(entered_matrix)
+            for label, obj in zip(("a", "b", "c"), actions):
+                st.write(f"{source_name} {label} → {destination_name} {vector_text(obj.daughter)}")
             st.caption("These components are expressed on **separate coordinate axes**. "
                        "They cannot be compared as common-frame Cartesian vectors.")
             if st.checkbox("Show 3D coordinate-space sketches", value=False,
@@ -447,24 +606,29 @@ def render_correspondence_input(
 
                 left, right = st.columns(2)
                 with left:
-                    st.caption("Parent direct-coordinate components")
+                    st.caption(f"{source_name} direct-coordinate components")
                     st.plotly_chart(arrow_figure(action.parent, "Parent"),
                                     width="stretch", key=f"{prefix}_plot_parent")
                 with right:
-                    st.caption("Daughter direct-coordinate components")
+                    st.caption(f"{destination_name} direct-coordinate components")
                     st.plotly_chart(arrow_figure(action.daughter, "Daughter"),
                                     width="stretch", key=f"{prefix}_plot_daughter")
                 st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
 
-    with st.expander("Expert details: exact C, inverse and determinant", expanded=False):
+    with st.expander("Exact matrix, inverse, determinant and plane correspondence", expanded=False):
         st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
         st.write(f"det(C) = {C.det()}")
         st.code(str(C.inv()), language="text")
-        st.caption("C.inv() is the exact reverse coordinate mapping. It is not another independently measured correspondence.")
+        st.caption("C.inv() gives the reverse DIRECT correspondence, not an independently observed OR.")
+        plane = plane_image(entered_matrix, ("1", "0", "0"))
+        st.write(f"Reciprocal plane (1,0,0) in {source_name} → ({', '.join(plane)}) in {destination_name}.")
+        st.latex(r"\mathbf h_{\mathrm{destination}}=C_{\mathrm{source}\to\mathrm{destination}}^{-T}\mathbf h_{\mathrm{source}}")
+        st.caption("This is a reciprocal covector mapping; do not transform Miller planes by direct C.")
 
-    arrow, equation = displayed_relation("A_TO_M")
+
+    arrow, equation = displayed_relation(direction)
     return CorrespondenceUIResult(
-        canonical_rows=canonical, input_direction="A_TO_M",
+        canonical_rows=canonical, input_direction=direction,
         display_arrow=arrow, display_equation=equation,
     )
 

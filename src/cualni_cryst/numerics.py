@@ -12,6 +12,7 @@ from cross-theory validation and future GUI classification.
 
 from dataclasses import dataclass
 from enum import Enum
+import math
 
 
 class ResidualClass(str, Enum):
@@ -64,7 +65,7 @@ class NumericalPolicy:
             "rank_one": self.rank_one,
             "projective_angle_deg": self.projective_angle_deg,
         }
-        bad = {name: value for name, value in values.items() if value <= 0.0}
+        bad = {name: value for name, value in values.items() if not math.isfinite(value) or value <= 0.0}
         if bad:
             raise ValueError(f"All numerical tolerances must be positive: {bad}")
 
@@ -91,12 +92,14 @@ def classify_residual(
     and report the raw residual and the exact tolerance used.
     """
 
-    if residual < 0.0:
-        raise ValueError("Residual must be non-negative")
-    if tolerance <= 0.0:
-        raise ValueError("Tolerance must be positive")
-    if near_factor <= 1.0:
-        raise ValueError("near_factor must be > 1")
+    if not math.isfinite(residual) or residual < 0.0:
+        raise ValueError("Residual must be finite and non-negative")
+    if not math.isfinite(tolerance) or tolerance <= 0.0:
+        raise ValueError("Tolerance must be finite and positive")
+    if not math.isfinite(near_factor) or near_factor <= 1.0:
+        raise ValueError("near_factor must be finite and > 1")
+    if not math.isfinite(near_factor * tolerance):
+        raise ValueError("Near-threshold product overflows the numeric domain")
 
     if residual <= tolerance:
         return ResidualClass.PASS

@@ -1,8 +1,9 @@
 """P0 rigorous screening of non-conventional martensite rank-one connections.
 
-A proper parent lattice twofold Q satisfying U_j=Q U_i Q^T is a necessary
-condition for a conventional Mallard Type-I/Type-II/Compound twin relation.
-Absence EXCLUDES conventional classification; presence does NOT certify a type.
+A parent mirror or proper twofold that maps U_i to U_j is a necessary
+symmetry witness for the conventional CT Type-I/Type-II routes respectively.
+Absence of BOTH excludes a classical parent-symmetry route; presence of either
+does NOT certify a type. A mirror is not necessarily a proper parent twofold.
 Any rank-one connection excluded by this screening remains a valid mathematical
 compatibility but must not be presented as a classical twinning mode.
 
@@ -19,7 +20,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 CONVENTIONAL = frozenset({"Type I", "Type II", "Compound"})
-NONCONVENTIONAL = "Nonconventional rank-one (parent twofold excluded)"
+NONCONVENTIONAL = "Nonconventional rank-one (parent mirror/twofold excluded)"
 
 
 def _rel(left: np.ndarray, right: np.ndarray) -> float:
@@ -36,9 +37,19 @@ class TwofoldScreen:
     mapping_twofold_indices: tuple[int, ...]
     nearest_mapping_error: float | None
     tolerance: float
+    parent_mirror_count: int = 0
+    matching_mirror_indices: tuple[int, ...] = ()
+    nearest_mirror_mapping_error: float | None = None
+    nearest_symmetry_mapping_error: float | None = None
+
+    @property
+    def conventional_symmetry_excluded(self) -> bool:
+        return not (self.mapping_twofold_indices or self.matching_mirror_indices)
 
     @property
     def conventional_twofold_excluded(self) -> bool:
+        # The name refers strictly to proper twofolds, NOT to mirrors.
+        # Use conventional_symmetry_excluded when screening classical routes.
         return not self.mapping_twofold_indices
 
 
@@ -68,8 +79,11 @@ def screen_parent_twofold(
     B = (v * np.sqrt(ev)) @ v.T
     Bi = (v * (1.0 / np.sqrt(ev))) @ v.T
     qualifying: list[int] = []
+    mirrors_matching: list[int] = []
     errors: list[float] = []
+    mirror_errors: list[float] = []
     twofolds = 0
+    mirrors = 0
     for index, operation in enumerate(parent_group):
         g = np.asarray(operation, dtype=float)
         if g.shape != (3, 3) or not np.isfinite(g).all():
@@ -79,20 +93,29 @@ def screen_parent_twofold(
         Q = B @ g @ Bi
         if _rel(Q.T @ Q, np.eye(3)) > tolerance:
             raise ValueError(f"Parent symmetry #{index} is not Cartesian-orthogonal")
-        if abs(float(np.linalg.det(Q)) - 1.0) > tolerance:
+        det = float(np.linalg.det(Q))
+        trace = float(np.trace(Q))
+        involution = _rel(Q @ Q, np.eye(3)) <= tolerance
+        proper_twofold = abs(det - 1.0) <= tolerance and abs(trace + 1.0) <= tolerance and involution
+        mirror = abs(det + 1.0) <= tolerance and abs(trace - 1.0) <= tolerance and involution
+        if not (proper_twofold or mirror):
             continue
-        if not (abs(float(np.trace(Q)) + 1.0) <= tolerance and
-                _rel(Q @ Q, np.eye(3)) <= tolerance):
-            continue
-        twofolds += 1
+        if proper_twofold:
+            twofolds += 1
+        else:
+            mirrors += 1
         error = _rel(Q @ left @ Q.T, right)
-        errors.append(error)
+        (errors if proper_twofold else mirror_errors).append(error)
         if error <= tolerance:
-            qualifying.append(index)
+            (qualifying if proper_twofold else mirrors_matching).append(index)
     return TwofoldScreen(
         operation_count=len(parent_group), proper_twofold_count=twofolds,
         mapping_twofold_indices=tuple(qualifying),
         nearest_mapping_error=min(errors, default=None), tolerance=tolerance,
+        parent_mirror_count=mirrors,
+        matching_mirror_indices=tuple(mirrors_matching),
+        nearest_mirror_mapping_error=min(mirror_errors, default=None),
+        nearest_symmetry_mapping_error=min(errors + mirror_errors, default=None),
     )
 
 
@@ -122,6 +145,27 @@ def screen_unclassified_report(
             structures = []
             for branch in pair.constructions:
                 if branch.classification in CONVENTIONAL:
+                    # Independently re-screen ALL accepted classical labels.
+                    # A wrong earlier cross-lock must never bypass the final
+                    # necessary parent mirror/twofold check.
+                    if pair.stretch_i is None or pair.stretch_j is None:
+                        raise ValueError("Classical twin lacks indexed stretch pair")
+                    if (pair.stretch_i not in stretch_variants
+                            or pair.stretch_j not in stretch_variants):
+                        raise ValueError("Classical twin has an unknown stretch index")
+                    classical_screen = screen_parent_twofold(
+                        stretch_variants[pair.stretch_i],
+                        stretch_variants[pair.stretch_j],
+                        parent_metric=parent_metric,
+                        parent_group=parent_group,
+                        tolerance=tolerance,
+                    )
+                    if classical_screen.conventional_symmetry_excluded:
+                        raise ValueError(
+                            "Classical Type I/II/Compound claim contradicts all "
+                            "available parent mirror and twofold symmetry witnesses "
+                            f"for {pair.pair_id}; do not report a verified type"
+                        )
                     conventional += 1
                     structures.append(branch)
                     continue
@@ -140,25 +184,30 @@ def screen_unclassified_report(
                 witness = {
                     "pair": pair.pair_id, "branch": branch.branch,
                     "proper_parent_twofolds_examined": screen.proper_twofold_count,
+                    "parent_mirrors_examined": screen.parent_mirror_count,
                     "parent_symmetries_examined": screen.operation_count,
                     "matching_twofold_indices": list(screen.mapping_twofold_indices),
+                    "matching_mirror_indices": list(screen.matching_mirror_indices),
                     "nearest_twofold_mapping_error": screen.nearest_mapping_error,
+                    "nearest_mirror_mapping_error": screen.nearest_mirror_mapping_error,
+                    "nearest_symmetry_mapping_error": screen.nearest_symmetry_mapping_error,
                     "tolerance": tolerance,
-                    "conclusion": "conventional_parent_twofold_excluded"
-                    if screen.conventional_twofold_excluded else
+                    "conclusion": "conventional_parent_mirror_and_twofold_excluded"
+                    if screen.conventional_symmetry_excluded else
                     "classical_type_requires_additional_cross_lock",
                 }
                 proofs.append(witness)
-                if screen.conventional_twofold_excluded:
+                if screen.conventional_symmetry_excluded:
                     nonconventional += 1
                     structures.append(replace(
                         branch, classification=NONCONVENTIONAL,
                         classification_status=(
-                            "PROVED: no proper 180-degree symmetry in the supplied "
-                            f"parent group ({screen.operation_count} operations; "
+                            "PROVED: neither a parent mirror nor a proper 180-degree "
+                            f"rotation in the supplied parent group ({screen.operation_count} "
+                            f"operations; {screen.parent_mirror_count} mirrors; "
                             f"{screen.proper_twofold_count} twofolds) maps the "
-                            "two ordered stretch variants. Consequently, the classical "
-                            "Type I/II/Compound parent-twofold prerequisite is absent. "
+                            "two ordered stretch variants. Hence no classical parent "
+                            "Type-I mirror or Type-II twofold symmetry route exists. "
                             "Rank-one compatibility remains valid; genericity and "
                             "experimental occurrence are NOT established. "
                             "Previous audit: " + branch.classification_status
@@ -168,7 +217,7 @@ def screen_unclassified_report(
                     unresolved += 1
                     structures.append(replace(
                         branch, classification_status=(
-                            "UNRESOLVED: a parent twofold maps these stretches, "
+                            "UNRESOLVED: a parent mirror and/or twofold maps these stretches, "
                             "but Type I/II/Compound geometry lacks a verified direct "
                             "cross-lock. No type inferred. Previous audit: "
                             + branch.classification_status

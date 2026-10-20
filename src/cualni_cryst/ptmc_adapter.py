@@ -157,7 +157,11 @@ class PTMCHabitSolution:
 
 @dataclass(frozen=True)
 class PTMCContinuousFamily:
-    """An exact continuum of compatible LIS parameters."""
+    """Numerical continuum candidate certified against the middle-stretch gate.
+
+    This is a tolerance-based certificate, not a symbolic polynomial identity
+    or evidence of specimen-specific experimental compatibility.
+    """
 
     lis_type: str
     base_variant_index: int
@@ -282,8 +286,8 @@ class PTMCTwinPlaneInput:
             raise ValueError("Twin plane must be a finite nonzero (hkl)")
         if self.base_variant_index is not None and self.base_variant_index < 0:
             raise ValueError("base_variant_index must be >= 0")
-        if self.plane_tolerance_deg <= 0.0:
-            raise ValueError("plane_tolerance_deg must be positive")
+        if not np.isfinite(self.plane_tolerance_deg) or self.plane_tolerance_deg <= 0.0:
+            raise ValueError("plane_tolerance_deg must be finite and positive")
 
 
 @dataclass(frozen=True)
@@ -340,9 +344,14 @@ def _validated_invertible(matrix: Array, *, name: str) -> Array:
     value = np.asarray(matrix, dtype=float)
     if value.shape != (3, 3) or not np.all(np.isfinite(value)):
         raise ValueError(f"{name} must be a finite 3x3 matrix")
-    determinant = float(np.linalg.det(value))
-    if abs(determinant) <= 1.0e-14:
+    # Invertibility is scale-relative: a well-conditioned 1e-6*I has det 1e-18.
+    largest = float(np.max(np.abs(value)))
+    if largest == 0.0:
         raise ValueError(f"{name} must be invertible")
+    singular_values = np.linalg.svd(value / largest, compute_uv=False)
+    if (not np.isfinite(singular_values).all()
+            or singular_values[-1] <= 1.0e-12 * singular_values[0]):
+        raise ValueError(f"{name} is numerically singular or ill-conditioned")
     return value
 
 
@@ -392,7 +401,7 @@ def _projective_coefficients(vector: Array, *, tolerance: float = 1.0e-14) -> Ar
 def _correspondence_array(value: Correspondence | Array) -> Array:
     if isinstance(value, Correspondence):
         return _validated_invertible(
-            np.asarray(value.C_M_from_A, dtype=float),
+            value.to_float64_checked(),
             name="correspondence",
         )
     return _validated_invertible(value, name="correspondence")
@@ -576,6 +585,94 @@ def _stable_quadratic_roots(
     return tuple(roots)
 
 
+
+def _validate_ptmc_public_controls(
+    *, dilatational_factor: float, algebraic_tolerance: float,
+    eigenvalue_tolerance: float, middle_stretch_tolerance: float,
+    polynomial_tolerance: float,
+) -> None:
+    """Fail before symmetry/eigenvalue work if any physical control is invalid."""
+    for name, value in (
+        ("dilatational_factor", dilatational_factor),
+        ("algebraic_tolerance", algebraic_tolerance),
+        ("eigenvalue_tolerance", eigenvalue_tolerance),
+        ("middle_stretch_tolerance", middle_stretch_tolerance),
+        ("polynomial_tolerance", polynomial_tolerance),
+    ):
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
+
+
+def _is_true_invariant_plane(dilatational_factor: float) -> bool:
+    """Only delta=1 describes an undilated invariant plane.
+
+    A numerically near-unit Bowles–Mackenzie plane is still dilated.
+    """
+    if not np.isfinite(dilatational_factor) or dilatational_factor <= 0.0:
+        raise ValueError("dilatational_factor must be finite and positive")
+    return float(dilatational_factor) == 1.0
+
+
+def _verify_continuum_middle_stretch(
+    base: Array,
+    increment: Array,
+    delta: float,
+    domain: tuple[float, float] | None,
+    tolerance: float,
+) -> None:
+    """Fail closed: det(F.T F-delta² I) identically zero is NOT enough.
+
+    For symmetric B=F.T F-delta² I with det(B)=0, delta is the middle
+    singular value exactly when the product of the two other eigenvalues
+    is non-positive. That product equals the second principal invariant
+    p(x)=sum of the three principal 2x2 minors of B(x). Because F(x) is
+    affine, p is a polynomial of degree <=4. Test its extrema as well as
+    interval endpoints (or its global behaviour for an unbounded domain).
+    We additionally check the physical middle singular value at each
+    extremum, so numerical interpolation cannot silently certify a wrong
+    continuum branch.
+    """
+    from numpy.polynomial import Polynomial
+
+    midpoint = 0.0 if domain is None else 0.5 * (domain[0] + domain[1])
+    scale = 1.0 if domain is None else 0.5 * (domain[1] - domain[0])
+    centered = base + midpoint * increment
+    scaled = scale * increment
+    B0 = centered.T @ centered - (delta * delta) * np.eye(3)
+    B1 = centered.T @ scaled + scaled.T @ centered
+    B2 = scaled.T @ scaled
+    if not all(np.isfinite(v).all() for v in (B0, B1, B2)):
+        raise ValueError("Continuum invariants overflow; numerical proof unavailable")
+    poly = [[Polynomial((B0[i, j], B1[i, j], B2[i, j])) for j in range(3)]
+            for i in range(3)]
+    p = (poly[0][0] * poly[1][1] - poly[0][1] * poly[1][0]
+         + poly[0][0] * poly[2][2] - poly[0][2] * poly[2][0]
+         + poly[1][1] * poly[2][2] - poly[1][2] * poly[2][1])
+    coeff = np.asarray(p.coef, dtype=float)
+    if not np.isfinite(coeff).all():
+        raise ValueError("Continuum polynomial coefficients are non-finite")
+    degree = len(coeff) - 1
+    if domain is None and degree > 0 and (degree % 2 or coeff[-1] > 0.0):
+        raise ValueError("Unbounded PTMC determinant continuum does not establish middle-stretch compatibility")
+
+    points = [0.0] if domain is None else [-1.0, 0.0, 1.0]
+    if degree > 1:
+        for root in p.deriv().roots():
+            if abs(float(np.imag(root))) > 1e-8 * max(1.0, abs(float(np.real(root)))):
+                continue
+            t = float(np.real(root))
+            if domain is None or -1.0 <= t <= 1.0:
+                points.append(t)
+    for t in points:
+        x = midpoint + scale * t
+        middle = _middle_singular_value(base + x * increment)
+        if not np.isfinite(middle) or abs(middle - delta) > tolerance:
+            raise ValueError(
+                "PTMC determinant is a continuum candidate but the middle stretch "
+                f"is not compatible at parameter {x:.9g}: lambda2={middle:.9g}, delta={delta:.9g}"
+            )
+
+
 def solve_affine_ptmc_parameters(
     F0: Array,
     rank_one_increment: Array,
@@ -607,14 +704,16 @@ def solve_affine_ptmc_parameters(
     singular_values = np.linalg.svd(increment, compute_uv=False)
     if singular_values[0] <= 1.0e-15:
         raise ValueError("rank_one_increment must be nonzero")
-    if max(float(singular_values[1]), float(singular_values[2])) > (
-        1.0e-9 * max(float(singular_values[0]), 1.0)
-    ):
+    # Compare singular values RELATIVE to the increment's own scale.
+    # max(sigma_1, 1) would incorrectly accept a 1e-10*I full-rank
+    # increment as rank one, invalidating the quadratic PTMC assumption.
+    if float(singular_values[1]) > 1.0e-9 * float(singular_values[0]):
         raise ValueError("rank_one_increment must have numerical rank one")
     if dilatational_factor <= 0.0 or not np.isfinite(dilatational_factor):
         raise ValueError("dilatational_factor must be finite and positive")
-    if polynomial_tolerance <= 0.0 or middle_stretch_tolerance <= 0.0:
-        raise ValueError("PTMC numerical tolerances must be positive")
+    if (not np.isfinite(polynomial_tolerance) or polynomial_tolerance <= 0.0
+            or not np.isfinite(middle_stretch_tolerance) or middle_stretch_tolerance <= 0.0):
+        raise ValueError("PTMC numerical tolerances must be finite and positive")
     if domain is not None:
         lower, upper = map(float, domain)
         if not np.isfinite(lower) or not np.isfinite(upper) or lower > upper:
@@ -660,6 +759,10 @@ def solve_affine_ptmc_parameters(
     continuum = max(abs(c0), abs(c1), abs(c2)) <= (
         polynomial_tolerance * coefficient_scale
     )
+    if continuum:
+        _verify_continuum_middle_stretch(
+            base, increment, dilatational_factor, domain, middle_stretch_tolerance
+        )
     roots: list[float] = []
     if not continuum:
         for root in _stable_quadratic_roots(
@@ -1038,8 +1141,9 @@ def _habit_solution_from_predeformation(
                 parameter_value=float(parameter_value),
                 habit_branch=habit.branch,
                 dilatational_factor=float(dilatational_factor),
-                true_invariant_plane=abs(dilatational_factor - 1.0)
-                <= eigenvalue_tolerance,
+                # A uniformly dilated plane is NOT literally invariant when
+                # delta differs from one, however small the difference.
+                true_invariant_plane=_is_true_invariant_plane(dilatational_factor),
                 pre_shape_deformation=np.asarray(F_pre, dtype=float),
                 habit_rotation=habit.rotation,
                 macroscopic_deformation=shape_deformation,
@@ -1083,8 +1187,9 @@ def _base_notes() -> tuple[str, ...]:
             "correspondence; only the lattice-invariant-shear specification is PTMC-specific."
         ),
         (
-            "All discrete single-shear roots are retained. Exact continuum compatibility is "
-            "reported as a continuum family and is never replaced by an arbitrary sample."
+            "All discrete single-shear roots are retained. A tolerance-supported "
+            "continuum candidate is checked against the middle-stretch condition; "
+            "it is not a symbolic proof of exact compatibility."
         ),
         "No rounded experimental state is silently projected to exact compatibility.",
         (
@@ -1198,8 +1303,13 @@ def analyze_ptmc_twinning(
 
     if twin_plane is not None and twin_pair is not None:
         raise ValueError("Supply at most one of twin_plane or twin_pair")
-    if dilatational_factor <= 0.0:
-        raise ValueError("dilatational_factor must be positive")
+    _validate_ptmc_public_controls(
+        dilatational_factor=dilatational_factor,
+        algebraic_tolerance=algebraic_tolerance,
+        eigenvalue_tolerance=eigenvalue_tolerance,
+        middle_stretch_tolerance=middle_stretch_tolerance,
+        polynomial_tolerance=polynomial_tolerance,
+    )
 
     parent_metric = parent_lattice.metric()
     product_metric = product_lattice.metric()
@@ -1341,8 +1451,10 @@ def analyze_ptmc_twinning(
                         roots.polynomial_verification_residual
                     ),
                     note=(
-                        "Every fraction in [0,1] satisfies the determinant condition. "
-                        "This continuum is not replaced by a finite arbitrary sample."
+                        "Over [0,1], the determinant polynomial is within the "
+                        "stated numerical tolerance and the middle stretch passes "
+                        "the polynomial-extremum screening. This is a numerical "
+                        "continuum candidate, not exact algebraic or experimental proof."
                     ),
                 )
             )
@@ -1410,6 +1522,13 @@ def analyze_ptmc_slip(
 ) -> PTMCReport:
     """Enumerate classical slip-PTMC solutions for the supplied product slip system."""
 
+    _validate_ptmc_public_controls(
+        dilatational_factor=dilatational_factor,
+        algebraic_tolerance=algebraic_tolerance,
+        eigenvalue_tolerance=eigenvalue_tolerance,
+        middle_stretch_tolerance=middle_stretch_tolerance,
+        polynomial_tolerance=polynomial_tolerance,
+    )
     parent_metric = parent_lattice.metric()
     product_metric = product_lattice.metric()
     parent_symmetry = _validated_operations(
@@ -1506,9 +1625,10 @@ def analyze_ptmc_slip(
                         roots.polynomial_verification_residual
                     ),
                     note=(
-                        "The determinant condition is identically satisfied over the "
-                        "requested slip-shear domain. The family is not sampled as if "
-                        "the samples were exhaustive."
+                        "The determinant condition is satisfied numerically within "
+                        "the stated tolerance over the requested shear domain, and "
+                        "middle-stretch extrema have been screened. Do not interpret "
+                        "the continuum flag as symbolic or experimental proof."
                     ),
                 )
             )

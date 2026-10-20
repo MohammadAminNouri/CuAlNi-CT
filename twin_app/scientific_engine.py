@@ -869,8 +869,11 @@ def build_twin_family_report(
 
     loaded = project_from_dict(dict(project_payload), source="twin_family_app")
     project = loaded.project
-    project.validate().assert_passed()
     transformation = project.transformation(transformation_id)
+    # Exact rational invertibility is insufficient to certify binary64 calculations.
+    from .numeric_domain import validate_solver_correspondence
+    validate_solver_correspondence(transformation.correspondence.C_M_from_A)
+    project.validate().assert_passed()
     parent = project.phase(transformation.parent_phase_id)
     product = project.phase(transformation.product_phase_id)
     policy = project.numerical_policy

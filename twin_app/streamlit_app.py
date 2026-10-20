@@ -131,6 +131,13 @@ def _load_niti_example() -> None:
         for label, value in zip(("a", "b", "c", "alpha", "beta", "gamma"), lattice):
             st.session_state[f"{role}_{label}"] = value
     st.session_state["correspondence_direction_choice"] = "A → M"
+    # Keep both exact correspondence entry methods in sync with the restored NiTi INPUT.
+    from twin_app.cayron_correspondence import seed_paired_vectors
+    source_vectors, destination_vectors = seed_paired_vectors(NITI_CORRESPONDENCE, direction="A_TO_M")
+    for j in range(3):
+        st.session_state[f"correspondence_supercell_A_TO_M_src_{j}"] = source_vectors[j]
+        st.session_state[f"correspondence_supercell_A_TO_M_dst_{j}"] = destination_vectors[j]
+    st.session_state["correspondence_last_direction"] = "A_TO_M"
     for i, row in enumerate(NITI_CORRESPONDENCE):
         for j, value in enumerate(row):
             st.session_state[f"correspondence_A_TO_M_{i}_{j}"] = value

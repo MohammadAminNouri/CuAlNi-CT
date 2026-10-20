@@ -764,8 +764,8 @@ def _phase_payload(
         "cell": _cell_payload(cell_text, unit),
         "point_group": point_group,
         "provenance": {
-            "status": DataStatus.USER_MEASURED.value,
-            "notes": "Created by cualni-project create-pair; review provenance.",
+            "status": DataStatus.UNVERIFIED.value,
+            "notes": "User-entered only; no independent measurement or phase identity verified.",
         },
     }
 
@@ -792,7 +792,7 @@ def generic_template() -> dict[str, object]:
                     "length_unit": "angstrom",
                 },
                 "point_group": "m-3m",
-                "provenance": {"status": "USER_MEASURED"},
+                "provenance": {"status": "UNVERIFIED"},
             },
             {
                 "phase_id": "phase_B",
@@ -810,7 +810,7 @@ def generic_template() -> dict[str, object]:
                     "length_unit": "angstrom",
                 },
                 "point_group": "2/m",
-                "provenance": {"status": "USER_MEASURED"},
+                "provenance": {"status": "UNVERIFIED"},
             },
         ],
         "transformations": [],

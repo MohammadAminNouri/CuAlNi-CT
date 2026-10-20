@@ -64,9 +64,14 @@ def _validated_invertible(matrix: Array, *, name: str) -> Array:
     value = np.asarray(matrix, dtype=float)
     if value.shape != (3, 3) or not np.all(np.isfinite(value)):
         raise ValueError(f"{name} must be a finite 3x3 matrix")
-    determinant = float(np.linalg.det(value))
-    if abs(determinant) <= 1.0e-14:
+    # Invertibility is scale-relative: a well-conditioned 1e-6*I has det 1e-18.
+    largest = float(np.max(np.abs(value)))
+    if largest == 0.0:
         raise ValueError(f"{name} must be invertible")
+    singular_values = np.linalg.svd(value / largest, compute_uv=False)
+    if (not np.isfinite(singular_values).all()
+            or singular_values[-1] <= 1.0e-12 * singular_values[0]):
+        raise ValueError(f"{name} is numerically singular or ill-conditioned")
     return value
 
 
@@ -530,8 +535,8 @@ def evaluate_cofactor_conditions(
     paper.  The abstract contains an inconsistent plus sign and is not used.
     """
 
-    if tolerance <= 0.0:
-        raise ValueError("tolerance must be positive")
+    if not np.isfinite(tolerance) or tolerance <= 0.0:
+        raise ValueError("tolerance must be finite and positive")
     if fraction_samples < 2:
         raise ValueError("fraction_samples must be >= 2")
 
@@ -730,8 +735,8 @@ def analyze_ball_james(
         "rank_one_tolerance": rank_one_tolerance,
         "cofactor_tolerance": cofactor_tolerance,
     }.items():
-        if value <= 0.0:
-            raise ValueError(f"{name} must be positive")
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
 
     parent = _validated_spd(M_a, name="M_a")
     product = _validated_spd(M_m, name="M_m")
@@ -962,7 +967,7 @@ class BallJamesCrystalInput:
     @staticmethod
     def _correspondence_array(value: Correspondence | Array) -> Array:
         if isinstance(value, Correspondence):
-            return np.asarray(value.C_M_from_A, dtype=float)
+            return value.to_float64_checked()
         return _validated_invertible(value, name="correspondence")
 
     @staticmethod
@@ -1089,7 +1094,7 @@ class BallJamesAdapter:
         proper_product = sum(
             float(np.linalg.det(operation)) > 0.0 for operation in product_symmetry
         )
-        C = np.asarray(self.transformation.correspondence.C_M_from_A, dtype=float)
+        C = self.transformation.correspondence.to_float64_checked()
         return analyze_ball_james(
             self.parent.lattice.metric(),
             self.product.lattice.metric(),

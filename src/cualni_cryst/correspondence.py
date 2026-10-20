@@ -92,8 +92,50 @@ class Correspondence:
     def map_plane_m_to_a(self, p_m) -> sp.Matrix:
         return self.map_plane_M_to_A(p_m)
 
+    def to_float64_checked(self, *, maximum_condition: float = 1.0e12) -> np.ndarray:
+        """Fail closed before exact rational C enters a floating numerical solver.
+
+        Pure symbolic group theory still permits any invertible exact C. This
+        numerical gate neither proves lattice-node nor experimental validity.
+        """
+        if not np.isfinite(maximum_condition) or maximum_condition < 1.0:
+            raise ValueError("maximum_condition must be finite and >= 1")
+        exact = self.C_M_from_A
+        try:
+            matrix = np.asarray(exact, dtype=np.float64)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise ValueError("Exact correspondence cannot be represented in binary64") from exc
+        if not np.isfinite(matrix).all():
+            raise ValueError("Exact correspondence overflows binary64")
+        for i in range(3):
+            for j in range(3):
+                if exact[i, j] != 0 and matrix[i, j] == 0:
+                    raise ValueError(f"Correspondence[{i+1},{j+1}] underflows to zero in binary64")
+                if exact[i, j] != 0:
+                    # Nonzero subnormal coefficients can lose multiple digits
+                    # without underflowing all the way to zero.
+                    as_exact_float = sp.Rational(*float(matrix[i, j]).as_integer_ratio())
+                    relative_loss = abs((as_exact_float - exact[i, j]) / exact[i, j])
+                    if relative_loss > sp.Rational(1, 10**12):
+                        raise ValueError(
+                            f"Correspondence[{i+1},{j+1}] loses too much precision in binary64"
+                        )
+        scale = float(np.max(np.abs(matrix)))
+        if scale == 0.0 or scale > 1.0e100 or scale < 1.0e-100:
+            raise ValueError("Correspondence magnitude is outside stable numerical range")
+        try:
+            singular_values = np.linalg.svd(matrix / scale, compute_uv=False)
+        except np.linalg.LinAlgError as exc:
+            raise ValueError("Correspondence singular values could not be computed") from exc
+        if not np.isfinite(singular_values).all() or singular_values[-1] <= 0:
+            raise ValueError("Exact correspondence became numerically singular")
+        condition = float(singular_values[0] / singular_values[-1])
+        if not np.isfinite(condition) or condition > maximum_condition:
+            raise ValueError(f"Correspondence ill-conditioned ({condition:.3g}); higher precision required")
+        return matrix
+
     def pullback_product_metric(self, M_m: np.ndarray) -> np.ndarray:
-        C = np.array(self.C_m_from_a, dtype=float)
+        C = self.to_float64_checked()
         return C.T @ np.asarray(M_m, dtype=float) @ C
 
     def intercorrespondence_from_parent_symmetry(self, g_a: sp.Matrix) -> sp.Matrix:
