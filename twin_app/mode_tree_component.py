@@ -67,7 +67,7 @@ def build_tree_model(modes: tuple[ModeSummary, ...]) -> dict[str, Any]:
             "pairs": int(mode.symmetry_pairs),
             "types": types,
         })
-    return {"root": "Austenite A → Martensite M", "modes": output}
+    return {"root": "Parent crystal → Product crystal", "modes": output}
 
 
 def allowed_selections(model: dict[str, Any]) -> set[tuple[str, str]]:
