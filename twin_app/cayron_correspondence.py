@@ -99,9 +99,9 @@ def entered_matrix_from_canonical(
 def direction_labels(direction: str) -> tuple[str, str]:
     """Left-side source and right-side destination for both directions."""
     if direction == "A_TO_M":
-        return "Parent A", "Product M"
+        return "Parent crystal", "Product crystal"
     if direction == "M_TO_A":
-        return "Product M", "Parent A"
+        return "Product crystal", "Parent crystal"
     raise ValueError("Direction must be A_TO_M or M_TO_A")
 
 
