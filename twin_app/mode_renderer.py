@@ -147,9 +147,10 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
         "not distinct measured twin interfaces."
     )
     st.caption(
-        f"{len(view.visible_modes)} verified modes · {catalogue.mapped_stretch_count} stretch variants · "
-        f"{len(catalogue.incompatible_pair_orbits)} incompatible pair orbits. "
-        f"{view.unresolved_record_count} unresolved source records are available in the scientific audit."
+        f"{len(view.visible_modes)} calculated twinning modes · "
+        f"{catalogue.mapped_stretch_count} distinct stretch variants. "
+        "Unclassified records and incompatible symmetry orbits are retained "
+        "in the expandable scientific audit."
     )
     if not view.visible_modes:
         st.info("No Type I, Type II or Compound twinning mode supported by direct cross-lock "
