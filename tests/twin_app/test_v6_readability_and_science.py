@@ -59,7 +59,8 @@ def test_point_group_meaning_immediately_below_selection_is_metric_validated():
     assert "selected_group_explanation = st.container()" in source
     assert "with selected_group_explanation:" in source
     assert "build_symmetry_inventory(point_group, lattice.metric())" in source
-    assert "Verified contents:" in source
+    assert "Exact group order:" in source
+    assert "NOT whether the specimen\'s atoms actually possess this point group" in source
     assert "_coordinate_rule(op.matrix)" in source
     assert len(POINT_GROUP_SIGNATURES) == len(POINT_GROUP_SHORT_NAMES) == 32
 
