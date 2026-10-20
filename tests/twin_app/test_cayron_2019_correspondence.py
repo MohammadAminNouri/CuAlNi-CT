@@ -29,7 +29,10 @@ def test_cayron_three_pairs_generate_niti_exactly_no_floating_rounding():
     )
     assert value.canonical_M_from_A == NITI
     assert value.source_columns == (("2", "0", "0"), ("0", "2", "0"), ("0", "0", "2"))
-    assert value.destination_columns == (("0", "1", "-1"), ("0", "1", "1"), ("2", "0", "0"))
+    # PairedSupercell.source_columns/destination_columns store MATRIX ROWS.
+    # The UI text-input pairs are separately column triplets; Q=C*P exactly.
+    assert value.destination_columns == (("0", "0", "2"), ("1", "1", "0"), ("-1", "1", "0"))
+    assert exact_matrix(value.destination_columns) == exact_matrix(NITI) * exact_matrix(value.source_columns)
     assert preview_correspondence(value.canonical_M_from_A, direction="A_TO_M").determinant == "1/2"
 
 
