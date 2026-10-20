@@ -141,4 +141,5 @@ def test_blind_2024_correspondence_and_metric_stretch_agree_with_f_and_volume():
     assert product_a == sp.Matrix([1, 0, 0])
     parent_plane = sp.Matrix([1, 1, 0])
     product_plane = correspondence.map_plane_A_to_M(parent_plane)
-    assert sp.simplify(product_plane.dot(product_a)) == 0 if parent_plane.dot(parent_a) == 0 else True
+    assert parent_plane.dot(parent_a) == 0
+    assert sp.simplify(product_plane.dot(product_a)) == 0
