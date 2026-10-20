@@ -249,6 +249,15 @@
     "The source table states that vector comparisons are made up to cubic symmetry.",
     "Rounded source values justify the declared tolerances."
   ],
+  "reference_vector_semantics_audit_2026": {
+    "status": "UNRESOLVED_LEGACY_VECTOR_NORMALIZATION",
+    "affected_entry": "expected.habit_outer_products Type II shear~0.2804 second branch b",
+    "recorded_b_norm_approx": 1.0000031136,
+    "interpretation": "This vector is unit-direction-like, not demonstrably the physical shape vector b in I + b tensor m. Original fixture is preserved verbatim.",
+    "action": "Do not use this ambiguous vector as a physically scaled b oracle. Compare physical shape magnitude and direction using the separately hash-locked Otsuka_Ren_2005_NiTi_TypeII fixture.",
+    "primary_table_checked": false,
+    "source_correction_claimed": false
+  },
   "lock": {
     "algorithm": "sha256(canonical-json; sort_keys=true; separators=(',',':'))",
     "input_sha256": "d9eda9604583115ca7707b89391a0287549de1270005a605eb569171dddc1bd1",
