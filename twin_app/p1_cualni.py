@@ -97,6 +97,47 @@ def reduced_gamma_to_unique_b(cell)->dict:
             "warning":"This is a BASIS CONVERSION, not a proof that two experimentally reported phases/cells are identical. Transform C and all symmetries coherently."}
 
 
+
+def transport_reduced_gamma_correspondence(correspondence_M_from_A):
+    """Exact C re-indexing when gamma-angle reduced 6M is rebased to unique-b.
+
+    If daughter direct coordinates change as u_old = P u_new with the
+    unimodular GAMMA_TO_UNIQUE_B basis P, then the solver needs
+    C_(new M <- A) = P^-1 C_(old M <- A).
+
+    A cell-setting rebase is NOT a 6M-to-conventional-18R phase or
+    superstructure identification. No correspondence can be inferred
+    from metrics or stacking labels; a measured C must be supplied.
+    """
+    if correspondence_M_from_A is None:
+        raise CrystalInputError(
+            "A documented gamma-setting correspondence is required; "
+            "lattice metrics cannot determine C or 6M/18R equivalence"
+        )
+    try:
+        rows = list(correspondence_M_from_A)
+        if len(rows) != 3 or any(len(row) != 3 for row in rows):
+            raise ValueError("expected exactly 3x3")
+        C_old = sp.Matrix([
+            [sp.Rational(str(value)) for value in row] for row in rows
+        ])
+        if C_old.det() == 0:
+            raise ValueError("singular correspondence")
+    except (TypeError, ValueError, ZeroDivisionError, sp.SympifyError) as exc:
+        raise CrystalInputError(
+            "Source gamma-setting C must be an invertible exact rational 3x3 matrix"
+        ) from exc
+    P = GAMMA_TO_UNIQUE_B
+    if P.det() != 1:
+        raise AssertionError("Unexpected nonunimodular gamma-to-unique-b basis")
+    C_new = P.inv() * C_old
+    if P * C_new != C_old:
+        raise AssertionError("Exact daughter correspondence transport failed")
+    return tuple(
+        tuple(str(C_new[i, j]) for j in range(3))
+        for i in range(3)
+    )
+
 def _validate_point_group(cell,group,phase):
     a,b,c,al,be,ga=cell
     if group=="mmm":
