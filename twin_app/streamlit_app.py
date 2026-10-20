@@ -521,11 +521,15 @@ def main() -> None:
             st.warning("Stored report predates the physical-mode catalogue; recalculate to validate mode mapping.")
             return
         st.markdown("### Calculated inventory")
-        summary_a, summary_b, summary_c = st.columns(3)
-        summary_a.metric("Twinning-mode orbits", len(catalogue.modes))
+        summary_a, summary_b = st.columns(2)
+        summary_a.metric("Calculated twinning modes", len(catalogue.modes))
         summary_b.metric("Distinct stretch variants", catalogue.mapped_stretch_count)
-        summary_c.metric("Non-twinning pair orbits", len(catalogue.incompatible_pair_orbits))
-        st.caption("Each mode is one parent-symmetry orbit of unordered stretch-variant pairs. Source families and individual correspondence records remain in the scientific audit. Counts are calculated, not loaded from published answers.")
+        st.caption(
+            "Modes group symmetry-related compatible variant pairs. Their names "
+            "are navigation labels, not experimentally assigned twin systems. "
+            "Individual pairs, incompatible orbits and source records are "
+            "available in the scientific audit below."
+        )
         st.warning("Numerical compatibility is not experimental validation of the entered transformation. Independent specimen-specific phase, correspondence, orientation and interface measurements are required.")
         render_mode_report(catalogue, report)
         from twin_app.p1_ui import render_p1_symmetry_orbit_panel
