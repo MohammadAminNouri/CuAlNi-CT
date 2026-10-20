@@ -28,7 +28,8 @@ def test_cayron_three_pairs_generate_niti_exactly_no_floating_rounding():
         direction="A_TO_M",
     )
     assert value.canonical_M_from_A == NITI
-    assert value.source_columns == (("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"))
+    assert value.source_columns == (("2", "0", "0"), ("0", "2", "0"), ("0", "0", "2"))
+    assert value.destination_columns == (("0", "1", "-1"), ("0", "1", "1"), ("2", "0", "0"))
     assert preview_correspondence(value.canonical_M_from_A, direction="A_TO_M").determinant == "1/2"
 
 
