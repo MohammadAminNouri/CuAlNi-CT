@@ -462,16 +462,16 @@ def render_correspondence_input(
     if method == methods[0]:
         st.markdown(f"**Three corresponding direct-space lattice vectors · {source_name} → {destination_name}**")
         st.caption("Each pair gives the source and destination components of one direct lattice vector. "
-                   "Use three linearly independent source vectors with exact fractional components.")
+                   "Use independent vectors in exact integer/fraction notation, in the basis of each crystal.")
         default_source, default_dest = seed_paired_vectors(baseline, direction=direction)
-        guides = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
+        guides = st.columns([0.85, 2.6, 0.4, 2.6], gap="small")
         guides[1].markdown(f"**Source · {source_name}**")
         guides[2].markdown("**→**")
         guides[3].markdown(f"**Destination · {destination_name}**")
         source = []
         destination = []
         for j, label in enumerate(("Pair 1", "Pair 2", "Pair 3")):
-            cols = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
+            cols = st.columns([0.85, 2.6, 0.4, 2.6], gap="small")
             cols[0].markdown(f"**{label}**")
             src = cols[1].text_input(
                 f"{label} in {source_name}", value=default_source[j],
@@ -499,8 +499,8 @@ def render_correspondence_input(
             r"B_{\mathrm{source}}^{-1}="
             + sp.latex(exact_matrix(paired.source_to_destination))
         )
-        st.caption("The column vectors generate the supercell relation. They need not be the shortest "
-                   "primitive vectors; verify centering and actual crystallographic correspondence separately.")
+        st.caption("The initial integer pairs are algebraically generated, not experimentally observed. "
+                   "Verify cell settings, centering and physical correspondence before using the predictions.")
     else:
         st.markdown(f"**Exact 3 × 3 correspondence · {source_name} → {destination_name}**")
         st.caption("Read source (left) → destination (right). Each COLUMN is a "
