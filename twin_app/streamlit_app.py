@@ -160,6 +160,25 @@ def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     .stApp [data-testid="stAlert"] {{
       border-color:var(--tf-border);
     }}
+    /* The built-in dark Streamlit theme does not automatically switch with our
+       in-app light control. Keep formulas and ordinary widget controls legible. */
+    [data-testid="stHeader"] {{background:var(--tf-bg) !important;}}
+    .stApp .katex,.stApp .katex * {{color:var(--tf-fg) !important;}}
+    .stApp [data-testid="stButton"] button,
+    .stApp [data-testid="stDownloadButton"] button {{
+      color:var(--tf-fg) !important;
+      background:var(--tf-surface) !important;
+      border-color:var(--tf-border) !important;
+    }}
+    .stApp [data-testid="stButton"] button:hover,
+    .stApp [data-testid="stDownloadButton"] button:hover {{
+      border-color:var(--tf-accent) !important;
+    }}
+    .stApp [data-testid="stRadio"] label span,
+    .stApp [data-testid="stCheckbox"] label span,
+    .stApp [data-testid="stSelectbox"] label span {{
+      color:var(--tf-fg) !important;
+    }}
     [data-baseweb="popover"],[role="listbox"] {{
       background:var(--tf-field) !important; color:var(--tf-fg) !important;
     }}
