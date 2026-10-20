@@ -45,7 +45,10 @@ def _vectors_as_columns(M):
 
 
 def test_cayron_2022_exact_supercell_directions_and_reciprocal_planes():
-    # Cayron's printed inter-correspondence matrix is the authoritative input.\n    # Applying that matrix gives [-1, 1, -2] for [3, 0, -1]; a prose\n    # transcription showing [-1, -1, -2] is inconsistent with this matrix.\n    # Do not change the expected result to make it match that printed sign.
+    # Cayron's printed inter-correspondence matrix is the authoritative input.
+    # Applying that matrix gives [-1, 1, -2] for [3, 0, -1]; a prose
+    # transcription showing [-1, -1, -2] is inconsistent with this matrix.
+    # Do not change the expected result to make it match that printed sign.
     C = PUBLISHED_C_INT
     assert C.det() == 1
     assert C * AXIS == AXIS
