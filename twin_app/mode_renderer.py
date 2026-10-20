@@ -209,10 +209,9 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     st.divider()
     st.markdown(f"### {selected_mode.display_name} → {twin_type.label} · full numerical result")
     st.caption(
-        f"Physical shear of this mode ≈ {_value(selected_mode.shear, 8)}. "
-        f"{twin_type.stretch_couples} of {selected_mode.symmetry_pairs} unordered "
-        "stretch-variant pairs in this symmetry orbit have this verified classification. "
-        "These are symmetry-related calculated pairs, not that many separately observed twins."
+        f"Calculated twin shear magnitude: s = {_value(selected_mode.shear, 8)}. "
+        "The displayed type refers to the selected mode; inspect the geometry and "
+        "independent classification evidence below."
     )
     # Verify the numerator against the actual U_i–U_j identities at presentation
     # time. Different twin types may classify overlapping pairs, so never sum
@@ -223,13 +222,22 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     }))
     if len(unique_pairs) != twin_type.stretch_couples:
         raise ValueError("Selected type pair count disagrees with calculated U-pair identities")
-    with st.expander("Which stretch-variant pairs are counted? (U indices)", expanded=False):
+    with st.expander("Scientific audit: which variant pairs belong to this mode?", expanded=False):
+        st.markdown(
+            f"**{twin_type.stretch_couples} of {selected_mode.symmetry_pairs} pairs** "
+            f"in {selected_mode.display_name} have a supported {twin_type.label} classification."
+        )
         st.write(
-            "Each U index denotes one calculated stretch tensor. A pair Uᵢ–Uⱼ "
-            "is unordered, so U₁–U₂ and U₂–U₁ are the same pair. "
-            "The denominator is the complete parent-symmetry orbit; "
-            "the numerator counts pairs with this particular verified twin type. "
-            "Different types can describe the same pair."
+            "A stretch variant Uᵢ is one calculated positive-definite transformation "
+            "stretch tensor. A pair Uᵢ–Uⱼ represents two distinct stretch variants "
+            "being compared for compatibility. The two orders Uᵢ–Uⱼ and Uⱼ–Uᵢ "
+            "count once. Applying parent point-group symmetry generates an orbit "
+            "of equivalent unordered pairs. Its size is the denominator. "
+            "The numerator counts pairs whose indicated Type I, Type II, or "
+            "Compound classification is independently cross-checked or rigorously "
+            "transported by symmetry. A pair may carry more than one classification; "
+            "therefore counts across Type I and Type II must not be added. "
+            "These are neither measured twins nor distinct physical samples."
         )
         st.code(
             "  ·  ".join(f"U{a}–U{b}" for a, b in unique_pairs),
@@ -243,9 +251,9 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
         )
     if twin_type.stretch_couples < selected_mode.symmetry_pairs:
         st.warning(
-            f"Incomplete symmetry-orbit classification: {twin_type.label} has direct or symmetry-transport evidence "
-            f"for {twin_type.stretch_couples} of {selected_mode.symmetry_pairs} pairs. "
-            "This does not classify the remaining pairs; see scientific audit."
+            f"Some symmetry-related pairs have no verified {twin_type.label} classification. "
+            "The remaining pairs are unclassified for this type, not necessarily "
+            "incompatible or untwinnable; inspect the audit before drawing conclusions."
         )
     entry = _select_source(selected_mode, twin_type)
     twin, pair = entry.construction, entry.pair
