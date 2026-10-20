@@ -87,7 +87,7 @@ function updateSelection(mode,type,notify){
  jump.value=mode;
  graph.querySelectorAll('.mode-col').forEach(column=>{const chosen=column.dataset.mode===mode;column.dataset.chosen=String(chosen);column.querySelector('.mode-head').setAttribute('aria-pressed',String(chosen));column.querySelectorAll('.type').forEach(node=>node.setAttribute('aria-pressed',String(chosen&&node.dataset.type===type)));});
  const path=byId('selected-path');path.replaceChildren();path.append(el('strong','',found.label),el('span','arrow','→'));
- const term=found.types.find(t=>t.id===type);const leaf=el('span','path-type',term.label);leaf.style.setProperty('--path',({'Type I':'var(--i)','Type II':'var(--ii)','Compound':'var(--compound)'})[type]);path.append(leaf,el('span','arrow','→'),el('span','',`${term.verifiedPairs} of ${term.totalPairs} related variant pairs · s = ${found.shear} · K₁, η₁ and habits below`));
+ const term=found.types.find(t=>t.id===type);const leaf=el('span','path-type',term.label);leaf.style.setProperty('--path',({'Type I':'var(--i)','Type II':'var(--ii)','Compound':'var(--compound)'})[type]);path.append(leaf,el('span','arrow','→'),el('span','',`s = ${found.shear} · K₁, η₁ and habit-plane results below`));
  byId('announce').textContent=`Selected ${found.label}, ${type}. The calculated interface and habit solutions are shown below the tree.`;
  if(notify)send('streamlit:setComponentValue',{dataType:'json',value:{mode,type}});
 }
@@ -101,12 +101,12 @@ function render(){
    const opt=el('option','',`${mode.label} · s=${mode.shear}`);opt.value=mode.id;jump.append(opt);
    const column=el('section','mode-col');column.dataset.mode=mode.id;column.setAttribute('aria-label',`${mode.label}, ${mode.types.length} verified twin types`);
    const head=el('button','mode-head');head.type='button';head.setAttribute('aria-label',`Select ${mode.label}; shear ${mode.shear}`);
-   head.append(el('strong','',mode.label),el('small','',`s = ${mode.shear} · ${mode.pairs} stretch-variant pairs in orbit`));
+   head.append(el('strong','',mode.label),el('small','',`Twin shear · s = ${mode.shear}`));
    head.addEventListener('click',()=>choose(mode.id,mode.types[0].id));column.append(head);
    column.append(el('div','type-stem'));const fork=el('div','type-fork');fork.dataset.count=String(mode.types.length);
    for(const t of mode.types){const b=el('button','type');b.type='button';b.dataset.type=t.id;b.dataset.kind=t.id;
-     b.setAttribute('aria-label',`${mode.label}: ${t.label}. Classified ${t.verifiedPairs} of ${t.totalPairs} unordered stretch-variant pairs in this symmetry orbit; not ${t.verifiedPairs} independent experimental twins. ${t.hasHabit?'Compatible A/M habits calculated':'No discrete A/M habit for this branch'}.`);
-     b.append(el('strong','',t.label),el('small','',`${t.verifiedPairs} of ${t.totalPairs} variant pairs`));
+     b.setAttribute('aria-label',`${mode.label}: ${t.label}. ${t.hasHabit?'Compatible habit solutions available':'No discrete habit plane computed'}. Select to inspect exact twin-plane, shear and provenance results.`);
+     b.append(el('strong','',t.label));
      b.addEventListener('click',()=>choose(mode.id,t.id));fork.append(b);
    }
    column.append(fork);graph.append(column);
