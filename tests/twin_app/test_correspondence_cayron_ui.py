@@ -28,7 +28,7 @@ def test_exact_cayron_ui_has_two_routes_and_left_to_right_arrows():
     source = inspect.getsource(render_correspondence_input)
     assert "Three paired lattice vectors" in source
     assert "Exact rational 3 × 3 matrix" in source
-    assert "A → M" in source and "M → A" in source
+    assert "Parent crystal → Product crystal" in source and "Product crystal → Parent crystal" in source
     assert "calculate_from_paired_vectors" in source
     assert "calculate_action(entered_matrix, parent_vector)" in source
     assert "entered_matrix_from_canonical(canonical, direction=direction)" in source
