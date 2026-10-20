@@ -27,11 +27,15 @@ def test_only_verified_types_and_partial_coverage_remain_explicit():
     src = (ROOT/'twin_app'/'mode_renderer.py').read_text()
     widget = (ROOT/'twin_app'/'mode_tree_component.py').read_text()
     frontend = (ROOT/'twin_app'/'mode_tree_frontend/index.html').read_text()
-    assert 'Incomplete symmetry-orbit classification' in src
+    assert 'Some symmetry-related pairs have no verified' in src
+    assert '{twin_type.stretch_couples} of {selected_mode.symmetry_pairs}' in src
     assert 'twin_type.stretch_couples' in src
     assert 'ct_tree_science_digest' in src
     assert 'twin_type.label not in _ALLOWED_TYPES' in widget
-    assert 't.verifiedPairs' in frontend and 't.totalPairs' in frontend
+    # Graph data retains exact coverage; the renderer shows it in the audit.
+    assert '"verifiedPairs": count' in widget
+    assert '"totalPairs": int(mode.symmetry_pairs)' in widget
+    assert '"pairLabels": pair_labels' in widget
 
 
 def test_restorable_correspondence_preserves_canonical_solver_input():
