@@ -202,5 +202,18 @@ def build_mode_catalogue(
     # a specific alloy's reference shears or paper's mode A/B/C/D names.
     output = tuple(PhysicalTwinMode(f"Mode {i}", orbit, entries, shear, types)
                    for i, (orbit, entries, shear, types) in enumerate(modes, 1))
+    # An independent combinatorial completeness guard: n stretch variants
+    # must generate exactly n(n-1)/2 unordered pairs. A pair classified
+    # as both Type I and Type II is STILL one unordered variant pair.
+    all_pairs = {pair for mode in output for pair in mode.stretch_pairs}
+    non_twinning = {pair for orbit in incompatible for pair in orbit}
+    required = len(stretches) * (len(stretches) - 1) // 2
+    if (all_pairs & non_twinning or
+            len(all_pairs | non_twinning) != required or
+            sum(len(mode.stretch_pairs) for mode in output) +
+            sum(len(orbit) for orbit in incompatible) != required):
+        raise ModeClassificationError(
+            "Mode and non-twinning orbits do not partition all unordered stretch pairs"
+        )
     return ModeCatalogue(output, tuple(incompatible), len(correspondence_pairs),
                          sum(len(o) for o in orbits), len(stretches))
