@@ -100,7 +100,7 @@ def test_cayron_2022_wrong_plane_and_wrong_correspondence_fail_closed():
     with pytest.raises(ValueError, match="weak planes|projectively"):
         evaluate_axial_weak_twin(M, PUBLISHED_C_INT, AXIS, PLANE_1,
                                 (3, 1, 1), **kwargs)
-    with pytest.raises(ValueError, match="axis|correspondence|weak planes"):
+    with pytest.raises(ValueError, match="equal volume|det\\(C\\)"):
         evaluate_axial_weak_twin(M, PUBLISHED_C_INT + sp.eye(3),
                                 AXIS, PLANE_1, PLANE_2, **kwargs)
 
