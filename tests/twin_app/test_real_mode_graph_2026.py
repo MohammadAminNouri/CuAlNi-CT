@@ -109,7 +109,9 @@ def test_left_to_right_genealogy_is_root_then_modes_then_types():
     assert ".root-stem{height:2px;width:" in html
     assert "Parent crystal → Product crystal" in html
     assert "12/12 pairs" not in html
-    assert "of ${t.totalPairs} variant pairs" in html
+    assert "of ${t.totalPairs} variant pairs" not in html
+    assert "Twin shear · s = ${mode.shear}" in html
+    assert "pairLabels" in component
 
 
 def test_pair_coverage_lists_real_unique_stretch_pairs_and_catches_wrong_count():
