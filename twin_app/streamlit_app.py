@@ -511,9 +511,9 @@ def main() -> None:
             st.session_state["twin_mode_catalogue"] = catalogue
             st.session_state["twin_family_report"] = report
             st.session_state["twin_family_result_signature"] = signature
-            st.success("Calculation finished. Inspect the calculated twin-family results below.")
+            st.success("Calculation finished. Inspect the calculated twinning modes below.")
 
-    st.subheader("02  /  Calculated twin-family genealogy")
+    st.subheader("02  /  Calculated twinning modes")
     report = st.session_state.get("twin_family_report")
     if report is not None and st.session_state.get("twin_family_result_signature") == signature:
         catalogue = st.session_state.get("twin_mode_catalogue")
@@ -522,10 +522,10 @@ def main() -> None:
             return
         st.markdown("### Calculated inventory")
         summary_a, summary_b, summary_c = st.columns(3)
-        summary_a.metric("Physical mode orbits", len(catalogue.modes))
-        summary_b.metric("Source families", len(report.families))
-        summary_c.metric("Incompatible pair orbits", len(catalogue.incompatible_pair_orbits))
-        st.caption("Counts are calculated from this report; they are not literature-expected answers.")
+        summary_a.metric("Twinning-mode orbits", len(catalogue.modes))
+        summary_b.metric("Distinct stretch variants", catalogue.mapped_stretch_count)
+        summary_c.metric("Non-twinning pair orbits", len(catalogue.incompatible_pair_orbits))
+        st.caption("Each mode is one parent-symmetry orbit of unordered stretch-variant pairs. Source families and individual correspondence records remain in the scientific audit. Counts are calculated, not loaded from published answers.")
         st.warning("Numerical compatibility is not experimental validation of the entered transformation. Independent specimen-specific phase, correspondence, orientation and interface measurements are required.")
         render_mode_report(catalogue, report)
         from twin_app.p1_ui import render_p1_symmetry_orbit_panel
@@ -562,7 +562,7 @@ def main() -> None:
                 key="tf_export_v8",
             )
     else:
-        st.caption("Calculate to create the full twin-family genealogy. The solver does not use published result tables as answers.")
+        st.caption("Calculate to inspect the twinning-mode genealogy and its interface evidence. Published output tables are not used as solver answers.")
 
 if __name__ == "__main__":
     main()
