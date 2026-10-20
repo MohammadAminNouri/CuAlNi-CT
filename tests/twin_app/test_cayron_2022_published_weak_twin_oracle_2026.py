@@ -97,7 +97,7 @@ def test_cayron_2022_published_weak_twin_index_strain_and_shear():
 def test_cayron_2022_wrong_plane_and_wrong_correspondence_fail_closed():
     M = _published_metric()
     kwargs = dict(node_basis=BravaisNodeBasis.primitive_conventional())
-    with pytest.raises(ValueError, match="weak planes|projectively"):
+    with pytest.raises(ValueError, match="weak plane|projectively"):
         evaluate_axial_weak_twin(M, PUBLISHED_C_INT, AXIS, PLANE_1,
                                 (3, 1, 1), **kwargs)
     with pytest.raises(ValueError, match="equal volume"):
