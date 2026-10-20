@@ -32,7 +32,9 @@ def test_scientific_data_flow_and_result_freshness():
     assert "validate_report_integrity(report)" in source
     assert "build_mode_catalogue(report, payload)" in source
     assert 'st.session_state.get("twin_family_result_signature") == signature' in source
-    assert "summary_a.metric" in source and "summary_b.metric" in source and "summary_c.metric" in source
+    assert 'summary_a.metric("Calculated twinning modes"' in source
+    assert 'summary_b.metric("Distinct stretch variants"' in source
+    assert "summary_c.metric" not in source
     assert "Numerical compatibility is not experimental validation of the entered transformation." in source
     assert "with st.expander(\"Crystal parameters and correspondence\"" in source
 
