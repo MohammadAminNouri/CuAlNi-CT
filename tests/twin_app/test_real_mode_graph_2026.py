@@ -111,7 +111,8 @@ def test_left_to_right_genealogy_is_root_then_modes_then_types():
     assert "12/12 pairs" not in html
     assert "of ${t.totalPairs} variant pairs" not in html
     assert "Twin shear · s = ${mode.shear}" in html
-    assert "pairLabels" in component
+    component = (Path(__file__).resolve().parents[2] / "twin_app/mode_tree_component.py").read_text(encoding="utf-8")
+    assert '"pairLabels": pair_labels' in component
 
 
 def test_pair_coverage_lists_real_unique_stretch_pairs_and_catches_wrong_count():
