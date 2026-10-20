@@ -16,11 +16,11 @@ def test_single_linear_workflow_and_optional_references():
     source, main = _main()
     assert "st.tabs(" not in source
     assert "01  /  Crystal setup" in source
-    assert "02  /  Calculated twin-family genealogy" in source
+    assert "02  /  Calculated twinning modes" in source
     assert "Show optional material-specific references" in source
     assert "if show_material_references:" in source
     assert "Cu–Al–Ni independent evidence and source references (optional)" not in source
-    assert source.index("01  /  Crystal setup") < source.index("02  /  Calculated twin-family genealogy")
+    assert source.index("01  /  Crystal setup") < source.index("02  /  Calculated twinning modes")
     assert "Twin Family Explorer" in source
     assert "Restore published NiTi crystal inputs" in source
     assert "st.button(\"Calculate physical twinning modes and habit planes\"" in source
