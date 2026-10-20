@@ -121,38 +121,89 @@ def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cel
     """Scientific meaning beside the selected group, not a large operations dump."""
     guide = group_guide(inventory, parent=parent)
     with st.container(border=True):
-        st.markdown(f"**{guide.symbol} · {guide.title}**")
+        st.markdown(f"**{guide.symbol} · {guide.family.capitalize()} crystal class**")
+        st.caption(f"Selected Hermann–Mauguin point group · {guide.setting}")
         st.write(guide.signature)
-        st.caption(f"{guide.family.capitalize()} · {guide.setting} · {guide.order} total point operations")
-        st.markdown(
-            f"**Verified contents:**  {guide.proper} proper (orientation-preserving) operations; "
-            f"{guide.improper} improper (orientation-reversing) operations. "
-            f"Inversion centre: {'present' if guide.inversion else 'absent'}."
-        )
-        st.markdown("**Why it matters for this calculation**")
-        st.write(guide.role_explanation)
         st.caption(
-            "These operations are an exact inventory of the *selected* point group, "
-            "verified against the entered lattice metric. Lattice parameters alone do not "
-            "establish atomic-structure or space-group symmetry."
+            f"Exact group order: {guide.order} operations · "
+            f"{guide.proper} proper (det = +1) · {guide.improper} improper (det = −1) · "
+            f"Inversion: {'yes' if guide.inversion else 'no'}."
         )
-
-        with st.expander("Understand the symmetry elements and their directions", expanded=False):
-            st.write(
-                "Each operation maps the crystal onto itself. The operation count is NOT "
-                "always the number of geometric axes: +90° and −90° can share one axis."
-            )
-            for family in guide.families:
-                line = f"**{family.name}** — {family.operations} operation(s)"
+        # Counts are from actual exact matrices, never prose/table expected values.
+        families = tuple(f for f in guide.families if f.name != "Identity")
+        if families:
+            preview = []
+            for family in families:
+                kind = family.name.lower()
+                label = f"{family.operations} {kind}"
                 if family.geometric_elements:
                     axes = family.geometric_elements
-                    label = ('(' + ', '.join(str(v) for v in axes[0]) + ')') if 'plane' in family.coordinate_type else ('[' + ', '.join(str(v) for v in axes[0]) + ']')
-                    line += f" · {len(axes)} distinct indexed {'planes' if 'plane' in family.coordinate_type else 'axes'} · e.g. {label}"
-                st.markdown(line)
+                    representative = axes[0]
+                    form = "(" + ", ".join(map(str, representative)) + ")" if "plane" in family.coordinate_type else "[" + ", ".join(map(str, representative)) + "]"
+                    label += f" · {len(axes)} distinct {'planes' if 'plane' in family.coordinate_type else 'axes'}, e.g. {form}"
+                preview.append(label)
+            st.markdown("**Operations belonging to this group**")
+            st.write("  ·  ".join(preview))
+        else:
+            st.write("Identity only; no nontrivial point-symmetry operation.")
+        mirror_count = next((f.operations for f in guide.families if f.name == "Mirror reflections"), 0)
+        twofold_count = next((f.operations for f in guide.families if f.name == "Proper 2-fold rotation"), 0)
+        if parent:
             st.caption(
-                "A rotation axis [uvw] denotes a direct-space direction. A mirror plane (hkl) "
-                "is a reciprocal-space covector. They are not interchangeable. "
-                "These indices follow the selected conventional setting."
+                f"Role in the calculation: these exact parent operations act on the calculated "
+                f"stretch variants and determine which unordered variant pairs belong to one "
+                f"symmetry orbit. The group contains {mirror_count} mirror operation(s) and "
+                f"{twofold_count} proper half-turn(s). They are candidate symmetry relations, "
+                "not automatically physical Type I or Type II twins: rank-one compatibility, "
+                "twin geometry and independent classification checks must also pass."
+            )
+        else:
+            st.caption(
+                "Role in the calculation: these product symmetries identify equivalent "
+                "crystal-coordinate descriptions; plane (hkl) and direction [uvw] indices "
+                "refer to this product's selected conventional setting. The product point "
+                "group alone cannot establish a measured twin."
+            )
+        st.caption(
+            f"Metric check: maximum relative preservation residual "
+            f"{inventory.metric_preservation_maximum_residual:.2e}. "
+            "This checks compatibility with the entered lattice metric, "
+            "NOT whether the specimen's atoms actually possess this point group."
+        )
+
+        with st.expander("Operation counts, indexed elements and primary references", expanded=False):
+            st.caption(
+                "Counts below are matrix operations, not counts of independent axes. "
+                "For example, opposite quarter-turns share a fourfold axis. "
+                "Axis [uvw] is a direct-space direction; plane (hkl) is a reciprocal covector."
+            )
+            for family in guide.families:
+                indices = family.geometric_elements
+                label = f"**{family.name}: {family.operations} operation(s)**"
+                if indices:
+                    example = indices[:6]
+                    formatted = ", ".join(
+                        "(" + ",".join(map(str, v)) + ")" if "plane" in family.coordinate_type
+                        else "[" + ",".join(map(str, v)) + "]"
+                        for v in example
+                    )
+                    label += f" · {len(indices)} indexed elements · {formatted}"
+                    if len(indices) > 6:
+                        label += f" · +{len(indices)-6} more"
+                st.write(label)
+            st.markdown(
+                "Crystallographic nomenclature and operation definitions: "
+                "[IUCr — Symmetry and 32 point groups]"
+                "(https://www.iucr.org/what-we-do/education/pamphlets/symmetry) · "
+                "[IUCr — Matrices, mappings and crystallographic symmetry]"
+                "(https://www.iucr.org/what-we-do/education/pamphlets/matrices-mappings-and-crystallographic-symmetry) · "
+                "[IUCr — Definition of symmetry elements]"
+                "(https://www.iucr.org/who-we-are/commissions/commission-on-crystallographic-nomenclature/published-reports/symel)"
+            )
+            st.caption(
+                "Hermann–Mauguin symbols and group orders follow the 32 crystallographic "
+                "point classes. A space group additionally describes translations, "
+                "including glides and screw axes; this tool does not infer one from lattice angles."
             )
 
         with st.expander("Inspect one symmetry operation (optional) · action, axis and matrix", expanded=False):
