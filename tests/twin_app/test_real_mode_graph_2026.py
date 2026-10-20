@@ -95,3 +95,46 @@ def test_interactive_frontend_and_calculation_are_separate():
         assert name in html
     for forbidden in ('0.2385', '0.2804', '0.3096', '0.1423'):
         assert forbidden not in component + renderer + html
+
+
+def test_left_to_right_genealogy_is_root_then_modes_then_types():
+    html = (Path(__file__).resolve().parents[2] /
+            "twin_app/mode_tree_frontend/index.html").read_text(encoding="utf-8")
+    assert 'class="branch-flow"' in html
+    assert html.index('class="root-wrap"') < html.index('class="viewport"')
+    assert ".track{display:flex;flex-direction:column" in html
+    assert ".mode-col{width:max-content" in html
+    assert ".mode-col::before" in html
+    assert ".type-stem{height:2px;width:" in html
+    assert ".root-stem{height:2px;width:" in html
+    assert "Parent crystal → Product crystal" in html
+    assert "12/12 pairs" not in html
+    assert "of ${t.totalPairs} variant pairs" in html
+
+
+def test_pair_coverage_lists_real_unique_stretch_pairs_and_catches_wrong_count():
+    @dataclass(frozen=True)
+    class Pair:
+        stretch_i: int
+        stretch_j: int
+    @dataclass(frozen=True)
+    class Entry:
+        pair: Pair
+
+    # Two source records for U1–U2 are NOT two different stretch pairs.
+    source = (Entry(Pair(1, 2)), Entry(Pair(2, 1)), Entry(Pair(1, 3)))
+    model = Mode("Mode 1", "Mode A", 0.3, 2, (
+        Type("Type I", source_records=3, stretch_couples=2, entries=source),
+    ))
+    data = build_tree_model((model,))
+    assert data["modes"][0]["types"][0]["pairLabels"] == ("U1–U2", "U1–U3")
+    assert data["modes"][0]["types"][0]["verifiedPairs"] == 2
+    incorrect = Mode("Mode 1", "Mode A", 0.3, 3, (
+        Type("Type I", source_records=3, stretch_couples=3, entries=source),
+    ))
+    try:
+        build_tree_model((incorrect,))
+    except ValueError as exc:
+        assert "coverage" in str(exc) or "identities" in str(exc)
+    else:
+        raise AssertionError("Incorrect U-pair coverage was accepted")
