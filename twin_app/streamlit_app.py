@@ -48,7 +48,12 @@ NITI_CORRESPONDENCE = (
 
 def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     base_background = {"dark": "#101922", "light": "#fff", "contrast": "#050505"}[appearance]
-    text_color = {"dark": "#f2f5f8", "light": "#1b3240", "contrast": "#fff"}[appearance]
+    text_color = {"dark": "#f2f5f8", "light": "#18313f", "contrast": "#fff"}[appearance]
+    muted_color = {"dark": "#c2cdd6", "light": "#344d5c", "contrast": "#fff"}[appearance]
+    surface_color = {"dark": "#182631", "light": "#f3f7fa", "contrast": "#111111"}[appearance]
+    field_color = {"dark": "#213342", "light": "#fff", "contrast": "#050505"}[appearance]
+    border_color = {"dark": "#60788c", "light": "#758d9b", "contrast": "#fff"}[appearance]
+    focus_color = {"dark": "#b8dfff", "light": "#175e9f", "contrast": "#fff"}[appearance]
     fontsize = "1.12rem" if font_scale == "large" else "1rem"
     st.markdown("""<style>
     :root { --tf-blue:#5C85AD; --tf-teal:#458C81; --tf-amber:#B68C4F;
@@ -92,7 +97,7 @@ def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     @media (prefers-reduced-motion: reduce) {
        *, *::before, *::after { animation:none !important; transition:none !important; }
     }
-    .tf-pane-heading { color:#8fb4d3; font-size:.81rem; font-weight:800; letter-spacing:.075em; margin-top:1rem; }
+    .tf-pane-heading { color:var(--tf-accent); font-size:.81rem; font-weight:800; letter-spacing:.075em; margin-top:1rem; }
     .tf-quantity { border:1px solid rgba(124,146,163,.38); border-radius:11px; padding:15px 15px 14px; margin:8px 0 13px; background:rgba(115,136,152,.045); min-height:124px; }
     .tf-quantity-label {font-weight:700; font-size:1.07rem; margin-bottom:10px;}
     .tf-quantity-label span {font-weight:500; opacity:.8;}
@@ -105,7 +110,68 @@ def _style(*, appearance: str = "dark", font_scale: str = "standard") -> None:
     .tf-banner-neutral {border-left-color:#8995a2;background:rgba(125,145,160,.08);}
     [data-testid="stWidgetLabel"] {font-size:1rem;font-weight:650;}
     [data-testid="stExpander"] summary { min-height:48px; align-items:center; }
-    </style>""" + f"<style>:root{{--tf-fsize:{fontsize}}} .stApp{{background:{base_background};color:{text_color}}} .stApp p, .stApp label{{font-size:{fontsize}}}</style>", unsafe_allow_html=True)
+    </style>""" + f"""<style>
+    :root {{
+      --tf-fsize: {fontsize};
+      --tf-bg: {base_background}; --tf-fg: {text_color};
+      --tf-muted: {muted_color}; --tf-surface: {surface_color};
+      --tf-field: {field_color}; --tf-border: {border_color};
+      --tf-accent: {focus_color};
+      /* Streamlit/BaseWeb tokens: the runtime appearance control must recolor
+         real widget surfaces, not only the outer app background. */
+      --background-color: {base_background};
+      --secondary-background-color: {surface_color};
+      --text-color: {text_color};
+    }}
+    .stApp, [data-testid="stAppViewContainer"] {{
+      background: var(--tf-bg) !important; color:var(--tf-fg) !important;
+      color-scheme: {"light" if appearance == "light" else "dark"};
+    }}
+    [data-testid="stSidebar"],[data-testid="stSidebarContent"] {{
+      background:var(--tf-surface) !important;color:var(--tf-fg) !important;
+    }}
+    .stApp h1,.stApp h2,.stApp h3,.stApp h4,.stApp p,
+    .stApp li,.stApp label,.stApp [data-testid="stWidgetLabel"],
+    .stApp [data-testid="stMarkdownContainer"],
+    .stApp [data-testid="stExpander"] summary {{
+      color:var(--tf-fg) !important;
+    }}
+    .stApp [data-testid="stCaptionContainer"] p,
+    .stApp [data-testid="stCaptionContainer"] span,
+    .stApp [data-testid="stSidebar"] small {{
+      color:var(--tf-muted) !important;
+    }}
+    .stApp [data-baseweb="input"],.stApp [data-baseweb="textarea"],
+    .stApp [data-baseweb="select"],.stApp [data-testid="stNumberInput"] input,
+    .stApp [data-testid="stTextInput"] input {{
+      background:var(--tf-field) !important;
+      color:var(--tf-fg) !important;
+      border-color:var(--tf-border) !important;
+    }}
+    .stApp [data-baseweb="input"] input,.stApp [data-baseweb="textarea"] textarea,
+    .stApp [data-baseweb="select"] *,
+    .stApp [role="radiogroup"] label,.stApp [role="radiogroup"] p {{
+      color:var(--tf-fg) !important;
+    }}
+    .stApp input::placeholder,.stApp textarea::placeholder {{
+      color:var(--tf-muted) !important; opacity:1;
+    }}
+    .stApp [data-testid="stExpander"],.stApp [data-testid="stForm"],
+    .stApp [data-testid="stAlert"] {{
+      border-color:var(--tf-border);
+    }}
+    [data-baseweb="popover"],[role="listbox"] {{
+      background:var(--tf-field) !important; color:var(--tf-fg) !important;
+    }}
+    [role="listbox"] [role="option"],[role="listbox"] span {{
+      color:var(--tf-fg) !important;
+    }}
+    .stApp button:focus-visible,.stApp input:focus-visible,
+    .stApp textarea:focus-visible,.stApp [role="radio"]:focus-visible {{
+      outline:3px solid var(--tf-accent) !important;outline-offset:2px;
+    }}
+    .stApp p,.stApp label {{font-size:{fontsize}}}
+    </style>""", unsafe_allow_html=True)
 
 
 def _fingerprint(value: Any) -> str:
@@ -130,7 +196,7 @@ def _load_niti_example() -> None:
         st.session_state[f"{role}_point_group_{family}"] = group
         for label, value in zip(("a", "b", "c", "alpha", "beta", "gamma"), lattice):
             st.session_state[f"{role}_{label}"] = value
-    st.session_state["correspondence_direction_choice"] = "A → M"
+    st.session_state["correspondence_direction_choice"] = "Parent crystal → Product crystal"
     # Keep both exact correspondence entry methods in sync with the restored NiTi INPUT.
     from twin_app.cayron_correspondence import seed_paired_vectors
     source_vectors, destination_vectors = seed_paired_vectors(NITI_CORRESPONDENCE, direction="A_TO_M")
@@ -164,7 +230,7 @@ def _render_research_workspace_header() -> None:
             background: linear-gradient(112deg,rgba(29,88,115,.23),rgba(31,55,81,.09) 55%,rgba(24,112,106,.15));
             margin: .2rem 0 1.4rem;
           }
-          .tf-workspace-overline {color:#88c5d7; font-size:.78rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase;}
+          .tf-workspace-overline {color:var(--tf-accent); font-size:.78rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase;}
           .tf-workspace-hero h1 {font-size:clamp(1.7rem,3.4vw,2.8rem)!important;margin:.42rem 0 .55rem!important;line-height:1.13;}
           .tf-workspace-hero p {color:inherit;opacity:.9;font-size:1.06rem!important;max-width:57rem;margin:.4rem 0 1rem;}
           .tf-workspace-meta {display:flex;gap:.45rem;flex-wrap:wrap;}
@@ -173,7 +239,7 @@ def _render_research_workspace_header() -> None:
           [data-testid="stTabs"] button[role="tab"] {border:1px solid rgba(116,147,164,.34);border-radius:.7rem .7rem 0 0;padding:.8rem 1.08rem; min-height:3.1rem;}
           [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {background:rgba(45,129,145,.13);border-bottom:3px solid #67bcb6;font-weight:800;}
           div[data-testid="stVerticalBlockBorderWrapper"] {border-radius:14px;}
-          .tf-workspace-step {color:#83b8cb;font-weight:800;letter-spacing:.05em;}
+          .tf-workspace-step {color:var(--tf-accent);font-weight:800;letter-spacing:.05em;}
           @media(max-width:700px){.tf-workspace-hero{padding:1.25rem;}[data-testid="stTabs"] button[role="tab"]{font-size:.83rem; padding:.6rem .7rem;}}
         </style>
         <section class="tf-workspace-hero">
@@ -324,12 +390,12 @@ def main() -> None:
                             st.session_state[key] = value
             st.session_state["tf_v9_last_unit"] = length_unit
             parent_ui = render_phase_input(
-                prefix="parent", heading="Parent crystal A", role="parent", length_unit=length_unit,
+                prefix="parent", heading="Parent crystal (initial phase)", role="parent", length_unit=length_unit,
                 default_family="cubic", default_point_group="m-3m", defaults=NITI_PARENT,
             )
             st.divider()
             product_ui = render_phase_input(
-                prefix="product", heading="Product crystal M", role="product", length_unit=length_unit,
+                prefix="product", heading="Product crystal (transformed phase)", role="product", length_unit=length_unit,
                 default_family="monoclinic", default_point_group="2/m", defaults=NITI_PRODUCT,
             )
             st.divider()
