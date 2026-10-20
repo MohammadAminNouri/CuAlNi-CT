@@ -86,7 +86,7 @@ def test_coordinate_input_probe_uses_the_actually_selected_source_direction():
     assert 'plane_image(entered_matrix, ("1", "0", "0"))' in src
     assert "st.plotly_chart(" in src
     assert 'direction="A_TO_M"' in src
-    assert '"M → A": "M_TO_A"' in src
+    assert '"Product crystal → Parent crystal": "M_TO_A"' in src
     assert "separate coordinate axes" in src
     assert "Exact correspondence sent to the solver" in src
     assert "C.inv()" in src
