@@ -20,6 +20,10 @@ BENCH = ROOT / "data" / "benchmarks"
 def test_legacy_niti_vector_is_ambiguous_unit_direction_not_shape_magnitude():
     """Do not misrepresent a locked legacy unit vector as physical b."""
     old = json.loads((BENCH / "bhattacharya_niti_twin_habit_v1.json").read_text())
+    audit = old["reference_vector_semantics_audit_2026"]
+    assert audit["status"] == "UNRESOLVED_LEGACY_VECTOR_NORMALIZATION"
+    assert audit["primary_table_checked"] is False
+    assert audit["source_correction_claimed"] is False
     candidate = next(
         item for item in old["expected"]["habit_outer_products"]
         if item["classification"] == "Type II"
