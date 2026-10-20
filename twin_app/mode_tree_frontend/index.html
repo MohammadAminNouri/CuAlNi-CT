@@ -31,6 +31,7 @@ button:disabled{cursor:default}
 .root small{display:block;font-weight:500;color:var(--muted);margin-top:5px;font-size:12px}
 .root-stem{height:2px;width:35px;flex:none;background:var(--line)}
 .viewport{position:relative;flex:1 1 0;min-width:0;max-height:640px;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) var(--bg);border:1px solid var(--border);border-radius:10px}
+.viewport::before{content:"";position:absolute;z-index:1;left:0;top:50%;width:13px;height:2px;background:var(--line);pointer-events:none}
 .track{display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:max-content;min-width:100%;padding:12px 14px 12px 29px;position:relative}
 .track::before{content:"";position:absolute;left:12px;top:47px;bottom:47px;border-left:2px solid var(--line)}
 .mode-col{width:max-content;min-width:530px;flex:none;position:relative;display:flex;flex-direction:row;align-items:center;gap:0}
@@ -86,7 +87,7 @@ function updateSelection(mode,type,notify){
  jump.value=mode;
  graph.querySelectorAll('.mode-col').forEach(column=>{const chosen=column.dataset.mode===mode;column.dataset.chosen=String(chosen);column.querySelector('.mode-head').setAttribute('aria-pressed',String(chosen));column.querySelectorAll('.type').forEach(node=>node.setAttribute('aria-pressed',String(chosen&&node.dataset.type===type)));});
  const path=byId('selected-path');path.replaceChildren();path.append(el('strong','',found.label),el('span','arrow','→'));
- const term=found.types.find(t=>t.id===type);const leaf=el('span','path-type',term.label);leaf.style.setProperty('--path',({'Type I':'var(--i)','Type II':'var(--ii)','Compound':'var(--compound)'})[type]);path.append(leaf,el('span','arrow','→'),el('span','',`s = ${found.shear}  ·  K₁, η₁ and habits in the results panel below`));
+ const term=found.types.find(t=>t.id===type);const leaf=el('span','path-type',term.label);leaf.style.setProperty('--path',({'Type I':'var(--i)','Type II':'var(--ii)','Compound':'var(--compound)'})[type]);path.append(leaf,el('span','arrow','→'),el('span','',`${term.verifiedPairs} of ${term.totalPairs} related variant pairs · s = ${found.shear} · K₁, η₁ and habits below`));
  byId('announce').textContent=`Selected ${found.label}, ${type}. The calculated interface and habit solutions are shown below the tree.`;
  if(notify)send('streamlit:setComponentValue',{dataType:'json',value:{mode,type}});
 }
