@@ -107,6 +107,8 @@ def test_correspondence_controls_explain_crystal_role_and_do_not_name_people():
         '"Product crystal → Parent crystal"',
         '"Pair 1", "Pair 2", "Pair 3"',
         "Exact correspondence sent to the solver",
+        '"A → M": "Parent crystal → Product crystal"',
+        '"M → A": "Product crystal → Parent crystal"',
         "entered_matrix_from_canonical(canonical, direction=direction)",
         "calculate_action(entered_matrix, parent_vector)",
         "plane_image(entered_matrix",
