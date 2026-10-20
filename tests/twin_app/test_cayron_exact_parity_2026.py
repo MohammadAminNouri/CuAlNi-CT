@@ -88,8 +88,8 @@ def test_random_mixed_rational_matrix_and_supercells_are_algebraically_identical
 
 
 def test_direction_labels_always_read_from_left_to_right():
-    assert direction_labels("A_TO_M") == ("Parent A", "Product M")
-    assert direction_labels("M_TO_A") == ("Product M", "Parent A")
+    assert direction_labels("A_TO_M") == ("Parent crystal", "Product crystal")
+    assert direction_labels("M_TO_A") == ("Product crystal", "Parent crystal")
     with pytest.raises(ValueError):
         direction_labels("wrong")
     with pytest.raises(ValueError):
