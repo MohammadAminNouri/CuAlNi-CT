@@ -120,3 +120,32 @@ def test_symmetry_display_keeps_rotation_axes_and_mirror_covectors_distinct():
     assert np.isclose(np.linalg.norm(axis), 1.0)
     assert np.isclose(np.linalg.norm(normal), 1.0)
     assert abs(float(axis @ normal)) < 0.999
+
+
+def test_all_32_point_group_cards_derive_counts_from_exact_inventory():
+    from twin_app.point_group_guide import group_guide
+    for symbol, (family, order) in EXPECTED_32.items():
+        inventory = build_symmetry_inventory(symbol, _lattice(family).metric())
+        guide = group_guide(inventory, parent=True)
+        assert guide.symbol == symbol
+        assert guide.order == order
+        assert guide.proper + guide.improper == order
+        assert sum(x.operations for x in guide.families) == order
+        assert guide.inversion == any(op.kind == "inversion" for op in inventory.operations)
+        for group in guide.families:
+            assert group.operations > 0
+            if group.coordinate_type.startswith("(hkl)"):
+                assert "mirror" in group.name.lower()
+        product = group_guide(inventory, parent=False)
+        assert product.order == order and product.proper == guide.proper
+
+
+def test_group_card_cites_authoritative_iucr_and_explains_metric_vs_atomic_claims():
+    src = (ROOT / "twin_app" / "input_ui.py").read_text(encoding="utf-8")
+    assert "www.iucr.org/what-we-do/education/pamphlets/symmetry" in src
+    assert "matrices-mappings-and-crystallographic-symmetry" in src
+    assert "published-reports/symel" in src
+    assert "inventory.metric_preservation_maximum_residual" in src
+    assert "NOT whether the specimen's atoms actually possess this point group" in src
+    assert "mirror_count" in src and "twofold_count" in src
+    assert "Operation counts, indexed elements and primary references" in src
