@@ -70,7 +70,11 @@ def test_point_groups_explain_exact_operators_not_just_names():
     source = (APP / "input_ui.py").read_text(encoding="utf-8")
     atlas = (APP / "point_group_explainer.py").read_text(encoding="utf-8")
     assert "POINT_GROUP_SHORT_NAMES" in atlas
-    assert "Verified contents:" in source
+    # Assert the actual operation-count and symmetry safeguards, not obsolete UI copy.
+    assert "Exact group order:" in source
+    assert "inventory.metric_preservation_maximum_residual" in source
+    assert "Operation counts, indexed elements and primary references" in source
+    assert "NOT whether the specimen's atoms actually possess this point group" in source
     assert "Inspect one symmetry operation (optional)" in source
     assert "_coordinate_rule(op.matrix)" in source
     assert "make_operation_scene" in source
