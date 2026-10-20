@@ -340,7 +340,7 @@ def render_correspondence_input(
     last_direction_key = f"{prefix}_last_direction"
     warning_key = f"{prefix}_conversion_warning"
     methods = ("Three paired lattice vectors", "Exact rational 3 × 3 matrix")
-    directions = {"A → M": "A_TO_M", "M → A": "M_TO_A"}
+    directions = {"Parent crystal → Product crystal": "A_TO_M", "Product crystal → Parent crystal": "M_TO_A"}
     dir_key = "correspondence_direction_choice"
 
     def matrix_keys(direction: str):
@@ -404,7 +404,7 @@ def render_correspondence_input(
         previous_method = st.session_state.get(last_method_key, methods[0])
         previous_direction = st.session_state.get(last_direction_key, "A_TO_M")
         new_method = st.session_state.get(method_key, methods[0])
-        new_direction = directions.get(st.session_state.get(dir_key, "A → M"), "A_TO_M")
+        new_direction = directions.get(st.session_state.get(dir_key, "Parent crystal → Product crystal"), "A_TO_M")
         try:
             canonical = read_editor(previous_method, previous_direction)
             set_editor(new_method, new_direction, canonical)
@@ -414,30 +414,31 @@ def render_correspondence_input(
             # draft visible in its original direction/format so it can be fixed.
             st.session_state[method_key] = previous_method
             st.session_state[dir_key] = (
-                "A → M" if previous_direction == "A_TO_M" else "M → A"
+                "Parent crystal → Product crystal" if previous_direction == "A_TO_M" else "Product crystal → Parent crystal"
             )
             st.session_state[warning_key] = (
                 "Cannot convert an invalid correspondence: " + str(exc)
                 + ". Correct the original entries before switching."
             )
 
-    st.subheader("Lattice correspondence · Cayron (2019)")
+    st.subheader("Crystallographic correspondence")
     st.caption(
-        "Direct-space correspondence: parent A directions become product M directions. "
-        "Enter three matching lattice vectors as in Cayron's supercell construction, "
-        "or enter the exact matrix directly. Both routes preserve rational arithmetic."
+        "Specify how direct-lattice directions in the parent crystal correspond "
+        "to directions in the product crystal. Either input method produces "
+        "the same exact correspondence matrix."
     )
-    st.latex(r"\mathbf u_M=C_{A\to M}\,\mathbf u_A")
+    st.latex(r"\mathbf u_{\mathrm{product}}=C_{\mathrm{product}\leftarrow\mathrm{parent}}\,\mathbf u_{\mathrm{parent}}")
     st.caption("This C is NOT the orientation matrix T or the distortion F. "
                "Parent and product indices use their respective conventional crystal bases.")
     method = st.radio(
         "Input format", methods, horizontal=True, key=method_key,
         on_change=synchronize_editors,
-        help="Paired vectors: Cayron (2019), Eq. (9). Matrix: exact rational components.",
+        help="Paired vectors use C = Q P⁻¹; matrix entries may be exact integers or fractions.",
     )
     direction_label = st.radio(
         "Enter correspondence in direction",
-        ("A → M", "M → A"), horizontal=True, key=dir_key,
+        ("Parent crystal → Product crystal", "Product crystal → Parent crystal"),
+        horizontal=True, key=dir_key,
         on_change=synchronize_editors,
         help="Changing direction computes an exact inverse; it does not infer an orientation relationship.",
     )
@@ -450,19 +451,18 @@ def render_correspondence_input(
     if st.session_state.get(warning_key):
         st.warning(st.session_state.pop(warning_key))
 
-    with st.expander("Read Cayron's conventions (direct and reciprocal)", expanded=False):
+    with st.expander("How vectors and Miller planes transform", expanded=False):
         st.write("Corresponding direct lattice vectors form columns of B_source and B_destination. "
-                 "C(source → destination) = B_destination · B_source⁻¹ (Eq. 9). "
-                 "For the reverse direction, C is inverted exactly (Eq. 13). "
-                 "Miller plane covectors follow C⁻ᵀ (Eq. 11).")
+                 "C = Q P⁻¹. Reversing the input direction uses C⁻¹. "
+                 "Miller-plane covectors transform by C⁻ᵀ, not C.")
         st.caption("Integers and rational entries p/q are preferred. A typed finite decimal "
                    "is treated as its exact base-10 fraction; 0.3333 does not mean 1/3. "
                    "Cell parameters, atom positions and point-group settings do not determine C by themselves.")
 
     if method == methods[0]:
         st.markdown(f"**Three corresponding direct-space lattice vectors · {source_name} → {destination_name}**")
-        st.caption("Each row is one correspondence; entries are triplets [u,v,w] of exact integers or p/q fractions. "
-                   "Use three linearly independent vectors on each side.")
+        st.caption("Each pair gives the source and destination components of one direct lattice vector. "
+                   "Use three linearly independent source vectors with exact fractional components.")
         default_source, default_dest = seed_paired_vectors(baseline, direction=direction)
         guides = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
         guides[1].markdown(f"**Source · {source_name}**")
@@ -470,7 +470,7 @@ def render_correspondence_input(
         guides[3].markdown(f"**Destination · {destination_name}**")
         source = []
         destination = []
-        for j, label in enumerate(("u", "v", "w")):
+        for j, label in enumerate(("Pair 1", "Pair 2", "Pair 3")):
             cols = st.columns([0.4, 2.5, 0.38, 2.5], gap="small")
             cols[0].markdown(f"**{label}**")
             src = cols[1].text_input(
@@ -507,12 +507,12 @@ def render_correspondence_input(
                    "source basis vector, with destination components in its rows. "
                    "Use exact p/q fractions rather than rounded approximations.")
         D_default = exact_matrix(entered_matrix_from_canonical(baseline, direction=direction))
-        headings = st.columns([0.9, 1, 1, 1])
-        for col, name in zip(headings, ("Component / axis", "a", "b", "c")):
+        headings = st.columns([1.6, 1, 1, 1])
+        for col, name in zip(headings, ("Destination ↓ / source →", "a", "b", "c")):
             col.markdown(f"**{name}**")
         typed = []
         for i, label in enumerate(("a", "b", "c")):
-            cols = st.columns([0.9, 1, 1, 1], gap="small")
+            cols = st.columns([1.6, 1, 1, 1], gap="small")
             cols[0].markdown(f"**{label}**")
             row = []
             for j in range(3):
@@ -548,9 +548,10 @@ def render_correspondence_input(
                   on_click=restore_starting_correspondence)
 
     st.markdown("**Exact correspondence sent to the solver**")
-    st.latex(r"C_{A\to M}=" + sp.latex(C))
-    st.caption(f"det(C) = {C.det()} · exact rational GL(3,Q) matrix · "
-               "the reverse mapping is its exact inverse. No decimal conversion.")
+    st.latex(r"C_{\mathrm{product}\leftarrow\mathrm{parent}}=" + sp.latex(C))
+    st.caption(f"det(C) = {C.det()} · exact rational, invertible correspondence. "
+               "Reverse entry uses its exact inverse.")
+    st.caption("Algebraic invertibility alone does not prove a physical correspondence.")
     entered_matrix = entered_matrix_from_canonical(canonical, direction=direction)
     D = exact_matrix(entered_matrix)
     st.markdown(f"**Interactive vector mapping · {source_name} → {destination_name}**")
@@ -615,7 +616,7 @@ def render_correspondence_input(
                                     width="stretch", key=f"{prefix}_plot_daughter")
                 st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
 
-    with st.expander("Exact matrix, inverse, determinant and plane correspondence", expanded=False):
+    with st.expander("Advanced: inverse matrix and reciprocal-plane correspondence", expanded=False):
         st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
         st.write(f"det(C) = {C.det()}")
         st.code(str(C.inv()), language="text")
