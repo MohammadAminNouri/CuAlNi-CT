@@ -108,15 +108,29 @@ def direction_labels(direction: str) -> tuple[str, str]:
 def seed_paired_vectors(
     canonical_rows: Sequence[Sequence[object]], *, direction: str
 ) -> tuple[tuple[str, str, str], tuple[str, str, str]]:
-    """Lossless representation of any invertible rational C as three pairs.
+    """Generate exactly corresponding INTEGER lattice-coordinate triplets.
 
-    Identity source vectors are a convenient exact basis, not an assertion that
-    those are the shortest physical lattice vectors or that centering is known.
+    Take the least common multiple of all denominators in the selected
+    source-to-destination correspondence. Then P=dI and Q=D P have integral
+    coordinates in both crystal bases and reconstruct D=QP^-1 exactly.
+
+    These are algebraically generated common-supercell directions, NOT
+    independently observed lattice correspondences or a smallest-index
+    primitive supercell. Users may replace all three pairs with verified ones.
     """
     D = exact_matrix(entered_matrix_from_canonical(canonical_rows, direction=direction))
-    identity = tuple(",".join(str(sp.eye(3)[i, j]) for i in range(3)) for j in range(3))
-    images = tuple(",".join(str(D[i, j]) for i in range(3)) for j in range(3))
-    return identity, images
+    denominator = sp.Integer(1)
+    for value in D:
+        denominator = sp.ilcm(denominator, sp.denom(value))
+    P = denominator * sp.eye(3)
+    Q = D * P
+    if any(not value.is_Integer for value in Q):
+        raise AssertionError("Generated paired-vector supercell is not integral")
+    if Q * P.inv() != D or P.det() == 0 or Q.det() == 0:
+        raise AssertionError("Generated paired-vector reconstruction failed")
+    source = tuple(",".join(str(P[i, j]) for i in range(3)) for j in range(3))
+    destination = tuple(",".join(str(Q[i, j]) for i in range(3)) for j in range(3))
+    return source, destination
 
 
 def plane_image(
