@@ -89,7 +89,7 @@ def canonical_correspondence_rows(
 def displayed_relation(direction: str) -> tuple[str, str]:
     key = str(direction).strip().upper()
     if key == "A_TO_M":
-        return "Parent crystal → Product crystal", "u_product = C_(product←parent) u_parent"
+        return "Parent crystal → Product crystal", "u_product = C_(parent→product) u_parent"
     if key == "M_TO_A":
-        return "Product crystal → Parent crystal", "u_parent = C_(parent←product) u_product"
+        return "Product crystal → Parent crystal", "u_parent = C_(product→parent) u_product"
     raise ValueError("direction must be 'A_TO_M' or 'M_TO_A'")
