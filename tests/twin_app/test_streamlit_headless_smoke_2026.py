@@ -56,3 +56,50 @@ def test_switch_exact_correspondence_methods_and_reverse_direction_without_loss(
                     for i in range(3)]
     paired = calculate_from_paired_vectors(sources, destinations, direction="M_TO_A")
     assert exact_matrix(paired.canonical_M_from_A) == exact_matrix(NITI_CORRESPONDENCE)
+
+
+def test_reverse_editor_live_edit_updates_canonical_and_survives_switches():
+    """Change an actual Streamlit cell, not a stored fixture or static source."""
+    from twin_app.input_logic import exact_matrix, canonical_correspondence_rows
+    from twin_app.streamlit_app import NITI_CORRESPONDENCE
+
+    app = AppTest.from_file(str(ROOT / "twin_app" / "streamlit_app.py"), default_timeout=90)
+    app.run()
+    assert not app.exception
+    method = next(x for x in app.radio if x.key == "correspondence_entry_method")
+    method.set_value("Exact rational 3 × 3 matrix")
+    app.run()
+    direction = next(x for x in app.radio if x.key == "correspondence_direction_choice")
+    direction.set_value("Product crystal → Parent crystal")
+    app.run()
+    assert not app.exception, [str(e.message) for e in app.exception]
+
+    def rows(code):
+        return tuple(tuple(app.session_state["correspondence_{}_{}_{}".format(code, i, j)]
+                           for j in range(3)) for i in range(3))
+
+    original = exact_matrix(NITI_CORRESPONDENCE)
+    assert exact_matrix(rows("M_TO_A")) == original.inv()
+    reverse_cell = next(x for x in app.text_input
+                        if x.key == "correspondence_M_TO_A_0_1")
+    reverse_cell.set_value("2")
+    app.run()
+    assert not app.exception, [str(e.message) for e in app.exception]
+    inverse_entry = exact_matrix(rows("M_TO_A"))
+    new_canonical = exact_matrix(canonical_correspondence_rows(
+        rows("M_TO_A"), direction="M_TO_A"))
+    assert new_canonical == inverse_entry.inv()
+    assert new_canonical != original
+    assert inverse_entry * new_canonical == new_canonical * inverse_entry == __import__("sympy").eye(3)
+
+    direction = next(x for x in app.radio if x.key == "correspondence_direction_choice")
+    direction.set_value("Parent crystal → Product crystal")
+    app.run()
+    assert not app.exception, [str(e.message) for e in app.exception]
+    assert exact_matrix(rows("A_TO_M")) == new_canonical
+
+    direction = next(x for x in app.radio if x.key == "correspondence_direction_choice")
+    direction.set_value("Product crystal → Parent crystal")
+    app.run()
+    assert not app.exception, [str(e.message) for e in app.exception]
+    assert exact_matrix(rows("M_TO_A")) == inverse_entry
