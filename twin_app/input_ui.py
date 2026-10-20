@@ -486,7 +486,7 @@ def render_correspondence_input(
         "to directions in the product crystal. Either input method produces "
         "the same exact correspondence matrix."
     )
-    st.latex(r"\mathbf u_{\mathrm{product}}=C_{\mathrm{product}\leftarrow\mathrm{parent}}\,\mathbf u_{\mathrm{parent}}")
+    st.latex(r"\mathbf u_{\mathrm{product}}=C_{\mathrm{parent}\rightarrow\mathrm{product}}\,\mathbf u_{\mathrm{parent}}")
     st.caption("This C is NOT the orientation matrix T or the distortion F. "
                "Parent and product indices use their respective conventional crystal bases.")
     method = st.radio(
@@ -607,7 +607,7 @@ def render_correspondence_input(
                   on_click=restore_starting_correspondence)
 
     st.markdown("**Exact correspondence sent to the solver**")
-    st.latex(r"C_{\mathrm{product}\leftarrow\mathrm{parent}}=" + sp.latex(C))
+    st.latex(r"C_{\mathrm{parent}\rightarrow\mathrm{product}}=" + sp.latex(C))
     st.caption(f"det(C) = {C.det()} · exact rational, invertible correspondence. "
                "Reverse entry uses its exact inverse.")
     st.caption("Algebraic invertibility alone does not prove a physical correspondence.")
