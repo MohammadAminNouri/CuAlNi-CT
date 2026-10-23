@@ -1,0 +1,3535 @@
+{
+  "audit": "2026-10-21-variant-identity-v1",
+  "phase": "hostile",
+  "rows": [
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284271389583557e-08,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-8",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000000086014016e-08,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284271389583557e-08,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284271389583557e-08,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-8",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000000086014016e-08,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284271389583557e-08,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284271389583557e-08,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-8",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000000086014016e-08,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284271389583557e-08,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587713e-10,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-10",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335733e-10,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587713e-10,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587713e-10,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-10",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335733e-10,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587713e-10,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587713e-10,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-10",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335733e-10,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587713e-10,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8283645550729526e-12,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-12",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999702377296433e-12,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8283645550729526e-12,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8283645550729526e-12,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-12",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999702377296433e-12,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8283645550729526e-12,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "bj_min_returned_gap": 2.8283645550729526e-12,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-12",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999702377296433e-12,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          21,
+          22
+        ],
+        [
+          4,
+          7,
+          16,
+          19
+        ],
+        [
+          5,
+          6,
+          17,
+          18
+        ],
+        [
+          8,
+          11,
+          12,
+          15
+        ],
+        [
+          9,
+          10,
+          13,
+          14
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8283645550729526e-12,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 3,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 0.3535533905932736,
+      "bj_orbit_matched_count": 3,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "0",
+      "exact_binary64_orbit": 3,
+      "exact_min_principal_gap": 0.0,
+      "expected_resolved_count": 3,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 3,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3,
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 0.3535533905932736,
+      "ptmc_orbit_matched_count": 3,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 3,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11,
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          12,
+          13,
+          14,
+          15,
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 0.3535533905932736,
+      "bj_orbit_matched_count": 3,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "0",
+      "exact_binary64_orbit": 3,
+      "exact_min_principal_gap": 0.0,
+      "expected_resolved_count": 3,
+      "lattice_scale": 1.0,
+      "operation_order": "reverse",
+      "ptmc_count": 3,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11,
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          12,
+          13,
+          14,
+          15,
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 0.3535533905932736,
+      "ptmc_orbit_matched_count": 3,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 3,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          3,
+          4,
+          7,
+          16,
+          19,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          5,
+          6,
+          17,
+          18,
+          21,
+          22
+        ],
+        [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      ],
+      "bj_min_returned_gap": 0.3535533905932736,
+      "bj_orbit_matched_count": 3,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "0",
+      "exact_binary64_orbit": 3,
+      "exact_min_principal_gap": 0.0,
+      "expected_resolved_count": 3,
+      "lattice_scale": 1.0,
+      "operation_order": "sorted",
+      "ptmc_count": 3,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          3,
+          4,
+          7,
+          16,
+          19,
+          20,
+          23
+        ],
+        [
+          1,
+          2,
+          5,
+          6,
+          17,
+          18,
+          21,
+          22
+        ],
+        [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      ],
+      "ptmc_min_returned_gap": 0.3535533905932736,
+      "ptmc_orbit_matched_count": 3,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-08,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-12,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-08,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-11,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-12,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999241279106e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999999796343477e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 0.01,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.828427044752808e-09,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 1.1102230246251565e-16,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-9",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999998071200577e-09,
+      "expected_resolved_count": 6,
+      "lattice_scale": 100.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.828427044752808e-09,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 1.1102230246251565e-16,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-08,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-12,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-08,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-11,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 0.0,
+      "bj_variant_tolerance": 1e-12,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000004068335734e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 1.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284273587712998e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 1.1102230246251565e-16,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 2.0000141950568536e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 0.01,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284430596958867e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    },
+    {
+      "algebraic_tolerance": 1e-10,
+      "ball_james_count": 6,
+      "ball_james_variant_loss": false,
+      "bj_false_generator_membership": [],
+      "bj_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "bj_min_returned_gap": 2.8284273587712998e-11,
+      "bj_orbit_matched_count": 6,
+      "bj_orbit_max_one_to_one_error": 1.1102230246251565e-16,
+      "bj_variant_tolerance": 1e-09,
+      "epsilon": "1e-11",
+      "exact_binary64_orbit": 6,
+      "exact_min_principal_gap": 1.9999887350106448e-11,
+      "expected_resolved_count": 6,
+      "lattice_scale": 100.0,
+      "operation_order": "forward",
+      "ptmc_count": 6,
+      "ptmc_false_generator_membership": [],
+      "ptmc_generators": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8,
+          9,
+          10,
+          11
+        ],
+        [
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          16,
+          17,
+          18,
+          19
+        ],
+        [
+          20,
+          21,
+          22,
+          23
+        ]
+      ],
+      "ptmc_min_returned_gap": 2.8284116578467128e-11,
+      "ptmc_orbit_matched_count": 6,
+      "ptmc_orbit_max_one_to_one_error": 0.0,
+      "ptmc_variant_loss": false,
+      "roundoff_resolution": 4.9731494688170556e-14
+    }
+  ],
+  "timestamp_utc": "2026-10-21T14:51:44.801602+00:00"
+}

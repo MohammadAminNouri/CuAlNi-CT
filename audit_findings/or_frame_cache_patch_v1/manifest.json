@@ -1,0 +1,10 @@
+{
+  "status": "INSTALLED",
+  "branch": "feature/twin-family-tree-app-v1",
+  "source_sha256": "3b6f433789097cef98fddebbc4caded59a50184c096cc4284de1c93f6a7ea317",
+  "test_collision": "absent",
+  "patched_sha256": "44ef938c8d34d623861cefd2b18779162d45a9468f2ab880aaf917dbf5a3c1ca",
+  "test_created": true,
+  "test_sha256": "857ff08e40eb09920f7e6f8a6dfb0aae1206978edd61aaca078089e8e0c1a60f",
+  "scientific_numerics_modified": false
+}

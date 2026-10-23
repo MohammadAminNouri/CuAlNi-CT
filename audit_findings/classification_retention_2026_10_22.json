@@ -1,0 +1,4770 @@
+{
+  "timestamp_utc": "2026-10-22T19:08:42.394485+00:00",
+  "scope": "data-model retention and necessary twofold geometry; not rendering or full CT classification proof",
+  "git_head": "7dc7a4427a12c989e6cd8df62e991b7c9454003b",
+  "working_tree_may_be_dirty": true,
+  "working_source_sha256": {
+    "src/cualni_cryst/ptmc_adapter.py": "82ef1b6ae9e41cbd6a5532aa98a6cf0c6ae336dbf7050e9b8a10e7199b93824a",
+    "src/cualni_cryst/variant_identity.py": "8a12c8d9642ca93e0f5d9ee5fb40367a04e0d9baa1768f2260bf283c8607fc58",
+    "twin_app/scientific_engine.py": "c8a4c7cc47aab07981faca8a6141490f828f1edb1e43627d9e8cc30e0714354a",
+    "twin_app/mode_catalogue.py": "2fddc874136581d7ddf72bd2d9b437792776aac1b13410d1dc56cdf93a3edee8",
+    "twin_app/symmetry_completion.py": "c1fe31389330db3c4b73d4fd7a97a5a8b3e011f5f10c4418857b5735131eb0f0",
+    "twin_app/p0_classification.py": "3d424d0dd459c2d0423e2ca130d458ae33a449517fdf7af8b9098b165b595638",
+    "twin_app/mode_type_status.py": "cf9ca25cebaba70704d82c5460b01ed9436770a8d47cb703576e1568cf32c73b"
+  },
+  "cases": [
+    {
+      "name": "2h",
+      "topology_variant_count": 6,
+      "stretch_variant_count": 6,
+      "raw_ptmc_twin_branches": 60,
+      "raw_ptmc_habit_solutions": 192,
+      "report_constructions": 30,
+      "mode_constructions": 30,
+      "report_habits": 96,
+      "mode_habits": 96,
+      "physical_modes": 2,
+      "incompatible_pair_orbits": 0,
+      "ptmc_unordered_compatible_pairs": 15,
+      "represented_unordered_stretch_pairs": 15,
+      "missing_compatible_unordered_pairs": [],
+      "type_counts": {
+        "Compound": 6,
+        "Type I": 12,
+        "Type II": 12
+      },
+      "geometry_candidates": {
+        "Compound": 6,
+        "Type I": 12,
+        "Type II": 12
+      },
+      "mismatches": [],
+      "reviews": [],
+      "ct_generator_provenance": [
+        {
+          "system": [
+            "F1",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S2",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S3",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S2",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S3",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S5",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S6",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S7",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S8",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        }
+      ],
+      "status": "PASS_CONDITIONAL",
+      "retained_constructions": [
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            2
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            2
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B1; G-index 19; ordered stretch and physical rank-one tensor residuals 1.097e-15, 5.005e-16, 1.850e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            3,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M1\u2013M2:P1.B2; G-index 19; ordered stretch and physical rank-one tensor residuals 5.520e-16, 5.852e-16, 1.897e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            4,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            4,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M5",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M5",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M6",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M6",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M3",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M3",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M5",
+            "P7.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M5",
+            "P7.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M6",
+            "P8.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M6",
+            "P8.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M5",
+            "P9.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            3,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M5",
+            "P9.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M4:P2.B1; G-index 23; ordered stretch and physical rank-one tensor residuals 4.454e-16, 5.240e-16, 3.078e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            3,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M6",
+            "P10.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            3,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M6",
+            "P10.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M6:P4.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 6.293e-16, 1.991e-16, 4.681e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            3,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M5",
+            "P11.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M6:P4.B1; G-index 16; ordered stretch and physical rank-one tensor residuals 6.293e-16, 1.991e-16, 4.681e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            6,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M5",
+            "P11.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            6,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M6",
+            "P12.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M4:P2.B1; G-index 18; ordered stretch and physical rank-one tensor residuals 4.454e-16, 5.240e-16, 3.078e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            6,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M6",
+            "P12.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            6,
+            5
+          ]
+        }
+      ],
+      "classification_screens": [
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 8.192295283817064e-17,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556275
+            },
+            {
+              "operation": 7,
+              "mapping_error": 6.090661287726524e-16,
+              "type_i_normal_alignment_error": 0.9999999999999989,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 8.192295283817064e-17,
+              "type_i_normal_alignment_error": 0.9999999999999967,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            },
+            {
+              "operation": 7,
+              "mapping_error": 6.090661287726524e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556252
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 1.081192902141583e-15,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556223
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B1; G-index 19; ordered stretch and physical rank-one tensor residuals 1.097e-15, 5.005e-16, 1.850e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 1.081192902141583e-15,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556236
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999979,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M1\u2013M2:P1.B2; G-index 19; ordered stretch and physical rank-one tensor residuals 5.520e-16, 5.852e-16, 1.897e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 6.894569898116021e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556253
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999977,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 6.894569898116021e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9627946587556223
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 6.292904165864087e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216935
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 6.292904165864087e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 1.0087559578527224e-15,
+              "type_i_normal_alignment_error": 0.9999999999999976,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 1.0087559578527224e-15,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.8707934457216958
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M5",
+            "P3.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 5.519665509133088e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216935
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M5",
+            "P3.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 5.519665509133088e-16,
+              "type_i_normal_alignment_error": 0.9999999999999999,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M6",
+            "P4.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 8.472167524373175e-16,
+              "type_i_normal_alignment_error": 0.9999999999999982,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M6",
+            "P4.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 8.472167524373175e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.8707934457216916
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M3",
+            "P5.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 6.431630342895029e-16,
+              "type_i_normal_alignment_error": 2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216928
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M3",
+            "P5.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 6.431630342895029e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P6.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 1.0174678583485317e-15,
+              "type_i_normal_alignment_error": 0.9999999999999979,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P6.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 1.0174678583485317e-15,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216912
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M5",
+            "P7.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 8.692172661688852e-16,
+              "type_i_normal_alignment_error": 0.9999999999999979,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M5",
+            "P7.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 8.692172661688852e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216953
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M6",
+            "P8.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 5.851747632313018e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216936
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M6",
+            "P8.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 5.851747632313018e-16,
+              "type_i_normal_alignment_error": 0.9999999999999998,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M5",
+            "P9.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216984
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M5",
+            "P9.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M4:P2.B1; G-index 23; ordered stretch and physical rank-one tensor residuals 4.454e-16, 5.240e-16, 3.078e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 0.999999999999995,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M6",
+            "P10.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216915
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M3\u2013M6",
+            "P10.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M6:P4.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 6.293e-16, 1.991e-16, 4.681e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 0.9999999999999982,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M5",
+            "P11.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M6:P4.B1; G-index 16; ordered stretch and physical rank-one tensor residuals 6.293e-16, 1.991e-16, 4.681e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 0.9999999999999982,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M5",
+            "P11.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216915
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M6",
+            "P12.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M4:P2.B1; G-index 18; ordered stretch and physical rank-one tensor residuals 4.454e-16, 5.240e-16, 3.078e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 0.999999999999995,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M4\u2013M6",
+            "P12.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 1.0227779757151979e-15,
+              "type_i_normal_alignment_error": 2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.8707934457216984
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6m",
+      "topology_variant_count": 12,
+      "stretch_variant_count": 12,
+      "raw_ptmc_twin_branches": 168,
+      "raw_ptmc_habit_solutions": 336,
+      "report_constructions": 84,
+      "mode_constructions": 84,
+      "report_habits": 168,
+      "mode_habits": 168,
+      "physical_modes": 5,
+      "incompatible_pair_orbits": 1,
+      "ptmc_unordered_compatible_pairs": 42,
+      "represented_unordered_stretch_pairs": 42,
+      "missing_compatible_unordered_pairs": [],
+      "type_counts": {
+        "Compound": 24,
+        "Unresolved": 12,
+        "Type I": 24,
+        "Type II": 24
+      },
+      "geometry_candidates": {
+        "Compound": 24,
+        "Unresolved": 12,
+        "Type I": 24,
+        "Type II": 24
+      },
+      "mismatches": [],
+      "reviews": [],
+      "ct_generator_provenance": [
+        {
+          "system": [
+            "F1",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S2",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S3",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F1",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S2",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S3",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F2",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F4",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F4",
+            "S2",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F4",
+            "S3",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F4",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F6",
+            "S1",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F6",
+            "S2",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        },
+        {
+          "system": [
+            "F6",
+            "S3",
+            "II"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": 1.0
+        },
+        {
+          "system": [
+            "F6",
+            "S4",
+            "I"
+          ],
+          "parent_symmetry_match_error": 0.0,
+          "determinant": -1.0
+        }
+      ],
+      "status": "PASS_CONDITIONAL",
+      "retained_constructions": [
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            2
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            2
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            3,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 3.444e-16, 6.728e-16, 1.187e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            4,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            4,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M7\u2013M8",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M9\u2013M10:P5.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 8.152e-16, 8.248e-16, 1.309e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            5,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M7\u2013M8",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            5,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M9\u2013M10",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M7\u2013M8:P4.B2; G-index 11; ordered stretch and physical rank-one tensor residuals 8.152e-16, 8.248e-16, 1.479e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            11,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M9\u2013M10",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            11,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M11\u2013M12",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B1; G-index 11; ordered stretch and physical rank-one tensor residuals 2.605e-16, 2.716e-16, 3.926e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            9,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M11\u2013M12",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 1",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            9,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M5\u2013M9",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M3:P1.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 5.205e-16, 8.816e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            4,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M5\u2013M9",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M3:P1.B2; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 5.205e-16, 8.715e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            4,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M6\u2013M10",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 7.490e-16, 5.297e-16, 9.051e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            7,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M6\u2013M10",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 9; ordered stretch and physical rank-one tensor residuals 7.490e-16, 5.297e-16, 9.434e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            7,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M7\u2013M11",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 13; ordered stretch and physical rank-one tensor residuals 7.757e-16, 4.974e-16, 9.274e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            5,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M7\u2013M11",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 13; ordered stretch and physical rank-one tensor residuals 7.757e-16, 4.974e-16, 9.236e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            5,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M8\u2013M12",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 11; ordered stretch and physical rank-one tensor residuals 6.489e-16, 2.716e-16, 9.073e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            6,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M8\u2013M12",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 2",
+          "type": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 11; ordered stretch and physical rank-one tensor residuals 6.489e-16, 2.716e-16, 9.220e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            6,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M1\u2013M4",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M1\u2013M4",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            12
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M2\u2013M3",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M2\u2013M3",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            3
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M5\u2013M10",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            4,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M5\u2013M10",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            4,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M6\u2013M9",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            7,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M6\u2013M9",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            7,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M7\u2013M12",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            5,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M7\u2013M12",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            5,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M8\u2013M11",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            6,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M8\u2013M11",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 5",
+          "type": "Unresolved",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "direct": false,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            6,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M5",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M5",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M6",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M6",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M5",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M5",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            4
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M6",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M6",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            7
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M7",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M7",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 3; ordered stretch and physical rank-one tensor residuals 2.632e-16, 6.411e-16, 5.646e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            3,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M8",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M2\u2013M5:P3.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 4.013e-16, 4.704e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            3,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M8",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M7",
+            "P7.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M6:P2.B1; G-index 5; ordered stretch and physical rank-one tensor residuals 3.298e-16, 4.013e-16, 3.654e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            12,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M7",
+            "P7.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            12,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M8",
+            "P8.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            12,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M8",
+            "P8.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 3.298e-16, 4.013e-16, 2.937e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            12,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M11",
+            "P9.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            11,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M11",
+            "P9.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 4.872e-16, 4.324e-16, 4.650e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            11,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M12",
+            "P10.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            11,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M12",
+            "P10.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 23; ordered stretch and physical rank-one tensor residuals 4.409e-16, 6.891e-16, 5.200e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            11,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M11",
+            "P11.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 18; ordered stretch and physical rank-one tensor residuals 4.409e-16, 6.891e-16, 5.200e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            8,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M11",
+            "P11.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            8,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M12",
+            "P12.B1",
+            -1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 24; ordered stretch and physical rank-one tensor residuals 4.872e-16, 4.324e-16, 4.650e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 0,
+          "stretches": [
+            8,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M12",
+            "P12.B2",
+            1
+          ],
+          "mode_id": "Mode 3",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            8,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M11",
+            "P1.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M11",
+            "P1.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M12",
+            "P2.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            1,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M12",
+            "P2.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            1,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M11",
+            "P3.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M11",
+            "P3.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            9
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M12",
+            "P4.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            2,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M12",
+            "P4.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 4,
+          "stretches": [
+            2,
+            10
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M9",
+            "P5.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M9",
+            "P5.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 3.780e-16, 2.923e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            3,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M10",
+            "P6.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M12:P4.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 3.780e-16, 1.805e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            3,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M10",
+            "P6.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            3,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M9",
+            "P7.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            12,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M9",
+            "P7.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 3; ordered stretch and physical rank-one tensor residuals 2.673e-16, 4.393e-16, 3.466e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            12,
+            11
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M10",
+            "P8.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M12:P4.B2; G-index 3; ordered stretch and physical rank-one tensor residuals 2.673e-16, 4.393e-16, 2.513e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            12,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M10",
+            "P8.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            12,
+            8
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M7",
+            "P9.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            4,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M7",
+            "P9.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 10; ordered stretch and physical rank-one tensor residuals 4.813e-16, 6.408e-16, 3.530e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            4,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M8",
+            "P10.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            4,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M8",
+            "P10.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M1\u2013M12:P2.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 6.408e-16, 2.334e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            4,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M7",
+            "P11.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M1\u2013M12:P2.B1; G-index 16; ordered stretch and physical rank-one tensor residuals 5.079e-16, 6.408e-16, 2.334e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            7,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M7",
+            "P11.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            7,
+            5
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M8",
+            "P12.B1",
+            -1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 15; ordered stretch and physical rank-one tensor residuals 4.813e-16, 6.408e-16, 3.530e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "direct": false,
+          "transported": true,
+          "habits": 4,
+          "stretches": [
+            7,
+            6
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M8",
+            "P12.B2",
+            1
+          ],
+          "mode_id": "Mode 4",
+          "type": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "direct": true,
+          "transported": false,
+          "habits": 0,
+          "stretches": [
+            7,
+            6
+          ]
+        }
+      ],
+      "classification_screens": [
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 7.580803519960376e-17,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9614816904887841
+            },
+            {
+              "operation": 7,
+              "mapping_error": 4.687933123710699e-16,
+              "type_i_normal_alignment_error": 0.9999999999999998,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M1\u2013M2",
+            "P1.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 7.580803519960376e-17,
+              "type_i_normal_alignment_error": 0.9999999999999989,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 7,
+              "mapping_error": 4.687933123710699e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887853
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 4.702288785163024e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9614816904887847
+            },
+            {
+              "operation": 7,
+              "mapping_error": 8.423115022178199e-17,
+              "type_i_normal_alignment_error": 0.9999999999999996,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M3\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 4.702288785163024e-16,
+              "type_i_normal_alignment_error": 0.9999999999999999,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            },
+            {
+              "operation": 7,
+              "mapping_error": 8.423115022178199e-17,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887842
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 3.444e-16, 6.728e-16, 1.187e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 7.712793956708329e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9614816904887862
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999976,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M5\u2013M6",
+            "P3.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 7.712793956708329e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887874
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M7\u2013M8",
+            "P4.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M9\u2013M10:P5.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 8.152e-16, 8.248e-16, 1.309e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 4.0153697877130473e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887842
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999978,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M7\u2013M8",
+            "P4.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 4.0153697877130473e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887874
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M9\u2013M10",
+            "P5.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M7\u2013M8:P4.B2; G-index 11; ordered stretch and physical rank-one tensor residuals 8.152e-16, 8.248e-16, 1.479e-14; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 2.362978885415412e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9614816904887841
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999977,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M9\u2013M10",
+            "P5.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 2,
+              "mapping_error": 2.362978885415412e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887868
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M11\u2013M12",
+            "P6.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F1:M3\u2013M4:P2.B1; G-index 11; ordered stretch and physical rank-one tensor residuals 2.605e-16, 2.716e-16, 3.926e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 3.817231379700678e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887841
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.9999999999999977,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F1",
+            "M11\u2013M12",
+            "P6.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 7,
+              "mapping_error": 3.817231379700678e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            },
+            {
+              "operation": 41,
+              "mapping_error": 0.0,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9614816904887868
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 2.632139211932723e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9010275962189337
+            },
+            {
+              "operation": 6,
+              "mapping_error": 5.322611011833885e-16,
+              "type_i_normal_alignment_error": 0.9999999999999999,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M1\u2013M3",
+            "P1.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 2.632139211932723e-16,
+              "type_i_normal_alignment_error": 0.9999999999999982,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            },
+            {
+              "operation": 6,
+              "mapping_error": 5.322611011833885e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9010275962189355
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P2.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 2.6734453420541773e-16,
+              "type_i_normal_alignment_error": -2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189357
+            },
+            {
+              "operation": 6,
+              "mapping_error": 5.343158349632985e-16,
+              "type_i_normal_alignment_error": 0.9999999999999981,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M2\u2013M4",
+            "P2.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "cross-locked: same rank-one branch has Type-I K1/eta1 geometry + shear (or exact -Q mirror provenance + shear) and independent Type-II exact parent twofold provenance + shear",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 2.6734453420541773e-16,
+              "type_i_normal_alignment_error": 0.9999999999999997,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 6,
+              "mapping_error": 5.343158349632985e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189335
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M5\u2013M9",
+            "P3.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M3:P1.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 5.205e-16, 8.816e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 7.980821134185468e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189385
+            },
+            {
+              "operation": 28,
+              "mapping_error": 7.115877953470417e-16,
+              "type_i_normal_alignment_error": 0.9999999999999968,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M5\u2013M9",
+            "P3.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M1\u2013M3:P1.B2; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 5.205e-16, 8.715e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 7.980821134185468e-16,
+              "type_i_normal_alignment_error": 0.999999999999997,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            },
+            {
+              "operation": 28,
+              "mapping_error": 7.115877953470417e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189385
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M6\u2013M10",
+            "P4.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 7.490e-16, 5.297e-16, 9.051e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 7.115877953470417e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189385
+            },
+            {
+              "operation": 28,
+              "mapping_error": 7.980821134185468e-16,
+              "type_i_normal_alignment_error": 0.999999999999997,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M6\u2013M10",
+            "P4.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 9; ordered stretch and physical rank-one tensor residuals 7.490e-16, 5.297e-16, 9.434e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 7.115877953470417e-16,
+              "type_i_normal_alignment_error": 0.9999999999999968,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 28,
+              "mapping_error": 7.980821134185468e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189385
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M7\u2013M11",
+            "P5.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 13; ordered stretch and physical rank-one tensor residuals 7.757e-16, 4.974e-16, 9.274e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 7.41956039983613e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9010275962189396
+            },
+            {
+              "operation": 39,
+              "mapping_error": 6.407993834599438e-16,
+              "type_i_normal_alignment_error": 0.9999999999999956,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M7\u2013M11",
+            "P5.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 13; ordered stretch and physical rank-one tensor residuals 7.757e-16, 4.974e-16, 9.236e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 7.41956039983613e-16,
+              "type_i_normal_alignment_error": 0.9999999999999954,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            },
+            {
+              "operation": 39,
+              "mapping_error": 6.407993834599438e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189394
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M8\u2013M12",
+            "P6.B1",
+            -1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B1; G-index 11; ordered stretch and physical rank-one tensor residuals 6.489e-16, 2.716e-16, 9.073e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 6.407993834599438e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9010275962189394
+            },
+            {
+              "operation": 39,
+              "mapping_error": 7.41956039983613e-16,
+              "type_i_normal_alignment_error": 0.9999999999999954,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F2",
+            "M8\u2013M12",
+            "P6.B2",
+            1
+          ],
+          "label": "Compound",
+          "status": "symmetry-transported from directly cross-locked F2:M2\u2013M4:P2.B2; G-index 11; ordered stretch and physical rank-one tensor residuals 6.489e-16, 2.716e-16, 9.220e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Compound",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 6.407993834599438e-16,
+              "type_i_normal_alignment_error": 0.9999999999999956,
+              "type_ii_shear_alignment_error": 0.0
+            },
+            {
+              "operation": 39,
+              "mapping_error": 7.41956039983613e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9010275962189396
+            }
+          ]
+        },
+        {
+          "key": [
+            "F3",
+            "M1\u2013M4",
+            "P1.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M1\u2013M4",
+            "P1.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M2\u2013M3",
+            "P2.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M2\u2013M3",
+            "P2.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M5\u2013M10",
+            "P3.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M5\u2013M10",
+            "P3.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M6\u2013M9",
+            "P4.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M6\u2013M9",
+            "P4.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M7\u2013M12",
+            "P5.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M7\u2013M12",
+            "P5.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M8\u2013M11",
+            "P6.B1",
+            -1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F3",
+            "M8\u2013M11",
+            "P6.B2",
+            1
+          ],
+          "label": "Nonconventional rank-one (parent mirror/twofold excluded)",
+          "status": "PROVED: neither a parent mirror nor a proper 180-degree rotation in the supplied parent group (48 operations; 9 mirrors; 9 twofolds) maps the two ordered stretch variants. Hence no classical parent Type-I mirror or Type-II twofold symmetry route exists. Rank-one compatibility remains valid; genericity and experimental occurrence are NOT established. Previous audit: rank-one relation exists, but the complete operator class has no exact mirror/twofold route",
+          "geometry_candidate": "Unresolved",
+          "max_tensor_residual": 0.0,
+          "witnesses": []
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M5",
+            "P1.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.078614410691508e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.905874790620793
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M5",
+            "P1.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.078614410691508e-16,
+              "type_i_normal_alignment_error": 0.9999999999999981,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M6",
+            "P2.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 7.662910953903553e-16,
+              "type_i_normal_alignment_error": 0.9999999999999957,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M1\u2013M6",
+            "P2.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 7.662910953903553e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.905874790620791
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M5",
+            "P3.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.813069667474024e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.905874790620794
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M5",
+            "P3.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.813069667474024e-16,
+              "type_i_normal_alignment_error": 0.9999999999999987,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M6",
+            "P4.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 7.48956070667233e-16,
+              "type_i_normal_alignment_error": 1.0,
+              "type_ii_shear_alignment_error": -2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M2\u2013M6",
+            "P4.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 7.48956070667233e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207955
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M7",
+            "P5.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 6.27719684935315e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207962
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M7",
+            "P5.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 3; ordered stretch and physical rank-one tensor residuals 2.632e-16, 6.411e-16, 5.646e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 6.27719684935315e-16,
+              "type_i_normal_alignment_error": 0.9999999999999996,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M8",
+            "P6.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M2\u2013M5:P3.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 4.013e-16, 4.704e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.619849591957839e-16,
+              "type_i_normal_alignment_error": 0.9999999999999984,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M3\u2013M8",
+            "P6.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.619849591957839e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207939
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M7",
+            "P7.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M6:P2.B1; G-index 5; ordered stretch and physical rank-one tensor residuals 3.298e-16, 4.013e-16, 3.654e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 6.327854303444471e-16,
+              "type_i_normal_alignment_error": 0.9999999999999962,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M7",
+            "P7.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 6.327854303444471e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.905874790620791
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M8",
+            "P8.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 4.688448576278149e-16,
+              "type_i_normal_alignment_error": 0.0,
+              "type_ii_shear_alignment_error": 0.9058747906207936
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M4\u2013M8",
+            "P8.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 3.298e-16, 4.013e-16, 2.937e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 4.688448576278149e-16,
+              "type_i_normal_alignment_error": 0.9999999999999982,
+              "type_ii_shear_alignment_error": 1.1102230246251565e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M11",
+            "P9.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207906
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M11",
+            "P9.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 17; ordered stretch and physical rank-one tensor residuals 4.872e-16, 4.324e-16, 4.650e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 0.9999999999999953,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M12",
+            "P10.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": -2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207936
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M9\u2013M12",
+            "P10.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 23; ordered stretch and physical rank-one tensor residuals 4.409e-16, 6.891e-16, 5.200e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 0.9999999999999986,
+              "type_ii_shear_alignment_error": -4.440892098500626e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M11",
+            "P11.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 18; ordered stretch and physical rank-one tensor residuals 4.409e-16, 6.891e-16, 5.200e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 0.9999999999999986,
+              "type_ii_shear_alignment_error": -4.440892098500626e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M11",
+            "P11.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": -2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207936
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M12",
+            "P12.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F4:M1\u2013M5:P1.B2; G-index 24; ordered stretch and physical rank-one tensor residuals 4.872e-16, 4.324e-16, 4.650e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 0.9999999999999953,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F4",
+            "M10\u2013M12",
+            "P12.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 4.3928639647904733e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.9058747906207906
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M11",
+            "P1.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 2.7430572482622454e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890802
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M11",
+            "P1.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 2.7430572482622454e-16,
+              "type_i_normal_alignment_error": 0.9999999999999998,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M12",
+            "P2.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.988210420951646e-16,
+              "type_i_normal_alignment_error": 0.9999999999999988,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M1\u2013M12",
+            "P2.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.988210420951646e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.810739210989081
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M11",
+            "P3.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.729262458236506e-16,
+              "type_i_normal_alignment_error": 0.9999999999999993,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M11",
+            "P3.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 28,
+              "mapping_error": 4.729262458236506e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890792
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M12",
+            "P4.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 2.237865782936645e-16,
+              "type_i_normal_alignment_error": 2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890802
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M2\u2013M12",
+            "P4.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "cross-locked: independent rank-one and discrete symmetry routes agree by exact parent twofold provenance + shear",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 19,
+              "mapping_error": 2.237865782936645e-16,
+              "type_i_normal_alignment_error": 0.9999999999999996,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M9",
+            "P5.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.204613469463148e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890809
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M9",
+            "P5.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 3.780e-16, 2.923e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.204613469463148e-16,
+              "type_i_normal_alignment_error": 0.9999999999999997,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M10",
+            "P6.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M12:P4.B2; G-index 5; ordered stretch and physical rank-one tensor residuals 2.127e-16, 3.780e-16, 1.805e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.774691175103342e-16,
+              "type_i_normal_alignment_error": 0.9999999999999989,
+              "type_ii_shear_alignment_error": 0.0
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M3\u2013M10",
+            "P6.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.774691175103342e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890812
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M9",
+            "P7.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.875172851177683e-16,
+              "type_i_normal_alignment_error": 2.220446049250313e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890819
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M9",
+            "P7.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 3; ordered stretch and physical rank-one tensor residuals 2.673e-16, 4.393e-16, 3.466e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 39,
+              "mapping_error": 4.875172851177683e-16,
+              "type_i_normal_alignment_error": 0.9999999999999986,
+              "type_ii_shear_alignment_error": 4.440892098500626e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M10",
+            "P8.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M12:P4.B2; G-index 3; ordered stretch and physical rank-one tensor residuals 2.673e-16, 4.393e-16, 2.513e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.296945900966654e-16,
+              "type_i_normal_alignment_error": 0.9999999999999978,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M4\u2013M10",
+            "P8.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 9,
+              "mapping_error": 5.296945900966654e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890823
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M7",
+            "P9.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 3.3306690738754696e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890782
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M7",
+            "P9.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 10; ordered stretch and physical rank-one tensor residuals 4.813e-16, 6.408e-16, 3.530e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 0.9999999999999978,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M8",
+            "P10.B1",
+            -1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890813
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M5\u2013M8",
+            "P10.B2",
+            1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M1\u2013M12:P2.B1; G-index 9; ordered stretch and physical rank-one tensor residuals 5.079e-16, 6.408e-16, 2.334e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 0.9999999999999989,
+              "type_ii_shear_alignment_error": 4.440892098500626e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M7",
+            "P11.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M1\u2013M12:P2.B1; G-index 16; ordered stretch and physical rank-one tensor residuals 5.079e-16, 6.408e-16, 2.334e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 0.9999999999999989,
+              "type_ii_shear_alignment_error": 4.440892098500626e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M7",
+            "P11.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 6,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 1.1102230246251565e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890813
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M8",
+            "P12.B1",
+            -1
+          ],
+          "label": "Type II",
+          "status": "symmetry-transported from directly cross-locked F6:M2\u2013M11:P3.B1; G-index 15; ordered stretch and physical rank-one tensor residuals 4.813e-16, 6.408e-16, 3.530e-15; this is NOT an independent discrete cross-lock for the target pair",
+          "geometry_candidate": "Type II",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 0.9999999999999978,
+              "type_ii_shear_alignment_error": 2.220446049250313e-16
+            }
+          ]
+        },
+        {
+          "key": [
+            "F6",
+            "M6\u2013M8",
+            "P12.B2",
+            1
+          ],
+          "label": "Type I",
+          "status": "cross-locked: independent rank-one and discrete routes agree by K1/eta1 geometry + shear OR exact (-Q) Type-I mirror provenance + shear",
+          "geometry_candidate": "Type I",
+          "max_tensor_residual": 0.0,
+          "witnesses": [
+            {
+              "operation": 3,
+              "mapping_error": 6.411033279352948e-16,
+              "type_i_normal_alignment_error": 3.3306690738754696e-16,
+              "type_ii_shear_alignment_error": 0.8107392109890782
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "script_sha256": "1a74a40c6bbb77f457f25bff3cf5ba0c777c1faeba374c14c72f781491ae11b4"
+}

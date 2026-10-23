@@ -1,0 +1,12 @@
+{
+  "epsilon": "1e-9",
+  "error": null,
+  "independent_orbit_min_frobenius_gap": 1.4468818956639133e-09,
+  "report": {
+    "stretch_variant_count": 6,
+    "warnings": [
+      "4 twin branches classified by proved parent-symmetry transport, not by separate direct CT cross-locks; their individual evidence appears in classification_status."
+    ]
+  },
+  "status": "APPLICATION_COMPLETED"
+}

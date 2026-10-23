@@ -1,0 +1,187 @@
+{
+  "branch": "feature/twin-family-tree-app-v1",
+  "cases": [
+    {
+      "all_pairs": 15,
+      "ambiguous": {},
+      "app_branch_constructions": 30,
+      "app_classifications": {
+        "Compound": 6,
+        "Type I": 12,
+        "Type II": 12
+      },
+      "case": "2h_reference",
+      "compatible_pairs": 15,
+      "evaluated_nonambiguous_pairs": 15,
+      "findings": 0,
+      "independent_branch_count": 30,
+      "independent_variant_count": 6,
+      "input": {
+        "C_M_from_A": [
+          [
+            "0",
+            "1",
+            "1"
+          ],
+          [
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "1",
+            "-1"
+          ]
+        ],
+        "parent": {
+          "a": 5.836,
+          "alpha": 90.0,
+          "b": 5.836,
+          "beta": 90.0,
+          "c": 5.836,
+          "gamma": 90.0,
+          "point_group": "m-3m"
+        },
+        "product": {
+          "a": 4.382116368337481,
+          "alpha": 90.0,
+          "b": 5.3562808,
+          "beta": 90.0,
+          "c": 4.222001371547299,
+          "gamma": 90.0,
+          "point_group": "mmm"
+        }
+      },
+      "model_status": "CONDITIONAL_ON_SUPPLIED_CORRESPONDENCE",
+      "provenance": "Bhattacharya published 2H worked input, correspondence from reference input",
+      "verified_app_branches": 30
+    },
+    {
+      "all_pairs": 15,
+      "ambiguous": {},
+      "app_branch_constructions": 30,
+      "app_classifications": {
+        "Compound": 6,
+        "Type I": 12,
+        "Type II": 12
+      },
+      "case": "2h_landa",
+      "compatible_pairs": 15,
+      "evaluated_nonambiguous_pairs": 15,
+      "findings": 0,
+      "independent_branch_count": 30,
+      "independent_variant_count": 6,
+      "input": {
+        "C_M_from_A": [
+          [
+            "0",
+            "1",
+            "1"
+          ],
+          [
+            "1",
+            "0",
+            "0"
+          ],
+          [
+            "0",
+            "1",
+            "-1"
+          ]
+        ],
+        "parent": {
+          "a": 5.835,
+          "alpha": 90.0,
+          "b": 5.835,
+          "beta": 90.0,
+          "c": 5.835,
+          "gamma": 90.0,
+          "point_group": "m-3m"
+        },
+        "product": {
+          "a": 4.389,
+          "alpha": 90.0,
+          "b": 5.342,
+          "beta": 90.0,
+          "c": 4.224,
+          "gamma": 90.0,
+          "point_group": "mmm"
+        }
+      },
+      "model_status": "CONDITIONAL_ON_SUPPLIED_CORRESPONDENCE",
+      "provenance": "Landa 2007 2H published lattice lengths (as stored by repository); canonical 2H correspondence *assumed*, not independently specimen verified",
+      "verified_app_branches": 30
+    },
+    {
+      "all_pairs": 66,
+      "ambiguous": {},
+      "app_branch_constructions": 84,
+      "app_classifications": {
+        "Compound": 12,
+        "Type I": 36,
+        "Type II": 36
+      },
+      "case": "niti",
+      "compatible_pairs": 42,
+      "evaluated_nonambiguous_pairs": 66,
+      "findings": 0,
+      "independent_branch_count": 84,
+      "independent_variant_count": 12,
+      "input": {
+        "C_M_from_A": [
+          [
+            "0",
+            "0",
+            "1"
+          ],
+          [
+            "1/2",
+            "1/2",
+            "0"
+          ],
+          [
+            "-1/2",
+            "1/2",
+            "0"
+          ]
+        ],
+        "parent": {
+          "a": 3.015,
+          "alpha": 90.0,
+          "b": 3.015,
+          "beta": 90.0,
+          "c": 3.015,
+          "gamma": 90.0,
+          "point_group": "m-3m"
+        },
+        "product": {
+          "a": 2.889,
+          "alpha": 90.0,
+          "b": 4.12,
+          "beta": 96.8,
+          "c": 4.622,
+          "gamma": 90.0,
+          "point_group": "2/m"
+        }
+      },
+      "model_status": "CONDITIONAL_ON_SUPPLIED_CORRESPONDENCE",
+      "provenance": "Bhattacharya NiTi B2/B19prime published worked input",
+      "verified_app_branches": 84
+    }
+  ],
+  "counts": {},
+  "findings": [],
+  "head": "7dc7a4427a12c989e6cd8df62e991b7c9454003b",
+  "independence_caveats": [
+    "No published expected fractions, shears, normals read",
+    "Published lattice values are model inputs, not experimentally indexed variant truth",
+    "PTMC variant list used strictly to translate app output indices",
+    "Null-cone method shares mathematical theorem, not production algebraic implementation",
+    "Near-degenerate cases need higher precision; no finite scan proves global completeness"
+  ],
+  "method": "Independent metric stretch orbit; null-cone rank-one dyad; generator geometry",
+  "schema": "upstream_independent_falsification_v1",
+  "status": "PASS_CONDITIONAL",
+  "timestamp": "2026-10-21T12:12:13.315156+00:00"
+}

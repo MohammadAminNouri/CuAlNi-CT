@@ -1,0 +1,23 @@
+{
+  "status": "PASS_CONDITIONAL",
+  "source_sha256": "44ef938c8d34d623861cefd2b18779162d45a9468f2ab880aaf917dbf5a3c1ca",
+  "backed_up_source_sha256": "3b6f433789097cef98fddebbc4caded59a50184c096cc4284de1c93f6a7ea317",
+  "case": "deterministic synthetic OR matrices on actual James-Hane 6M project",
+  "comparison_count": 42,
+  "matched_branch_assignments": 6,
+  "experimental_comparison_records": 13,
+  "bit_exact_assignment_and_residual_equality": true,
+  "bit_exact_experiment_residual_equality": true,
+  "no_near_orientation_aliasing": true,
+  "seconds": {
+    "original_first": 0.156023,
+    "cached_first": 0.089204,
+    "cached_repeat": 0.068641
+  },
+  "notes": [
+    "This is a read-only A/B integration check, not a published-input theory equivalence audit.",
+    "Synthetic proper rotations do not certify numerical science for measured material inputs.",
+    "Timing is indicative only; a speedup is not required for numerical PASS.",
+    "The 6M full comparison, EBSD Powell optimizer and the complete pytest suite remain unverified after caching."
+  ]
+}
