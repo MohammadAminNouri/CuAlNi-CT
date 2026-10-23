@@ -32,6 +32,12 @@ class ModeEntry:
     construction: PairTwinConstruction
     operator_family: str
 
+    @property
+    def evidence_category(self) -> str:
+        # Provenance only; never infer a classical twin subtype.
+        from .twin_evidence_status_2026_10_22 import category_for_construction
+        return category_for_construction(self.construction)
+
 
 @dataclass(frozen=True)
 class PhysicalTwinMode:
@@ -43,6 +49,17 @@ class PhysicalTwinMode:
 
     def by_type(self, twin_type: str) -> tuple[ModeEntry, ...]:
         return tuple(x for x in self.entries if _display_type(x.construction) == twin_type)
+
+    def by_evidence_category(self, category: str) -> tuple[ModeEntry, ...]:
+        # Separate parent-symmetry exclusion from unresolved evidence.
+        return tuple(x for x in self.entries if x.evidence_category == category)
+
+    def evidence_counts(self) -> dict[str, int]:
+        result: dict[str, int] = {}
+        for entry in self.entries:
+            category = entry.evidence_category
+            result[category] = result.get(category, 0) + 1
+        return result
 
 
 @dataclass(frozen=True)
@@ -90,6 +107,22 @@ def _symmetry_permutations(stretches: dict[int, np.ndarray], parent: Any, metric
     ids = tuple(sorted(stretches))
     if ids != tuple(range(1, len(ids) + 1)):
         raise ModeClassificationError("Stretch IDs must be contiguous and one-based")
+    # Uniqueness depends on actual separation, NOT on a fixed 1e-9 gap.
+    orbit_gaps = [
+        _relative_error(stretches[i], stretches[j])
+        for p, i in enumerate(ids)
+        for j in ids[p + 1:]
+    ]
+    if orbit_gaps:
+        orbit_minimum_gap = min(orbit_gaps)
+        if not np.isfinite(orbit_minimum_gap) or orbit_minimum_gap <= 128.0 * np.finfo(float).eps:
+            raise ModeClassificationError(
+                "UNRESOLVED_MODE_SYMMETRY: distinct stretch variants below "
+                f"reliable binary64 resolution; gap={orbit_minimum_gap:.3e}"
+            )
+        permutation_tolerance = min(tolerance, orbit_minimum_gap / 8.0)
+    else:
+        permutation_tolerance = tolerance
     result: set[tuple[int, ...]] = set()
     for lattice_operation in parent.symmetry_matrices():
         Q = B @ np.asarray(lattice_operation, float) @ Binv
@@ -99,10 +132,13 @@ def _symmetry_permutations(stretches: dict[int, np.ndarray], parent: Any, metric
         for idx in ids:
             target = Q @ stretches[idx] @ Q.T
             errors = sorted((_relative_error(target, U), other) for other, U in stretches.items())
-            if errors[0][0] > tolerance:
-                raise ModeClassificationError("Parent symmetry fails to map a stretch variant to another; verify input basis")
-            if len(errors) > 1 and abs(errors[1][0] - errors[0][0]) < 1.e-9:
-                raise ModeClassificationError("Symmetry mapping is ambiguous for near-degenerate stretches")
+            if errors[0][0] > permutation_tolerance:
+                raise ModeClassificationError(
+                    "Parent symmetry cannot uniquely identify the transformed "
+                    "stretch at the resolvable orbit separation"
+                )
+            if len(errors) > 1 and errors[1][0] <= permutation_tolerance:
+                raise ModeClassificationError("Multiple distinct stretch variants satisfy symmetry matching")
             perm.append(errors[0][1])
         if len(set(perm)) != len(ids):
             raise ModeClassificationError("Nonbijective parent symmetry action on stretch variants")

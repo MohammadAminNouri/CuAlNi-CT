@@ -45,4 +45,16 @@ def test_compound_never_deduplicates_type_i_k1_eta1_against_type_ii_k2_eta2():
 def test_invalid_edit_state_is_caught_before_calculation_boundary():
     source = (ROOT / "twin_app" / "streamlit_app.py").read_text(encoding="utf-8")
     assert 'One input is incomplete or incompatible.' in source
-    assert source.index('One input is incomplete or incompatible.') < source.index('if st.button(') < source.index('report = build_twin_family_report(')
+    # Only the actual calculation button is the safety boundary. CIF import
+    # contains an earlier button and must not be mistaken for calculation.
+    error_pos = source.index('One input is incomplete or incompatible.')
+    calculate_pos = source.index('if st.button("Calculate physical twinning modes and habit planes"')
+    solver_pos = source.index('report = build_twin_family_report(')
+    assert error_pos < calculate_pos < solver_pos
+    # Invalid crystal inputs return before the calculation button.
+    assert "\n            return\n" in source[error_pos:calculate_pos]
+    # Unconfirmed CIF pairs are blocked again immediately at calculation.
+    pre_solver = source[calculate_pos:solver_pos]
+    assert 'cif_admission_reason is not None' in pre_solver
+    assert 'st.error("Calculation blocked: " + cif_admission_reason)' in pre_solver
+    assert "\n            return\n" in pre_solver

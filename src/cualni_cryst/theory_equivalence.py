@@ -329,6 +329,8 @@ class PhysicalBranchMatcher:
             algebraic_tolerance=max(tolerance, 1.0e-10),
         )
         self.orientation_service = OrientationService(project)
+        # Only a matcher-local cache; never shared across projects or phase metrics.
+        self._or_frame_cache: dict[tuple[str, tuple[int, ...], bytes], np.ndarray] = {}
         self._am_stretch = self.kernel.kinematics_from_correspondence().stretch_A
         self._am_bridge_guard_tolerance = 10.0 * max(
             project.numerical_policy.exact_eigenvalue,
@@ -455,10 +457,19 @@ class PhysicalBranchMatcher:
         """
         if row.or_parent_from_product is None:
             return None
+        # Exact, unrounded matrix bytes + shape + row identifier prevent
+        # accidental aliasing of near-degenerate or different input states.
+        # A fresh copy is returned so callers cannot poison cached values.
+        matrix = np.asarray(row.or_parent_from_product, dtype=float)
+        cache_key = (row.row_id, matrix.shape, matrix.tobytes(order="C"))
+        cached = self._or_frame_cache.get(cache_key)
+        if cached is not None:
+            return cached.copy()
+
         state = self.orientation_service.state_from_matrix(
             self.parent.phase_id,
             self.product.phase_id,
-            np.asarray(row.or_parent_from_product, dtype=float),
+            matrix,
             orientation_id=f"equivalence_{row.row_id}",
             reference_convention=CartesianConvention.PTCLAB_A_X_C_XZ,
             moving_convention=CartesianConvention.PTCLAB_A_X_C_XZ,
@@ -469,7 +480,12 @@ class PhysicalBranchMatcher:
             CartesianConvention.SYMMETRIC_METRIC,
             CartesianConvention.SYMMETRIC_METRIC,
         )
-        return np.asarray(symmetric.R_reference_from_moving, dtype=float)
+        result = np.asarray(symmetric.R_reference_from_moving, dtype=float)
+        # Bound memory and retain identical numerical behaviour under heavy runs.
+        if len(self._or_frame_cache) >= 4096:
+            self._or_frame_cache.clear()
+        self._or_frame_cache[cache_key] = result.copy()
+        return result
 
     @staticmethod
     def _mixed_reference_current_twin_direction_semantics(

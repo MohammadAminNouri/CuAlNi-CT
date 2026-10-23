@@ -36,6 +36,7 @@ from .correspondence import Correspondence
 from .lattice import Lattice
 from .numerics import DEFAULT_NUMERICAL_POLICY, NumericalPolicy
 from .point_groups import point_group_operations
+from .variant_identity import match_stretch_orbit, pullback_orbit_keys
 
 Array = np.ndarray
 
@@ -386,27 +387,38 @@ def generate_stretch_variants(
     proper_parent_rotations: tuple[tuple[int, Array], ...],
     *,
     tolerance: float = 1.0e-9,
+    identity_keys: dict[int, object] | None = None,
+    conditioning: float = 1.0,
 ) -> tuple[StretchVariant, ...]:
-    """Generate the distinct parent-symmetry orbit U_i = Q U_0 Q^T."""
+    """Generate distinct variants; `tolerance` is NOT an identity threshold.
+
+    Optional exact metric-native signatures are used by the public analyzer.
+    Direct numerical use fails closed on non-identical near-machine-resolution
+    stretch tensors rather than silently misassigning symmetry provenance.
+    """
 
     base = _validated_spd(U0, name="U0")
     matrices: list[Array] = []
     provenance: list[list[int]] = []
     residuals: list[float] = []
+    keys: list[object | None] = []
+    if not np.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("tolerance must be finite and positive")
     for symmetry_index, rotation in proper_parent_rotations:
         Q = np.asarray(rotation, dtype=float).reshape(3, 3)
         candidate = Q @ base @ Q.T
         candidate = 0.5 * (candidate + candidate.T)
-        match = next(
-            (
-                index
-                for index, existing in enumerate(matrices)
-                if np.linalg.norm(candidate - existing, ord="fro") <= tolerance
-            ),
-            None,
+        key = None if identity_keys is None else identity_keys[int(symmetry_index)]
+        match = match_stretch_orbit(
+            candidate, matrices,
+            generator_index=int(symmetry_index),
+            identity_key=key,
+            existing_keys=keys,
+            conditioning=conditioning,
         )
         if match is None:
             matrices.append(candidate)
+            keys.append(key)
             provenance.append([int(symmetry_index)])
             residuals.append(_relative_residual(candidate, Q @ base @ Q.T))
         else:
@@ -746,15 +758,21 @@ def analyze_ball_james(
     u_lambdas, _ = _principal_stretches(U0)
     spectrum_residual = float(np.max(np.abs(u_lambdas - metric_spectrum.lambdas)))
 
+    parent_symmetry_matrices = tuple(parent_symmetry_matrices)
     proper_rotations = parent_symmetry_rotations(
         parent,
         parent_symmetry_matrices,
         tolerance=max(algebraic_tolerance, 1.0e-9),
     )
+    identity_keys = pullback_orbit_keys(
+        product, C, enumerate(parent_symmetry_matrices)
+    )
     variants = generate_stretch_variants(
         U0,
         proper_rotations,
         tolerance=max(algebraic_tolerance, 1.0e-9),
+        identity_keys=identity_keys,
+        conditioning=max(1.0, float(np.linalg.cond(parent)), float(np.linalg.cond(product))),
     )
     B_parent = _spd_sqrt(parent)
     B_parent_inv = np.linalg.inv(B_parent)

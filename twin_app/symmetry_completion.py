@@ -108,6 +108,25 @@ def complete_classifications_by_symmetry(
                 raise ValueError(f"Missing or identical stretch indices in pair {pair.pair_id}")
             for ci,branch in enumerate(pair.constructions):
                 entries.append((fi,pi,ci,family,pair,branch,si,sj,_tensor(branch.a_parent_cartesian, branch.n_parent_cartesian)))
+    # Symmetry transport must uniquely resolve already-distinct stretch states.
+    # A fixed model tolerance is not an equivalence relation near degeneracy.
+    variant_ids = sorted(stretches)
+    gaps = [
+        _relative(stretches[left], stretches[right])
+        for k, left in enumerate(variant_ids)
+        for right in variant_ids[k + 1:]
+    ]
+    if gaps:
+        minimum_distinct_gap = min(gaps)
+        if not np.isfinite(minimum_distinct_gap) or minimum_distinct_gap <= 128.0 * np.finfo(float).eps:
+            raise ValueError(
+                "UNRESOLVED_SYMMETRY_TRANSPORT: distinct stretches below reliable "
+                f"binary64 classification resolution; minimum gap={minimum_distinct_gap:.3e}"
+            )
+        # One-eighth of minimum orbit separation: less than half, with margin.
+        transport_tolerance = min(tolerance, minimum_distinct_gap / 8.0)
+    else:
+        transport_tolerance = tolerance
     originals=[x for x in entries if str(x[5].classification) in LABELS and "cross-locked" in str(x[5].classification_status)]
     proposals={}
     proofs=[]
@@ -119,11 +138,11 @@ def complete_classifications_by_symmetry(
             if source is target:continue
             for oi,Q in enumerate(operations):
                 ui=_relative(Q@stretches[source[6]]@Q.T, stretches[target[6]])
-                if ui>tolerance:continue
+                if ui>transport_tolerance:continue
                 uj=_relative(Q@stretches[source[7]]@Q.T, stretches[target[7]])
-                if uj>tolerance:continue
+                if uj>transport_tolerance:continue
                 rt=_relative(Q@source[8]@Q.T, target[8])
-                if rt>tolerance:continue
+                if rt>transport_tolerance:continue
                 candidates.append(CompletionEvidence(
                     source=f"{source[3].family_id}:{source[4].pair_id}:{source[5].construction_id}",
                     target=f"{target[3].family_id}:{target[4].pair_id}:{target[5].construction_id}",

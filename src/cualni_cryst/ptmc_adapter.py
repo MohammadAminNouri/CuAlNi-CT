@@ -44,6 +44,7 @@ from .correspondence import Correspondence
 from .lattice import Lattice
 from .numerics import DEFAULT_NUMERICAL_POLICY, NumericalPolicy
 from .point_groups import point_group_operations
+from .variant_identity import match_stretch_orbit, pullback_orbit_keys
 
 Array = np.ndarray
 
@@ -555,35 +556,32 @@ def _stable_quadratic_roots(
     *,
     tolerance: float,
 ) -> tuple[float, ...]:
+    """Fast quadratic roots. A negative discriminant is NEVER rounded to zero.
+
+    Near-tangent finite-domain cases are separately resolved against original
+    F0,D binary64 data by solve_affine_ptmc_parameters; this coefficient-only
+    utility must not manufacture a repeated root to satisfy a residual gate.
+    """
     scale = max(abs(c0), abs(c1), abs(c2), 1.0)
     threshold = tolerance * scale
     if abs(c2) <= threshold:
         if abs(c1) <= threshold:
             return ()
         return (-c0 / c1,)
-
-    discriminant = c1 * c1 - 4.0 * c2 * c0
-    discriminant_scale = max(c1 * c1, abs(4.0 * c2 * c0), 1.0)
-    if discriminant < -tolerance * discriminant_scale:
+    discriminant = c1*c1 - 4.0*c2*c0
+    if discriminant < 0.0:
         return ()
-    discriminant = max(0.0, discriminant)
+    if discriminant == 0.0:
+        return (-c1 / (2.0*c2),)
     root_discriminant = float(np.sqrt(discriminant))
-    if root_discriminant <= tolerance * max(abs(c1), 1.0):
-        return (-c1 / (2.0 * c2),)
-
     sign = 1.0 if c1 >= 0.0 else -1.0
-    q = -0.5 * (c1 + sign * root_discriminant)
-    first = q / c2
-    second = c0 / q if abs(q) > threshold else (-c1 - root_discriminant) / (2.0 * c2)
+    q = -0.5*(c1 + sign*root_discriminant)
+    first = q/c2
+    second = c0/q if q != 0.0 else (-c1-sign*root_discriminant)/(2.0*c2)
     roots = sorted((float(first), float(second)))
-    if abs(roots[1] - roots[0]) <= 10.0 * tolerance * max(
-        abs(roots[0]),
-        abs(roots[1]),
-        1.0,
-    ):
-        return (0.5 * (roots[0] + roots[1]),)
+    if roots[0] == roots[1]:
+        return (roots[0],)
     return tuple(roots)
-
 
 
 def _validate_ptmc_public_controls(
@@ -765,12 +763,23 @@ def solve_affine_ptmc_parameters(
         )
     roots: list[float] = []
     if not continuum:
-        for root in _stable_quadratic_roots(
-            c0,
-            c1,
-            c2,
-            tolerance=polynomial_tolerance,
-        ):
+        # PTMC_TANGENCY_ENCODED_MP_ROOT_GUARD_V1: keep numerical rank-one
+        # verification distinct from the exact encoded-root question.
+        discriminant = c1*c1 - 4.0*c2*c0
+        natural_scale = max(abs(c1*c1), abs(4.0*c2*c0), np.finfo(float).tiny)
+        near_tangent = (domain is not None and abs(c2) > polynomial_tolerance * max(abs(c0), abs(c1), abs(c2), np.finfo(float).tiny)
+                        and abs(discriminant) <= 1.0e-7 * natural_scale)
+        if near_tangent:
+            from .ptmc_root_isolation import resolve_bounded_habit_roots
+            candidate_roots = resolve_bounded_habit_roots(
+                base, increment, dilatational_factor=dilatational_factor,
+                domain=domain,
+            )
+        else:
+            candidate_roots = _stable_quadratic_roots(
+                c0, c1, c2, tolerance=polynomial_tolerance,
+            )
+        for root in candidate_roots:
             if domain is not None and not (
                 domain[0] - polynomial_tolerance
                 <= root
@@ -845,6 +854,12 @@ def _build_variants(
     B_m = _spd_sqrt(product)
     B_a_inv = np.linalg.inv(B_a)
 
+    # Exact binary64-input crystallographic orbit/stabilizer signatures.
+    # An algebraic-verification tolerance must never define variant identity.
+    identity_keys = pullback_orbit_keys(
+        product, C0, enumerate(parent_symmetry)
+    )
+    conditioning = max(1.0, float(np.linalg.cond(parent)), float(np.linalg.cond(product)))
     unique: list[dict[str, Any]] = []
     for symmetry_index, operation in enumerate(parent_symmetry):
         g = np.asarray(operation, dtype=float).reshape(3, 3)
@@ -875,19 +890,20 @@ def _build_variants(
         polar_residual, _, _ = _proper_rotation_residual(R_polar)
         metric_residual = _relative_residual(U @ U, target)
 
-        match = next(
-            (
-                item
-                for item in unique
-                if np.linalg.norm(U - item["U"], ord="fro")
-                <= 100.0 * algebraic_tolerance
-            ),
-            None,
+        # Use metric-native identity, with explicit fail-closed ambiguity.
+        index = match_stretch_orbit(
+            U, [item["U"] for item in unique],
+            generator_index=symmetry_index,
+            identity_key=identity_keys[symmetry_index],
+            existing_keys=[item["identity_key"] for item in unique],
+            conditioning=conditioning,
         )
+        match = None if index is None else unique[index]
         if match is None:
             unique.append(
                 {
                     "U": U,
+                    "identity_key": identity_keys[symmetry_index],
                     "C": C_i,
                     "rep": symmetry_index,
                     "indices": [symmetry_index],

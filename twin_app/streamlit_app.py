@@ -198,6 +198,33 @@ def _fingerprint(value: Any) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _cif_pair_signature(raw: dict[str, bytes]) -> str | None:
+    """Identify one complete pair of CIF uploads; never infer missing phases."""
+    if set(raw) != {"parent", "product"}:
+        return None
+    digest = hashlib.sha256()
+    for role in ("parent", "product"):
+        content = raw[role]
+        digest.update(role.encode("ascii"))
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
+    return digest.hexdigest()
+
+
+def _cif_admission_reason(
+    *, pair_signature: str | None, applied_signature: str | None,
+    confirmed: bool,
+) -> str | None:
+    """Fail closed when structures, applied cells or acknowledgement are missing."""
+    if pair_signature is None:
+        return "Upload two valid CIF structures, one for each phase."
+    if pair_signature != applied_signature:
+        return "Apply both imported cell parameters before calculating."
+    if not confirmed:
+        return "Verify the crystallographic settings and correspondence explicitly."
+    return None
+
+
 def _basis_payload(basis_result: Any) -> object:
     if basis_result.basis is None:
         return None
@@ -316,17 +343,22 @@ def main() -> None:
             help="All three methods feed exactly the same scientific solver. A CIF never provides the transformation correspondence automatically.",
         )
         imported_spglib = {}
+        cif_pair_signature = None
         if source == "Import CIF structures":
             st.caption("Import structures to check actual atomic symmetry and optionally fill cell lengths/angles. The correspondence remains your separate input.")
             left, right = st.columns(2)
             imported = {}
+            raw_cif = {}
+            st.caption("CIF parser limit: 2 MB per file (the generic uploader may display 200 MB).")
             for name, col in (("parent", left), ("product", right)):
                 with col:
                     uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}")
                     if uploaded is not None:
                         try:
-                            parsed = parse_cif(uploaded.getvalue(), filename=uploaded.name)
+                            bytes_cif = uploaded.getvalue()
+                            parsed = parse_cif(bytes_cif, filename=uploaded.name)
                             imported[name] = parsed
+                            raw_cif[name] = bytes_cif
                             st.success(f"{parsed.site_count} expanded unit-cell sites; cell metric validated")
                             if parsed.symmetry_model:
                                 st.caption(
@@ -350,9 +382,12 @@ def main() -> None:
                             else:
                                 imported_spglib[name] = evidence
                                 st.caption(f"spglib found space group {evidence['international']} ({evidence['number']}), point group {evidence['pointgroup']} at tolerance {evidence['symprec']:.0e}. Verify the conventional setting before selecting it below.")
-                        except ValueError as exc:
+                        except (ValueError, RuntimeError) as exc:
                             st.error(f"Could not read {name} CIF: {exc}")
-            if imported and st.button("Use imported cell parameters", key="tf_v9_use_cif_cells"):
+            cif_pair_signature = _cif_pair_signature(raw_cif)
+            if cif_pair_signature is None:
+                st.warning("Both parent and product CIFs must parse successfully before importing cell parameters.")
+            if st.button("Use imported cell parameters", key="tf_v9_use_cif_cells", disabled=cif_pair_signature is None):
                 # Validate all pending imports before mutating any widget state.
                 # Family-setting constraints may lock b/c/angles, so never
                 # silently overwrite an independent CIF cell parameter.
@@ -382,6 +417,7 @@ def main() -> None:
                             converted_lengths + parsed.angles,
                         ):
                             st.session_state[f"{name}_{label}"] = value
+                    st.session_state["tf_v9_applied_cif_pair_signature"] = cif_pair_signature
                     st.rerun()
         elif source == "NiTi input example":
             st.caption("NiTi B2→B19′ is preloaded as an editable input example. You can replace every value. Literature twin results are not loaded.")
@@ -467,6 +503,33 @@ def main() -> None:
                         "validated against a measured orientation relationship."
                     ),
                 }
+            cif_admission_reason = None
+            if source == "Import CIF structures":
+                applied = st.session_state.get("tf_v9_applied_cif_pair_signature")
+                pair_applied = cif_pair_signature is not None and applied == cif_pair_signature
+                if pair_applied:
+                    confirm_key = "tf_v9_confirm_cif_" + _fingerprint({
+                        "cif_pair": cif_pair_signature, "project": payload,
+                    })[:20]
+                    st.warning(
+                        "CIFs do not establish the transformation correspondence. "
+                        "The editor may still contain the NiTi example matrix. "
+                        "Check both point groups, crystal-axis settings and every correspondence entry."
+                    )
+                    confirmed = st.checkbox(
+                        "I have checked both imported structures, their settings, and "
+                        "the correspondence for this specific transformation.",
+                        value=False, key=confirm_key,
+                    )
+                else:
+                    confirmed = False
+                cif_admission_reason = _cif_admission_reason(
+                    pair_signature=cif_pair_signature,
+                    applied_signature=applied,
+                    confirmed=confirmed,
+                )
+                if cif_admission_reason:
+                    st.warning("CIF input not ready: " + cif_admission_reason)
         except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
             st.warning("One input is incomplete or incompatible. Fix it before calculation.")
             with st.expander("Which input failed?", expanded=False):
@@ -479,6 +542,9 @@ def main() -> None:
         st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
     if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
+        if source == "Import CIF structures" and cif_admission_reason is not None:
+            st.error("Calculation blocked: " + cif_admission_reason)
+            return
         st.session_state.pop("twin_family_report", None)
         st.session_state.pop("twin_mode_catalogue", None)
         st.session_state.pop("twin_family_result_signature", None)
@@ -534,6 +600,8 @@ def main() -> None:
         render_mode_report(catalogue, report)
         from twin_app.p1_ui import render_p1_symmetry_orbit_panel
         render_p1_symmetry_orbit_panel(report, payload, signature)
+        from twin_app.ebsd_ctf_ui import render_ctf_panel
+        render_ctf_panel(report, payload, transformation.transformation_id, signature)
         with st.expander("Export reproducible scientific report", expanded=False):
             st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
             record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))

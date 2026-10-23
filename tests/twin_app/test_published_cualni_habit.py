@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -63,11 +64,16 @@ def _fraction_matches(value: float, target: float, tolerance: float) -> bool:
     return min(abs(value - target), abs((1.0 - value) - target)) <= tolerance
 
 
+@lru_cache(maxsize=1)
+def _cached_cubic_operations():
+    return point_group_operations("m-3m")
+
+
 def _outer_residual_up_to_cubic_symmetry(pred_b, pred_m, target_b, target_m) -> float:
     predicted = np.outer(np.asarray(pred_b, float), np.asarray(pred_m, float))
     target = np.outer(np.asarray(target_b, float), np.asarray(target_m, float))
     best = float("inf")
-    for operation in point_group_operations("m-3m"):
+    for operation in _cached_cubic_operations():
         Q = np.asarray(operation, dtype=float)
         if np.linalg.det(Q) <= 0.0:
             continue
