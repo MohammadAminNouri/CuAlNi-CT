@@ -7,6 +7,7 @@ scientific report. Mode letters are display ordinals only; they are NEVER
 silently equated with a published paper's mode labels.
 """
 
+from contextlib import nullcontext
 from typing import Iterable
 
 import streamlit as st
@@ -49,18 +50,52 @@ def _select_source(mode: ModeSummary, twin_type) -> object:
 
 
 def _show_habits(entry: object, *, selection_key: str) -> None:
+    """Make the selected-branch numerical conclusion legible without hiding evidence."""
     twin = entry.construction
-    st.markdown("#### 4 · Compatible austenite–martensite habit solutions")
+    st.markdown("#### 4 · Austenite–martensite habit-plane compatibility")
+    st.caption(
+        "Scope: this selected calculated twin **source branch** and its entered "
+        "lattice parameters. Equivalent sources and other modes may give different results."
+    )
     if twin.continuum_fraction:
-        st.info("A continuous compatible laminate-fraction family is calculated; no single discrete habit orientation is selected.")
+        st.markdown("**A/M result: Continuous compatible laminate-fraction family.**")
+        st.write(
+            "The solver returns a continuum of compatible laminate fractions. "
+            "It does not select one unique habit orientation."
+        )
+        st.caption(
+            "Scientific interpretation: a predicted continuum is not a measured "
+            "variant fraction or an experimentally confirmed habit plane."
+        )
         return
     habits = tuple(twin.habit_solutions)
     if not habits:
-        st.info("**No exact A/M habit plane** for this twin interface and these lattice parameters. "
-                "The twin can exist without an exactly compatible austenite–martensite laminate.")
+        st.markdown("**A/M result: No exact habit-plane solution found for this branch.**")
+        st.write(
+            "**Interpretation:** The M/M twin interface calculated above remains "
+            "a separate mathematical result. For this branch and these lattice "
+            "parameters, the twinned-laminate calculation returned no exact "
+            "compatible parent–martensite habit plane."
+        )
+        st.caption(
+            "**Thesis-ready statement:** No exact A/M habit-plane solution "
+            "was obtained for the selected calculated twin branch under the "
+            "entered crystallographic parameters and numerical criteria."
+        )
+        st.caption(
+            "This does not exclude the calculated M/M twin, other twin branches "
+            "or the transformation itself; nor does it establish that every "
+            "physically possible habit plane is absent."
+        )
         return
-    st.caption(f"{len(habits)} recorded habit solution(s) for this selected twin branch. "
-               "Habit planes describe A/M compatibility, not M/M twin type.")
+    st.markdown(
+        f"**A/M result: {len(habits)} exact numerical habit-plane record(s) "
+        "for this selected twin branch.**"
+    )
+    st.caption(
+        "These are candidate parent–martensite interfaces of a twinned laminate, "
+        "not the M/M twin plane or necessarily distinct observed habit planes."
+    )
     chosen = 0
     if len(habits) > 1:
         chosen = st.radio(
@@ -74,6 +109,9 @@ def _show_habits(entry: object, *, selection_key: str) -> None:
     habit = habits[chosen]
     a, b, c = st.columns(3)
     a.metric("Other-variant fraction · λ", _value(habit.other_variant_volume_fraction))
+    st.caption(
+        "λ is the model-predicted laminate fraction, not a measured specimen fraction."
+    )
     with b:
         st.markdown("**A/M habit-plane normal · m**")
         st.code(_vec(habit.habit_normal_parent_cartesian), language="text")
@@ -95,9 +133,12 @@ def _show_habits(entry: object, *, selection_key: str) -> None:
         )
 
 
-def _show_audit(view: ModeView, catalogue: ModeCatalogue, report: TwinFamilyReport) -> None:
-    """Account explicitly for every unresolved and non-twinning record."""
-    with st.expander("Scientific audit: unresolved classifications, incompatible pairs and provenance", expanded=False):
+def _show_audit(view: ModeView, catalogue: ModeCatalogue, report: TwinFamilyReport, *, inline: bool = False) -> None:
+    """Preserve the complete audit, optionally displayed inside the third tab."""
+    context = nullcontext() if inline else st.expander(
+        "Unresolved records, incompatible pairs and provenance", expanded=False
+    )
+    with context:
         st.markdown("**What the main navigator does not show**")
         st.write(f"Unresolved rank-one source records: {view.unresolved_record_count}")
         st.write(f"Mode groups containing only unresolved classifications: {len(view.diagnostic_modes)}")
@@ -274,17 +315,32 @@ def render_mode_report(catalogue: ModeCatalogue, report: TwinFamilyReport) -> No
     _show_habits(entry, selection_key=f"{mode_id}_{selected_type}_{entry.operator_family}_"
                                     f"{pair.variant_i}_{pair.variant_j}_{twin.branch}")
     from .p1_ui import render_p1_source_evidence
-    render_p1_source_evidence(entry, report)
-    with st.expander("Independent verification, numerical residuals and provenance", expanded=False):
-        st.write("Classification evidence:", twin.classification_status)
-        st.write(f"Rank-one residual: {twin.rank_one_residual:.3e}")
-        st.write(f"Proper-rotation residual: {twin.rotation_residual:.3e}")
-        if twin.independent_outer_product_residual is not None:
-            st.write(f"Independent tensor residual: {twin.independent_outer_product_residual:.3e}")
-        if twin.independent_shear_relative_residual is not None:
-            st.write(f"Independent shear relative residual: {twin.independent_shear_relative_residual:.3e}")
-        st.write("CT classical system IDs:", ", ".join(twin.classical_system_ids) or "none")
-        for i, source in enumerate(twin_type.entries, start=1):
-            st.write(f"{i}. {entry_caption(source)} · s={_value(source.construction.shear_magnitude)} · "
-                     f"{len(source.construction.habit_solutions)} recorded habit branches")
-    _show_audit(view, catalogue, report)
+    with st.expander("Verify this result and inspect its scientific evidence", expanded=False):
+        numerical_tab, sources_tab, unresolved_tab = st.tabs((
+            "Numerical checks", "Variant pairs and sources", "Unresolved records"
+        ))
+        with numerical_tab:
+            st.caption(
+                "Numerical residuals test equations, not whether a physical "
+                "interface was observed. All source-level evidence is retained."
+            )
+            render_p1_source_evidence(entry, report, inline=True)
+            st.markdown("**Independent checks for the selected M/M interface**")
+            st.write(f"Rank-one residual: {twin.rank_one_residual:.3e}")
+            st.write(f"Proper-rotation residual: {twin.rotation_residual:.3e}")
+            if twin.independent_outer_product_residual is not None:
+                st.write(f"Independent tensor residual: {twin.independent_outer_product_residual:.3e}")
+            if twin.independent_shear_relative_residual is not None:
+                st.write(f"Independent shear relative residual: {twin.independent_shear_relative_residual:.3e}")
+        with sources_tab:
+            st.caption(
+                "Classification and source records supporting the displayed twin type. "
+                "Symmetry-related source records are not distinct observed twins."
+            )
+            st.write("Classification evidence:", twin.classification_status)
+            st.write("CT classical system IDs:", ", ".join(twin.classical_system_ids) or "none")
+            for i, source in enumerate(twin_type.entries, start=1):
+                st.write(f"{i}. {entry_caption(source)} · s={_value(source.construction.shear_magnitude)} · "
+                         f"{len(source.construction.habit_solutions)} recorded habit branches")
+        with unresolved_tab:
+            _show_audit(view, catalogue, report, inline=True)

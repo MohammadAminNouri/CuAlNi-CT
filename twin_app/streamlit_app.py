@@ -607,39 +607,8 @@ def main() -> None:
         )
         st.warning("Numerical compatibility is not experimental validation of the entered transformation. Independent specimen-specific phase, correspondence, orientation and interface measurements are required.")
         render_mode_report(catalogue, report)
-        from twin_app.p1_ui import render_p1_symmetry_orbit_panel
-        render_p1_symmetry_orbit_panel(report, payload, signature)
-        with st.expander("Export reproducible scientific report", expanded=False):
-            st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
-            record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
-            record["physical_mode_catalogue"] = {
-                "derivation": "parent metric-symmetry orbits of actual stretch-variant pairs; no reference outputs loaded",
-                "modes": [
-                    {
-                        "mode_id": m.mode_id,
-                        "symmetry_equivalent_stretch_pairs": m.stretch_pairs,
-                        "shear_magnitude": m.shear,
-                        "verified_types_and_unresolved": m.types,
-                        "source_records": [
-                            {"operator_family": e.operator_family,
-                             "pair_id": e.pair.pair_id,
-                             "construction_id": e.construction.construction_id,
-                             "classification": e.construction.classification,
-                             "classification_status": e.construction.classification_status}
-                            for e in m.entries
-                        ],
-                    }
-                    for m in catalogue.modes
-                ],
-                "incompatible_pair_orbits": catalogue.incompatible_pair_orbits,
-            }
-            st.download_button(
-                "Download complete analysis as JSON",
-                data=json.dumps(record, indent=2, default=str),
-                file_name="twin_family_research_record.json",
-                mime="application/json",
-                key="tf_export_v8",
-            )
+        from twin_app.research_tools_ui import render_research_tools
+        render_research_tools(catalogue, report, payload, signature)
 
         # Separate, opt-in comparison of the independent theory backends.
         # Existing modes, twin classifications and numerical engines are unchanged.

@@ -1,6 +1,7 @@
 """P1 Streamlit research presentation of evidence, not a new scientific solver."""
 from __future__ import annotations
 import json
+from contextlib import nullcontext
 from dataclasses import asdict
 from typing import Any
 import streamlit as st
@@ -29,11 +30,14 @@ def render_cualni_reference_guide():
     render_blind_evidence_comparison_panel()
 
 
-def render_p1_source_evidence(entry,report):
-    """One predictable science panel adjacent to numerical source results."""
+def render_p1_source_evidence(entry,report, *, inline=False):
+    """Retain complete equation and experimental evidence inside the first tab."""
     b=entry.construction
     evidence=branch_evidence_status(b)
-    with st.expander('Scientific validity · numerical checks, twins, habits and evidence',expanded=False):
+    context=nullcontext() if inline else st.expander(
+        'Numerical validity, twins, habits and evidence', expanded=False
+    )
+    with context:
         st.markdown('**1. Numerical equations**')
         x,y=st.columns(2)
         x.metric('Twin rank-one residual',f'{b.rank_one_residual:.2e}')
@@ -74,9 +78,12 @@ def render_p1_source_evidence(entry,report):
             key='p1_evidence_'+str(report.transformation_id)+'_'+str(entry.pair.pair_id)+'_'+str(b.branch))
 
 
-def render_p1_symmetry_orbit_panel(report,project_payload,signature):
-    """On-demand audited orbit grouping; never confuses microstructure with H-orbit."""
-    with st.expander('P1 · macroscopic symmetry orbits and solution-count interpretation',expanded=False):
+def render_p1_symmetry_orbit_panel(report,project_payload,signature, *, inline=False):
+    """Keep the on-demand orbit analysis unchanged inside the research-tools tab."""
+    context=nullcontext() if inline else st.expander(
+        'Macroscopic symmetry orbits and solution counts', expanded=False
+    )
+    with context:
         st.caption('Raw records count interfaces; a symmetry orbit groups equivalent macroscopic tensors. Neither count by itself enumerates distinct physical laminate microstructures.')
         key='p1_orbit_result_'+signature[:20]
         if st.button('Calculate complete physical-tensor symmetry orbit inventory',key='p1_compute_orbits_'+signature[:20]):

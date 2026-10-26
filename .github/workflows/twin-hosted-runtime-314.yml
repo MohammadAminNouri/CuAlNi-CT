@@ -46,4 +46,5 @@ jobs:
           python -m pytest -q --tb=short \
             tests/twin_app/test_streamlit_headless_smoke_2026.py \
             tests/twin_app/test_streamlit_166_deployment_ui_2026.py \
-            tests/twin_app/test_workspace_navigation_2026.py
+            tests/twin_app/test_workspace_navigation_2026.py \
+            tests/twin_app/test_habit_evidence_layout_2026.py
