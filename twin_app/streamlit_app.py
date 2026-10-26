@@ -541,6 +541,16 @@ def main() -> None:
     if previous is not None and previous != signature:
         st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
+    # Experimental data belong with CIF/manual inputs, not below predictions.
+    with st.expander("Experimental EBSD / CTF (optional input)", expanded=False):
+        from twin_app.ebsd_ctf_ui import render_ctf_panel
+        valid_report = (
+            st.session_state.get("twin_family_report")
+            if st.session_state.get("twin_family_result_signature") == signature
+            else None
+        )
+        render_ctf_panel(valid_report, payload, transformation.transformation_id, signature)
+
     if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
         if source == "Import CIF structures" and cif_admission_reason is not None:
             st.error("Calculation blocked: " + cif_admission_reason)
@@ -600,8 +610,6 @@ def main() -> None:
         render_mode_report(catalogue, report)
         from twin_app.p1_ui import render_p1_symmetry_orbit_panel
         render_p1_symmetry_orbit_panel(report, payload, signature)
-        from twin_app.ebsd_ctf_ui import render_ctf_panel
-        render_ctf_panel(report, payload, transformation.transformation_id, signature)
         with st.expander("Export reproducible scientific report", expanded=False):
             st.caption("Includes your input, coordinate conventions, every calculated variant, family and habit solution, and numerical residuals. Published benchmark outputs are not inserted.")
             record = make_export(report, input_payload=payload, policy=asdict(DEFAULT_NUMERICAL_POLICY))
@@ -633,6 +641,11 @@ def main() -> None:
                 mime="application/json",
                 key="tf_export_v8",
             )
+
+        # Separate, opt-in comparison of the independent theory backends.
+        # Existing modes, twin classifications and numerical engines are unchanged.
+        from twin_app.theory_comparison_ui import render_theory_comparison
+        render_theory_comparison(payload, transformation.transformation_id, signature)
     else:
         st.caption("Calculate to inspect the twinning-mode genealogy and its interface evidence. Published output tables are not used as solver answers.")
 

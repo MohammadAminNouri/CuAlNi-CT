@@ -8,8 +8,11 @@ from .ebsd_integration import parse_explicit_or, run_ctf_observation, summarize_
 
 
 def render_ctf_panel(report, project_payload, transformation_id, signature):
-    st.subheader("03 / Experimental EBSD (CTF)")
-    st.caption("This is an analysis of already indexed CTF orientations. It does not reindex diffraction patterns or certify twin planes from phase labels.")
+    st.markdown("**Experimental EBSD / CTF**")
+    st.caption("Optional experimental input, beside the crystallographic setup. "
+               "Only already-indexed CTF orientations are analyzed; no Kikuchi reindexing or twin-plane certification.")
+    if report is None:
+        st.info("Enter CTF inputs now. First calculate the crystallographic model above to enable CTF analysis.")
     with st.expander("Import an experimental CTF map", expanded=False):
         upload = st.file_uploader("Oxford / AZtec CTF map", type=["ctf"], key="tf_ctf_v1_file")
         left, right = st.columns(2)
@@ -18,7 +21,8 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
         nmin = int(st.number_input("Minimum indexed pixels per grain", min_value=1, max_value=1000, value=3, step=1, key="tf_ctf_v1_minpix"))
         matrix_txt = st.text_area("Independently established parent ← martensite OR (3 × 3 proper rotation)", value="", placeholder="r11 r12 r13\nr21 r22 r23\nr31 r32 r33", key="tf_ctf_v1_or", help="No default identity OR and no inference of crystallographic correspondence from CIF or CTF")
         confirm = st.checkbox("I have checked AZtec indexing, phase IDs, crystal settings, reference frames and this OR against independent evidence.", value=False, key="tf_ctf_v1_confirm")
-        if st.button("Analyze experimental CTF", type="primary", key="tf_ctf_v1_analyze"):
+        if st.button("Analyze experimental CTF", type="secondary",
+                 key="tf_ctf_v1_analyze", disabled=report is None):
             if upload is None or not matrix_txt.strip() or not confirm:
                 st.error("Supply a CTF, a verified OR, and explicit scientific input confirmation.")
             else:
@@ -32,7 +36,9 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
                     st.success("CTF orientation analysis finished. Physical twin certification remains separate.")
                 except Exception as exc:
                     st.error(f"CTF analysis not accepted: {type(exc).__name__}: {exc}")
-        saved = st.session_state.get("tf_ctf_v1_result")
+        if report is None:
+        return
+    saved = st.session_state.get("tf_ctf_v1_result")
         if saved is not None and upload is not None:
             digest = hashlib.sha256(upload.getvalue() + signature.encode() + matrix_txt.encode() + f"{phase_a}:{phase_m}:{nmin}".encode()).hexdigest()
             if saved[0] != digest:
