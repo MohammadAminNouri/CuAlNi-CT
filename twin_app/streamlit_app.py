@@ -307,6 +307,7 @@ def main() -> None:
     st.set_page_config(page_title=APP_TITLE, layout="wide", initial_sidebar_state="expanded")
     with st.sidebar:
         st.markdown("**Twin Family Explorer**")
+        st.caption("UI revision · Habit evidence 2026-10-26 R2")
         st.caption("Research workspace · scientific solver")
         st.divider()
         st.subheader("Display preferences")
