@@ -147,3 +147,24 @@ def test_single_variant_and_laminate_habit_counts_are_not_equated():
     assert "PTMC 384" in finding[1]
     assert "NOT counts of the same physical problem" in finding[2]
     assert "symmetry/sign-equivalent" in finding[2]
+
+def test_ni_ti_example_is_flagged_only_for_matching_lattice_and_correspondence():
+    from twin_app.theory_comparison_ui import input_matches_builtin_niti_demo
+
+    phases = [
+        {"phase_id": "A", "point_group": "m-3m", "cell": {
+            "a": 3.015, "b": 3.015, "c": 3.015,
+            "alpha_deg": 90, "beta_deg": 90, "gamma_deg": 90,
+            "length_unit": "angstrom"}},
+        {"phase_id": "M", "point_group": "2/m", "cell": {
+            "a": 2.889, "b": 4.120, "c": 4.622,
+            "alpha_deg": 90, "beta_deg": 96.8, "gamma_deg": 90,
+            "length_unit": "angstrom"}}
+    ]
+    matrix = [["0", "0", "1"], ["1/2", "1/2", "0"], ["-1/2", "1/2", "0"]]
+    project = {"phases": phases,
+               "transformations": [{"correspondence_M_from_A": matrix}]}
+    assert input_matches_builtin_niti_demo(project)
+    assert not input_matches_builtin_niti_demo({"phases": phases, "transformations": []})
+    phases[1]["cell"]["beta_deg"] = 99.5
+    assert not input_matches_builtin_niti_demo(project)

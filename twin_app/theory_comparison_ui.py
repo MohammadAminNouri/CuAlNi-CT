@@ -135,6 +135,83 @@ def calculate_full_theory_report(project_payload, transformation_id, *, progress
 
 
 
+
+def input_matches_builtin_niti_demo(project_payload):
+    """Identify the exact B2→B19' starter metrics *and* correspondence.
+
+    Do not infer alloy identity from crystal symmetry alone.
+    """
+    from fractions import Fraction
+
+    phases = project_payload.get("phases", ())
+    transformations = project_payload.get("transformations", ())
+    if len(phases) != 2 or len(transformations) != 1:
+        return False
+
+    expected_cells = (
+        (3.015, 3.015, 3.015, 90.0, 90.0, 90.0),
+        (2.889, 4.120, 4.622, 90.0, 96.8, 90.0),
+    )
+    keys = ("a", "b", "c", "alpha_deg", "beta_deg", "gamma_deg")
+    for phase, expected in zip(phases, expected_cells):
+        cell = phase.get("cell", {})
+        if str(cell.get("length_unit", "")).lower() != "angstrom":
+            return False
+        try:
+            if any(abs(float(cell[key]) - want) > 1e-8 for key, want in zip(keys, expected)):
+                return False
+        except (TypeError, ValueError, KeyError):
+            return False
+
+    correspondence = transformations[0].get("correspondence_M_from_A", ())
+    expected = ((0, 0, 1), (Fraction(1, 2), Fraction(1, 2), 0),
+                (Fraction(-1, 2), Fraction(1, 2), 0))
+    try:
+        return (
+            len(correspondence) == 3
+            and all(
+                len(row) == 3
+                and all(Fraction(str(value)) == Fraction(ref)
+                        for value, ref in zip(row, target))
+                for row, target in zip(correspondence, expected)
+            )
+        )
+    except (TypeError, ValueError, ZeroDivisionError):
+        return False
+
+
+def render_input_provenance(project_payload):
+    """Keep the analyzed material and crystal metrics visible above the comparison."""
+    phases = project_payload.get("phases", ())
+    if len(phases) >= 2:
+        def describe(phase):
+            cell = phase.get("cell", {})
+            try:
+                a, b, c = (float(cell[k]) for k in ("a", "b", "c"))
+                return (
+                    f"{phase.get('phase_id', '?')}: "
+                    f"({a:.4g}, {b:.4g}, {c:.4g}) {cell.get('length_unit','')}; "
+                    f"{phase.get('point_group', '?')}"
+                )
+            except (KeyError, ValueError, TypeError):
+                return str(phase.get("phase_id", "unknown"))
+        st.caption("Active crystallographic inputs — " +
+                   describe(phases[0]) + " → " + describe(phases[1]))
+    if input_matches_builtin_niti_demo(project_payload):
+        st.warning(
+            "**NiTi demonstration input detected (B2 → B19′).** "
+            "These are NOT Cu–Al–Ni thesis calculations. "
+            "Enter independently checked Cu–Al–Ni parent/product metrics "
+            "and the correct transformation correspondence, then recalculate."
+        )
+    else:
+        st.caption(
+            "Material chemistry and phase identity are not established by these "
+            "lattice inputs alone. Use verified 2H/18R metrics and correspondence "
+            "before interpreting the outputs as Cu–Al–Ni."
+        )
+
+
 def thesis_findings(unified, equivalence):
     """Answer the physical questions, not simply count raw data rows."""
     from cualni_cryst.theory_equivalence import MatchFamily
@@ -263,6 +340,11 @@ def thesis_notes(unified, equivalence, project_payload, signature):
                      f"{phase.get('point_group', '?')}, {metrics}, "
                      f"unit={cell.get('length_unit', '?')}")
     lines.append("")
+    if input_matches_builtin_niti_demo(project_payload):
+        lines.append(
+            "**WARNING: built-in NiTi B2→B19′ starter model detected; "
+            "these numerical outputs are not Cu–Al–Ni thesis data.**"
+        )
     lines.append("## Numerical findings and defensible interpretation")
     for question, result, meaning in thesis_findings(unified, equivalence):
         lines.extend(("", "### " + question, result, "", meaning))
@@ -287,6 +369,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
     """Only run expensive independent calculations after an explicit button press."""
     st.divider()
     st.subheader("04  /  Compare crystallographic theories")
+    render_input_provenance(project_payload)
     with st.container(border=True):
         st.caption(
             "Interpret the numerical evidence for this transformation. "

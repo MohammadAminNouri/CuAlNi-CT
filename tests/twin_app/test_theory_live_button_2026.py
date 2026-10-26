@@ -37,7 +37,7 @@ def test_default_niti_theory_button_finishes_and_renders_numeric_results():
         for h in app.subheader
     )
     assert any(
-        "What did these calculations actually tell us?" in getattr(x, "value", "")
+        "Four scientifically defensible findings" in getattr(x, "value", "")
         for x in app.markdown
     )
     assert any(
