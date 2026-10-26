@@ -122,3 +122,8 @@ def test_thesis_interpretation_requires_complete_tolerance_matches():
     finding = thesis_findings(un, eq)[0][1]
     assert '1 complete' in finding and '1 disagree' in finding and '1 are only partial' in finding
     assert 'not evaluable' in finding
+
+def test_theory_specific_explanations_are_visible_and_in_thesis_export():
+    source = (ROOT / "twin_app" / "theory_comparison_ui.py").read_text(encoding="utf-8")
+    assert "render_scientific_explanations(unified, equivalence)" in source
+    assert "scientific_notes(unified, equivalence)" in source

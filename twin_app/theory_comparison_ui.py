@@ -251,6 +251,8 @@ def thesis_notes(unified, equivalence, project_payload, signature):
     lines.append("## Numerical findings and defensible interpretation")
     for question, result, meaning in thesis_findings(unified, equivalence):
         lines.extend(("", "### " + question, result, "", meaning))
+    from twin_app.theory_scientific_explanations import scientific_notes
+    lines.extend(("", scientific_notes(unified, equivalence)))
     lines.extend((
         "", "## Scientific limitations",
         "The findings assume the entered lattice metrics, crystal settings, "
@@ -341,6 +343,9 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             st.markdown(f"**{i}. {question}**")
             st.write(result)
             st.caption("Meaning for your thesis: " + meaning)
+        from twin_app.theory_scientific_explanations import render_scientific_explanations
+        render_scientific_explanations(unified, equivalence)
+
         st.download_button(
             "Download numerical thesis notes (.md)",
             data=thesis_notes(unified, equivalence, project_payload, signature),

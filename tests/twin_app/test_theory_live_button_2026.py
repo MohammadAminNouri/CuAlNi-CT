@@ -40,3 +40,7 @@ def test_default_niti_theory_button_finishes_and_renders_numeric_results():
         "What did these calculations actually tell us?" in getattr(x, "value", "")
         for x in app.markdown
     )
+    assert any(
+        "How each theory reaches its conclusion" in getattr(x, "value", "")
+        for x in app.markdown
+    )
