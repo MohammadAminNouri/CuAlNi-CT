@@ -52,3 +52,31 @@ def test_research_tools_preserve_every_export_field_and_action():
     ):
         assert value in helper
     assert "st.tabs(" not in main  # Preserve initial keyboard-linear navigation.
+
+def test_calculated_habit_panel_renders_updated_section():
+    """Actually calculate before checking the habit-panel UI, not just startup."""
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(
+        str(ROOT / "twin_app" / "streamlit_app.py"), default_timeout=170
+    )
+    app.run()
+    assert not app.exception, [str(x.message) for x in app.exception]
+
+    calculate = next(
+        item for item in app.button
+        if item.label == "Calculate physical twinning modes and habit planes"
+    )
+    calculate.click()
+    app.run()
+    assert not app.exception, [str(x.message) for x in app.exception]
+
+    assert any(
+        "Austenite–martensite habit-plane compatibility" in getattr(x, "value", "")
+        for x in app.markdown
+    )
+    labels = [x.label for x in app.get("expander")]
+    assert "Verify this result and inspect its scientific evidence" in labels
+    assert "Research tools and complete scientific export" in labels
+    assert "Scientific validity · numerical checks, twins, habits and evidence" not in labels
+    assert "P1 · macroscopic symmetry orbits and solution-count interpretation" not in labels
