@@ -157,7 +157,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             )
             st.dataframe(
                 pd.DataFrame(rows[:100]).fillna("N/A"),
-                hide_index=True, use_container_width=True,
+                hide_index=True, width="stretch",
             )
         else:
             st.info("No independently matched branches for the selected inputs and assumptions. This is not proof that the theories disagree.")
@@ -170,7 +170,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             )
             st.dataframe(
                 pd.DataFrame(predictions[:150]).fillna("N/A"),
-                hide_index=True, use_container_width=True,
+                hide_index=True, width="stretch",
             )
             if equivalence.unmatched:
                 st.warning(
@@ -179,7 +179,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 )
                 st.dataframe(
                     pd.DataFrame([x.to_dict() for x in equivalence.unmatched[:60]]),
-                    hide_index=True, use_container_width=True,
+                    hide_index=True, width="stretch",
                 )
 
         with st.expander("Ball–James cofactor CC1 / CC2 / CC3 (advanced)", expanded=False):
@@ -201,7 +201,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                         ),
                     })
                 st.dataframe(
-                    pd.DataFrame(records[:100]), hide_index=True, use_container_width=True
+                    pd.DataFrame(records[:100]), hide_index=True, width="stretch"
                 )
                 st.caption("These are calculated compatibility conditions, not experimentally measured reversibility.")
 

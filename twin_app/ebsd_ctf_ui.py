@@ -37,8 +37,8 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
                 except Exception as exc:
                     st.error(f"CTF analysis not accepted: {type(exc).__name__}: {exc}")
         if report is None:
-        return
-    saved = st.session_state.get("tf_ctf_v1_result")
+            return
+        saved = st.session_state.get("tf_ctf_v1_result")
         if saved is not None and upload is not None:
             digest = hashlib.sha256(upload.getvalue() + signature.encode() + matrix_txt.encode() + f"{phase_a}:{phase_m}:{nmin}".encode()).hexdigest()
             if saved[0] != digest:
