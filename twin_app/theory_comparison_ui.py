@@ -361,7 +361,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                     "The assignment is geometric, not an overall theory ranking."
                 )
                 st.dataframe(
-                    pd.DataFrame(rows[:100]).fillna("N/A"),
+                    pd.DataFrame(rows[:100]),
                     hide_index=True, width="stretch",
                 )
             else:

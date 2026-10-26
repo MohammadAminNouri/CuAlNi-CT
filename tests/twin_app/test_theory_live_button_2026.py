@@ -37,7 +37,6 @@ def test_default_niti_theory_button_finishes_and_renders_numeric_results():
         for h in app.subheader
     )
     assert any(
-        h.value == "3. Numerical verification — no EBSD needed"
-        for h in app.get("markdown")
-    ) or any("Numerical verification" in getattr(x, "value", "")
-             for x in app.markdown)
+        "What did these calculations actually tell us?" in getattr(x, "value", "")
+        for x in app.markdown
+    )
