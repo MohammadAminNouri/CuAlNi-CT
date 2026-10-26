@@ -207,23 +207,38 @@ def thesis_findings(unified, equivalence):
                if eps else "No CT shear/shear residual for these inputs.")
 
     return (
-        ("Do CT and Ball–James calculate the same martensite twins?",
+        ("M/M twins — what actually agrees?",
          mm_text,
-         "Only fully verified branch matches support numerical agreement. "
-         "This does not establish which twin formed."),
-        ("Are exact austenite–martensite habit planes possible?",
-         f"Exact prediction records: CT {ct_habit}, BJ {bj_habit}, PTMC {ptmc_habit}. "
-         f"Fully agreeing geometries: CT/BJ {am_bj}, CT/PTMC {am_ptmc}.",
-         "The geometry, not the count, is compared. Zero exact solutions for "
-         "these inputs does not forbid the phase transformation."),
+         "CT twin constructions and BJ ordered branches are different records, "
+         "not counts of unique observed twins. The independent M/M audit and "
+         "the branch matcher test different criteria: an audit pass does not "
+         "upgrade a partial assignment to full agreement. To establish full "
+         "equivalence, compare plane normals, shears and coordinate frames."),
+        ("A/M habit planes — why do the counts differ?",
+         f"SINGLE-VARIANT exact A/M records: CT {ct_habit}, BJ {bj_habit}. "
+         f"TWO-VARIANT LAMINATE exact A/M records: PTMC {ptmc_habit}. "
+         f"Complete CT/BJ A/M assignments: {am_bj}; "
+         f"complete CT/PTMC A/M assignments: {am_ptmc}.",
+         "These are NOT counts of the same physical problem. PTMC uses a twinned "
+         "laminate with a fraction f, whereas the displayed CT/BJ checks "
+         "concern single-variant A/M interfaces. Zero single-variant habits "
+         "and many laminate habits are therefore NOT contradictory. "
+         "PTMC records can include symmetry/sign-equivalent solutions; "
+         "384 records are not 384 proven distinct physical planes. "
+         "Next: group equivalent PTMC solutions by habit normal and twin pair."),
         ("Do CT and PTMC orientation predictions agree?",
          or_text,
-         "An orientation relationship (OR) is a calculated candidate, not "
-         "evidence of the orientation selected by the specimen."),
+         "The smallest assigned angle is NOT confirmation of theory agreement "
+         "when no full match passes. Compare candidate rotations in a common "
+         "coordinate frame and under both phases' crystal symmetries, "
+         "then state an explicit angular tolerance."),
         ("Is the transformation especially compatible?",
          strong,
-         "Cofactor and shear/shear constraints are mathematical checks. "
-         "They are not measured hysteresis or reversibility."),
+         "Cofactor conditions demand stronger compatibility than ordinary "
+         "rank-one twinning. Failing CC1–CC3 does NOT invalidate BJ twins or "
+         "PTMC laminate habits. If CT shear/shear is unavailable, it was "
+         "NOT tested and should not be interpreted as a failed condition. "
+         "Next: inspect CC1, CC2, CC3 separately and vary the lattice metrics."),
     )
 
 
@@ -273,15 +288,16 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
     st.divider()
     st.subheader("04  /  Compare crystallographic theories")
     with st.container(border=True):
-        st.markdown("**First: what does each theory tell us?**")
-        for name, description in THEORIES:
-            st.markdown(f"**{name}** — {description}")
         st.caption(
-            "The theories address overlapping but different physical questions. "
-            "A twin interface (M/M) is not the same thing as an austenite–martensite "
-            "habit plane (A/M). A missing prediction is N/A, not an invented zero."
+            "Interpret the numerical evidence for this transformation. "
+            "Do not compare a martensite twin (M/M), a single-variant "
+            "austenite interface (A/M), and a PTMC two-variant laminate "
+            "as if they were identical problems."
         )
-        with st.expander("Read more: methods and what counts as agreement", expanded=False):
+        with st.expander("Which physical question does each theory answer?", expanded=False):
+            for name, description in THEORIES:
+                st.markdown(f"**{name}** — {description}")
+        with st.expander("Methods, assumptions and agreement criteria", expanded=False):
             st.markdown(
                 "**CT:** correspondence variants, operators and metric compatibility. "
                 "**Ball–James:** stretch tensors, M/M and A/M rank-one interfaces. "
@@ -332,7 +348,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             return
 
         _, unified, equivalence = stored
-        st.markdown("### What did these calculations actually tell us?")
+        st.markdown("### Four scientifically defensible findings")
         st.caption(
             "Answers concern all theoretical variants, not only the selected Mode. "
             "No experimental EBSD is needed."
@@ -342,7 +358,16 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
         ):
             st.markdown(f"**{i}. {question}**")
             st.write(result)
-            st.caption("Meaning for your thesis: " + meaning)
+            st.caption("Interpretation and useful next numerical check: " + meaning)
+        with st.expander("How to turn these results into thesis evidence", expanded=False):
+            st.markdown(
+                "1. **Unique PTMC habits:** reduce sign/symmetry-equivalent branches "
+                "and report actual unique habit-plane families.\n"
+                "2. **Comparable twins:** transform CT/BJ interface observables "
+                "to common coordinate frames and evaluate full residuals.\n"
+                "3. **Robustness:** rerun with justified 2H/18R lattice-parameter "
+                "ranges; identify which predictions persist."
+            )
         from twin_app.theory_scientific_explanations import render_scientific_explanations
         render_scientific_explanations(unified, equivalence)
 

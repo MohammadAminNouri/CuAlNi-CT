@@ -78,7 +78,8 @@ def scientific_explanations(unified, equivalence):
         "A/M habit planes exist can the additional shear/shear residual be evaluated."
     )
     ct_conclusion = (
-        "CT finds mathematically admissible correspondence/twin candidates. "
+        "CT generates correspondence/twin candidates and tests a single-variant "
+        "A/M metric condition, not a two-variant laminate habit plane. "
         + ("The entered metrics satisfy an exact CMC condition." if analysis.exact_compatible
            else "The entered metrics do not satisfy the exact CMC condition.")
         + " Closing-gap orientations are predictions, not experimentally selected ORs. "
@@ -118,7 +119,8 @@ def scientific_explanations(unified, equivalence):
         "under the stated lattice metrics, not the number of twins in a crystal. "
         + (f"{bj_valid} full CT/BJ assignments numerically agree. " if bj_valid
            else "No complete CT/BJ agreement was established by the matched assignments. ")
-        + "Unmatched, failed or incomplete comparisons cannot certify equivalent twins."
+        + "Unmatched, failed or incomplete branch assignments cannot certify "
+        "equivalent twins. The independent CT/Mallard audit has separate acceptance criteria."
     )
 
     # PTMC: invariant-plane solution of a twinned laminate, not the M/M interface itself.
@@ -146,14 +148,16 @@ def scientific_explanations(unified, equivalence):
             ptmc_example += "."
     ptmc_result = (
         f"{len(ptmc_rows)} PTMC habit-solution records "
-        f"({len(ptmc_exact)} true invariant-plane records at the selected δ), "
+        f"({len(ptmc_exact)} passing the implemented invariant-plane criterion "
+        f"at the selected δ), "
         f"{len(ptmc_cont)} continuum-family records. "
         f"CT/PTMC assigned A/M interfaces: {ptmc_agreed} full agreements, "
         f"{ptmc_failed} disagreements, {ptmc_partial} incomplete."
         + ptmc_example
     )
     ptmc_logic = (
-        "For an admissible twinned pair the pre-habit deformation is "
+        "Unlike a single-variant A/M interface, PTMC here tests a two-variant "
+        "twin laminate. For an admissible twinned pair the deformation is "
         "F(f) = U_i + f(a⊗n), with 0 ≤ f ≤ 1. "
         "The solver finds roots of det(FᵀF − δ²I) = 0, checks the middle "
         "singular value σ₂(F) = δ, and independently reconstructs a proper "
@@ -168,7 +172,10 @@ def scientific_explanations(unified, equivalence):
          if ptmc_rows or ptmc_cont else
          "PTMC returned no A/M habit solution under the entered twinning "
          "mechanism and parameters; that is not proof transformation is impossible.")
-        + " A PTMC habit is not automatically the plane between two martensite plates."
+        + " These laminate habit records cannot be compared as counts to the "
+        "single-variant CT/BJ results; multiple records may represent equivalent "
+        "habit planes after symmetry, sign and pair interchange. "
+        "A PTMC habit is also not the plane between two martensite plates."
     )
 
     # Cofactor: branch-specific conjunction; never inferred from a single CC1.
@@ -206,6 +213,8 @@ def scientific_explanations(unified, equivalence):
     cc_conclusion = (
         f"The code verifies stronger, branch-specific geometric compatibility "
         f"for {len(cc_all)} of {len(bj_twins)} M/M records. "
+        "Failure of all three stronger conditions does not exclude rank-one "
+        "twinning or PTMC laminate habit solutions. "
         "These conditions do not measure fatigue, hysteresis, transformation "
         "temperatures or whether a twin actually forms."
     )

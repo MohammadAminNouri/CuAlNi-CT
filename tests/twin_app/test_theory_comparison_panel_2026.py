@@ -18,7 +18,8 @@ def test_explanation_and_comparison_are_separate_from_physics():
     assert "StagedTheoryComparisonAdapter" in source
     assert "PTMCMode.ALL_TWINNING" in source
     assert "render_numerical_checks(unified, equivalence)" in source
-    assert "No missing theory prediction" in source or "No missing theory prediction was filled in" in source
+    assert "No theoretical prediction was invented" in source
+    assert "single-variant" in source.lower()
     assert "Calculated prediction rows" in source
 
 
@@ -127,3 +128,22 @@ def test_theory_specific_explanations_are_visible_and_in_thesis_export():
     source = (ROOT / "twin_app" / "theory_comparison_ui.py").read_text(encoding="utf-8")
     assert "render_scientific_explanations(unified, equivalence)" in source
     assert "scientific_notes(unified, equivalence)" in source
+
+def test_single_variant_and_laminate_habit_counts_are_not_equated():
+    from types import SimpleNamespace
+    from cualni_cryst.theory_unified import PredictionKind
+    from twin_app.theory_comparison_ui import thesis_findings
+
+    report = SimpleNamespace(
+        rows=tuple(
+            SimpleNamespace(prediction_kind=PredictionKind.PTMC_HABIT, exact=True)
+            for _ in range(384)
+        ),
+        ball_james_report=SimpleNamespace(martensite_twin_branches=()),
+    )
+    comparison = SimpleNamespace(matches=(), mm_independent_audit=None)
+    finding = thesis_findings(report, comparison)[1]
+    assert "CT 0, BJ 0" in finding[1]
+    assert "PTMC 384" in finding[1]
+    assert "NOT counts of the same physical problem" in finding[2]
+    assert "symmetry/sign-equivalent" in finding[2]
