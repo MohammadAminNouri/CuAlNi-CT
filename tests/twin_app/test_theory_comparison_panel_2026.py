@@ -105,3 +105,20 @@ def test_numerical_summary_keeps_raw_epsilon_and_failure():
     assert result[0]["Numerical result"] == "1 candidate ORs"
     assert "0.004" in result[1]["What it means"]
     assert result[2]["Numerical result"] == "Mismatch / incomplete"
+
+
+def test_thesis_interpretation_requires_complete_tolerance_matches():
+    from types import SimpleNamespace
+    from cualni_cryst.theory_equivalence import MatchFamily
+    from cualni_cryst.theory_unified import TheoryKind
+    from twin_app.theory_comparison_ui import thesis_findings
+    def match(value):
+        return SimpleNamespace(family=MatchFamily.MM_TWIN,
+            left_theory=TheoryKind.CAYRON_CT, right_theory=TheoryKind.BALL_JAMES,
+            all_required_components_within_tolerance=value,
+            residuals=SimpleNamespace(or_disorientation_deg=None))
+    eq = SimpleNamespace(matches=(match(True), match(None), match(False)), mm_independent_audit=None)
+    un = SimpleNamespace(rows=(),ball_james_report=SimpleNamespace(martensite_twin_branches=()))
+    finding = thesis_findings(un, eq)[0][1]
+    assert '1 complete' in finding and '1 disagree' in finding and '1 are only partial' in finding
+    assert 'not evaluable' in finding

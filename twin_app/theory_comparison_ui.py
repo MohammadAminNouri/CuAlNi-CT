@@ -134,6 +134,138 @@ def calculate_full_theory_report(project_payload, transformation_id, *, progress
     return unified, equivalence
 
 
+
+def thesis_findings(unified, equivalence):
+    """Answer the physical questions, not simply count raw data rows."""
+    from cualni_cryst.theory_equivalence import MatchFamily
+    from cualni_cryst.theory_unified import PredictionKind, TheoryKind
+
+    def count(kind, exact=False):
+        return sum(r.prediction_kind is kind and (not exact or r.exact is True)
+                   for r in unified.rows)
+
+    def compare(family, right):
+        matches = [m for m in equivalence.matches
+                   if m.family is family
+                   and m.left_theory is TheoryKind.CAYRON_CT
+                   and m.right_theory is right]
+        return (
+            sum(m.all_required_components_within_tolerance is True for m in matches),
+            sum(m.all_required_components_within_tolerance is False for m in matches),
+            sum(m.all_required_components_within_tolerance is None for m in matches),
+        )
+
+    mm_yes, mm_no, mm_partial = compare(MatchFamily.MM_TWIN, TheoryKind.BALL_JAMES)
+    audit = equivalence.mm_independent_audit
+    if audit is None:
+        audit_text = "Independent M/M verification was not evaluable."
+    elif (audit.get("success") is True and
+          audit.get("ct_coverage_complete") is True and
+          audit.get("classification_exact") is True):
+        audit_text = "Independent CT/Mallard/Ball–James audit passed."
+    else:
+        audit_text = "Independent M/M audit did not confirm complete agreement."
+
+    if mm_yes + mm_no + mm_partial:
+        mm_text = (
+            f"{mm_yes} complete CT/BJ twin assignments agree within tolerance, "
+            f"{mm_no} disagree, and {mm_partial} are only partial. {audit_text}"
+        )
+    else:
+        mm_text = "No CT/BJ twin branches were assigned for comparison. " + audit_text
+
+    ct_habit = count(PredictionKind.CT_AM_HABIT, True)
+    bj_habit = count(PredictionKind.BALL_JAMES_AM, True)
+    ptmc_habit = count(PredictionKind.PTMC_HABIT, True)
+    am_bj, _, _ = compare(MatchFamily.AM_INTERFACE, TheoryKind.BALL_JAMES)
+    am_ptmc, _, _ = compare(MatchFamily.AM_INTERFACE, TheoryKind.PTMC)
+
+    or_agreed, _, _ = compare(MatchFamily.ORIENTATION, TheoryKind.PTMC)
+    or_angles = [m.residuals.or_disorientation_deg for m in equivalence.matches
+                 if m.family is MatchFamily.ORIENTATION
+                 and m.left_theory is TheoryKind.CAYRON_CT
+                 and m.right_theory is TheoryKind.PTMC
+                 and m.residuals.or_disorientation_deg is not None]
+    or_text = (
+        f"CT produced {count(PredictionKind.CT_CLOSING_GAP_OR)} OR candidate records; "
+        f"{or_agreed} fully comparable CT/PTMC OR assignments agree."
+    )
+    if or_angles:
+        or_text += f" Minimum assigned rotation difference: {min(or_angles):.5g}°."
+    else:
+        or_text += " No CT/PTMC OR angle could be compared."
+
+    twins = unified.ball_james_report.martensite_twin_branches
+    cc = sum(b.cofactor.cc1_satisfied and b.cofactor.cc2_satisfied
+             and b.cofactor.cc3_satisfied for b in twins)
+    eps = [r.residuals["ct_supercompatibility_dimensionless"]
+           for r in unified.rows
+           if r.prediction_kind is PredictionKind.CT_SUPERCOMPATIBILITY
+           and "ct_supercompatibility_dimensionless" in r.residuals]
+    strong = f"{cc}/{len(twins)} BJ twin records satisfy CC1–CC3 at numerical tolerances. "
+    strong += (f"Minimum CT shear/shear ε = {min(eps):.5g}; ideal zero."
+               if eps else "No CT shear/shear residual for these inputs.")
+
+    return (
+        ("Do CT and Ball–James calculate the same martensite twins?",
+         mm_text,
+         "Only fully verified branch matches support numerical agreement. "
+         "This does not establish which twin formed."),
+        ("Are exact austenite–martensite habit planes possible?",
+         f"Exact prediction records: CT {ct_habit}, BJ {bj_habit}, PTMC {ptmc_habit}. "
+         f"Fully agreeing geometries: CT/BJ {am_bj}, CT/PTMC {am_ptmc}.",
+         "The geometry, not the count, is compared. Zero exact solutions for "
+         "these inputs does not forbid the phase transformation."),
+        ("Do CT and PTMC orientation predictions agree?",
+         or_text,
+         "An orientation relationship (OR) is a calculated candidate, not "
+         "evidence of the orientation selected by the specimen."),
+        ("Is the transformation especially compatible?",
+         strong,
+         "Cofactor and shear/shear constraints are mathematical checks. "
+         "They are not measured hysteresis or reversibility."),
+    )
+
+
+def thesis_notes(unified, equivalence, project_payload, signature):
+    """Export editable numerical findings with explicit limits."""
+    lines = [
+        "# Crystallographic theory comparison — numerical thesis working notes",
+        "",
+        f"Input fingerprint: {signature}",
+        "Scope: the whole transformation, not only the selected twin mode.",
+        "All counts refer to prediction records, not observed variants.",
+        "",
+        "## Input crystallography",
+    ]
+    for phase in project_payload.get("phases", ()):
+        cell = phase.get("cell", {})
+        metrics = ", ".join(
+            f"{k}={cell[k]}" for k in
+            ("a", "b", "c", "alpha_deg", "beta_deg", "gamma_deg") if k in cell
+        )
+        lines.append(f"- {phase.get('phase_id', '?')}: point group "
+                     f"{phase.get('point_group', '?')}, {metrics}, "
+                     f"unit={cell.get('length_unit', '?')}")
+    lines.append("")
+    lines.append("## Numerical findings and defensible interpretation")
+    for question, result, meaning in thesis_findings(unified, equivalence):
+        lines.extend(("", "### " + question, result, "", meaning))
+    lines.extend((
+        "", "## Scientific limitations",
+        "The findings assume the entered lattice metrics, crystal settings, "
+        "correspondence matrix and numerical tolerances. The calculations "
+        "do not prove experimentally formed variants, observed habit planes, "
+        "actual variant selection, kinetics, or hysteresis.",
+        "Unmatched and partial predictions cannot establish which theory is wrong.",
+        "Report independent residuals and sensitivity to lattice parameters "
+        "before treating these notes as thesis results.",
+        "", "## Backend warnings",
+    ))
+    lines.extend("- " + x for x in (*unified.warnings, *equivalence.warnings))
+    return "\n".join(lines) + "\n"
+
+
 def render_theory_comparison(project_payload, transformation_id: str, signature: str) -> None:
     """Only run expensive independent calculations after an explicit button press."""
     st.divider()
@@ -198,25 +330,44 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             return
 
         _, unified, equivalence = stored
-        st.markdown("#### 1. What each theory calculated")
-        st.table(pd.DataFrame(overview_rows(unified)))
+        st.markdown("### What did these calculations actually tell us?")
+        st.caption(
+            "Answers concern all theoretical variants, not only the selected Mode. "
+            "No experimental EBSD is needed."
+        )
+        for i, (question, result, meaning) in enumerate(
+            thesis_findings(unified, equivalence), start=1
+        ):
+            st.markdown(f"**{i}. {question}**")
+            st.write(result)
+            st.caption("Meaning for your thesis: " + meaning)
+        st.download_button(
+            "Download numerical thesis notes (.md)",
+            data=thesis_notes(unified, equivalence, project_payload, signature),
+            file_name="theory_thesis_notes.md",
+            mime="text/markdown",
+            key="tf_thesis_notes",
+        )
 
-        st.markdown("#### 2. Where the theories can be compared")
-        rows = matched_rows(equivalence)
-        if rows:
-            st.caption(
-                f"{len(rows)} matched physical branches across the complete input transformation. "
-                "Only the first 100 are displayed; download JSON for every branch. "
-                "The assignment is geometric, not an overall theory ranking."
-            )
-            st.dataframe(
-                pd.DataFrame(rows[:100]).fillna("N/A"),
-                hide_index=True, width="stretch",
-            )
-        else:
-            st.info("No independently matched branches for the selected inputs and assumptions. This is not proof that the theories disagree.")
+        with st.expander("Detailed theory predictions and matches (advanced)", expanded=False):
+            st.markdown("**Calculated prediction records (not observed twins)**")
+            st.table(pd.DataFrame(overview_rows(unified)))
+            st.markdown("**Numerical assignments and residuals**")
+            rows = matched_rows(equivalence)
+            if rows:
+                st.caption(
+                    f"{len(rows)} matched physical branches across the complete input transformation. "
+                    "Only the first 100 are displayed; download JSON for every branch. "
+                    "The assignment is geometric, not an overall theory ranking."
+                )
+                st.dataframe(
+                    pd.DataFrame(rows[:100]).fillna("N/A"),
+                    hide_index=True, width="stretch",
+                )
+            else:
+                st.info("No independently matched branches for the selected inputs and assumptions. This is not proof that the theories disagree.")
 
-        st.markdown("#### 3. Numerical verification — no EBSD needed")
+        st.markdown("#### Further independent numerical checks — no EBSD needed")
         from twin_app.theory_numerical_ui import render_numerical_checks
         render_numerical_checks(unified, equivalence)
 
