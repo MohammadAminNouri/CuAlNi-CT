@@ -103,7 +103,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 "Numerical agreement is **not** experimental confirmation or proof of theory equivalence."
             )
 
-        if st.button("Calculate independent CT / BJ / PTMC comparison",
+        if st.button("Calculate theories and numerical checks (no EBSD)",
                      key="tf_theory_compare_run", type="secondary"):
             st.session_state.pop("tf_theory_comparison_result", None)
             try:
@@ -119,12 +119,12 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                         project, transformation_id
                     ).compare(
                         ptmc_mode=PTMCMode.ALL_TWINNING,
-                        include_ct_closing_gap=False,
-                        include_ct_supercompatibility=False,
+                        include_ct_closing_gap=True,
+                        include_ct_supercompatibility=True,
                     )
                     equivalence = build_equivalence_report(
                         project, transformation_id, unified,
-                        include_independent_mm_audit=False,
+                        include_independent_mm_audit=True,
                     )
                 st.session_state["tf_theory_comparison_result"] = (
                     signature, unified, equivalence
@@ -161,6 +161,10 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             )
         else:
             st.info("No independently matched branches for the selected inputs and assumptions. This is not proof that the theories disagree.")
+
+        st.markdown("#### 3. Numerical verification — no EBSD needed")
+        from twin_app.theory_numerical_ui import render_numerical_checks
+        render_numerical_checks(unified, equivalence)
 
         with st.expander("Explore all calculated predictions (advanced)", expanded=False):
             predictions = _prediction_rows(unified)

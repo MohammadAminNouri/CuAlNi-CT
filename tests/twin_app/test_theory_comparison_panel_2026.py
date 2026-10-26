@@ -12,7 +12,10 @@ def test_explanation_and_comparison_are_separate_from_physics():
     source = (ROOT / "twin_app" / "theory_comparison_ui.py").read_text(encoding="utf-8")
     assert "TheoryComparisonAdapter" in source
     assert "build_equivalence_report" in source
-    assert "include_independent_mm_audit=False" in source
+    assert "include_independent_mm_audit=True" in source
+    assert "include_ct_closing_gap=True" in source
+    assert "include_ct_supercompatibility=True" in source
+    assert "render_numerical_checks(unified, equivalence)" in source
     assert "No missing theory prediction" in source or "No missing theory prediction was filled in" in source
     assert "Calculated prediction rows" in source
 
@@ -51,3 +54,52 @@ def test_ctf_upload_lives_only_in_setup_before_results():
     assert source.index("render_theory_comparison(") > source.index(
         "render_mode_report(catalogue, report)"
     )
+
+
+def test_numerical_summary_distinguishes_absence_from_success():
+    from types import SimpleNamespace
+    from twin_app.theory_numerical_ui import numerical_summary_rows
+
+    class FakeEquivalence:
+        mm_independent_audit = None
+        def matches_for(self, **kwargs):
+            return ()
+
+    unified = SimpleNamespace(
+        rows=(), ct_report=SimpleNamespace(exact_habit_planes=())
+    )
+    result = numerical_summary_rows(unified, FakeEquivalence())
+    assert [r["Numerical result"] for r in result] == [
+        "No candidate ORs", "Not applicable", "Not evaluable",
+    ]
+
+
+def test_numerical_summary_keeps_raw_epsilon_and_failure():
+    from types import SimpleNamespace
+    from cualni_cryst.theory_unified import PredictionKind
+    from twin_app.theory_numerical_ui import numerical_summary_rows
+
+    class FakeEquivalence:
+        mm_independent_audit = {
+            "success": False, "ct_coverage_complete": False,
+            "classification_exact": False, "relation_count": 5,
+        }
+        def matches_for(self, **kwargs):
+            return ()
+
+    def row(kind, residuals=None):
+        return SimpleNamespace(prediction_kind=kind, residuals=residuals or {})
+    unified = SimpleNamespace(
+        rows=(
+            row(PredictionKind.CT_CLOSING_GAP_OR),
+            row(PredictionKind.CT_SUPERCOMPATIBILITY,
+                {"ct_supercompatibility_dimensionless": 0.016}),
+            row(PredictionKind.CT_SUPERCOMPATIBILITY,
+                {"ct_supercompatibility_dimensionless": 0.004}),
+        ),
+        ct_report=SimpleNamespace(exact_habit_planes=(object(),)),
+    )
+    result = numerical_summary_rows(unified, FakeEquivalence())
+    assert result[0]["Numerical result"] == "1 candidate ORs"
+    assert "0.004" in result[1]["What it means"]
+    assert result[2]["Numerical result"] == "Mismatch / incomplete"
