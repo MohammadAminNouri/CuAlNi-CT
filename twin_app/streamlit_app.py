@@ -542,14 +542,13 @@ def main() -> None:
         st.info("Your inputs changed. The previous calculation is hidden until you calculate again.")
 
     # Experimental data belong with CIF/manual inputs, not below predictions.
-    with st.expander("Experimental EBSD / CTF (optional input)", expanded=False):
-        from twin_app.ebsd_ctf_ui import render_ctf_panel
-        valid_report = (
-            st.session_state.get("twin_family_report")
-            if st.session_state.get("twin_family_result_signature") == signature
-            else None
-        )
-        render_ctf_panel(valid_report, payload, transformation.transformation_id, signature)
+    from twin_app.ebsd_ctf_ui import render_ctf_panel
+    valid_report = (
+        st.session_state.get("twin_family_report")
+        if st.session_state.get("twin_family_result_signature") == signature
+        else None
+    )
+    render_ctf_panel(valid_report, payload, transformation.transformation_id, signature)
 
     if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
         if source == "Import CIF structures" and cif_admission_reason is not None:
