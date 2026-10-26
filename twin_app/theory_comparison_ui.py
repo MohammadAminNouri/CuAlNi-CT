@@ -76,6 +76,64 @@ def _prediction_rows(unified):
     return result
 
 
+def calculate_full_theory_report(project_payload, transformation_id, *, progress=None):
+    """Re-use tested staged theory backends and optimized, physical-frame matching.
+
+    Numerical algorithms, tolerances, and branch lists remain those of the backend.
+    The independent CT/Mallard/Ball–James audit is retained, never silently omitted.
+    """
+    from dataclasses import replace
+    import numpy as np
+    from cualni_cryst.project_io import project_from_dict
+    from cualni_cryst.theory_unified import PTMCMode
+    from cualni_cryst.theory_unified_components import StagedTheoryComparisonAdapter
+    from cualni_cryst.theory_equivalence_optimized import (
+        build_equivalence_report_optimized,
+        independent_mm_audit,
+        attach_independent_mm_audit,
+    )
+
+    def announce(message):
+        if progress is not None:
+            progress(message)
+
+    announce("Validating crystal structures and correspondence…")
+    project = project_from_dict(
+        dict(project_payload), source="twin_app:theory_comparison"
+    ).project
+    adapter = StagedTheoryComparisonAdapter(project, transformation_id)
+
+    announce("Cayron CT: twins, closing-gap ORs and shear/shear compatibility…")
+    ct = adapter.ct_component(
+        include_closing_gap=True, include_supercompatibility=True,
+    )
+    announce("Ball–James: rank-one interfaces and cofactor conditions…")
+    bj = adapter.ball_james_component(fraction_samples=101)
+    announce("PTMC: all exact twinning mechanisms and habit solutions…")
+    ptmc = adapter.ptmc_component(mode=PTMCMode.ALL_TWINNING)
+    unified = adapter.assemble(ct, bj, ptmc)
+
+    announce("Matching only physically comparable theoretical quantities…")
+    equivalence = build_equivalence_report_optimized(
+        project, transformation_id, unified,
+    )
+
+    announce("Independent M/M audit: CT versus Mallard versus Ball–James…")
+    try:
+        audit = independent_mm_audit(project, transformation_id)
+    except (AssertionError, ValueError, np.linalg.LinAlgError) as exc:
+        # A failed audit is an explicit warning, never a numerical pass.
+        equivalence = replace(
+            equivalence,
+            warnings=(*equivalence.warnings,
+                      f"Independent M/M audit not evaluable: {type(exc).__name__}: {exc}"),
+        )
+    else:
+        equivalence = attach_independent_mm_audit(equivalence, audit)
+
+    return unified, equivalence
+
+
 def render_theory_comparison(project_payload, transformation_id: str, signature: str) -> None:
     """Only run expensive independent calculations after an explicit button press."""
     st.divider()
@@ -99,41 +157,37 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             st.markdown(
                 "The same entered lattice metrics and correspondence feed every independent "
                 "backend. PTMC additionally assumes a lattice-invariant twin mechanism. "
-                "No natural CT orientation relationship is supplied in this quick comparison. "
+                "Without an independent natural OR, closing-gap solutions remain candidates. "
                 "Numerical agreement is **not** experimental confirmation or proof of theory equivalence."
             )
 
         if st.button("Calculate theories and numerical checks (no EBSD)",
                      key="tf_theory_compare_run", type="secondary"):
-            st.session_state.pop("tf_theory_comparison_result", None)
-            try:
-                from cualni_cryst.project_io import project_from_dict
-                from cualni_cryst.theory_unified import PTMCMode, TheoryComparisonAdapter
-                from cualni_cryst.theory_equivalence import build_equivalence_report
-
-                project = project_from_dict(
-                    dict(project_payload), source="twin_app:theory_comparison"
-                ).project
-                with st.spinner("Calculating separate theory branches and matching comparable physical quantities…"):
-                    unified = TheoryComparisonAdapter(
-                        project, transformation_id
-                    ).compare(
-                        ptmc_mode=PTMCMode.ALL_TWINNING,
-                        include_ct_closing_gap=True,
-                        include_ct_supercompatibility=True,
+            saved = st.session_state.get("tf_theory_comparison_result")
+            if saved is not None and saved[0] == signature:
+                st.success("Numerical comparison is already calculated for these inputs.")
+            else:
+                st.session_state.pop("tf_theory_comparison_result", None)
+                try:
+                    with st.status("Calculating theories", expanded=True) as status:
+                        unified, equivalence = calculate_full_theory_report(
+                            project_payload, transformation_id, progress=status.write,
+                        )
+                        status.update(
+                            label="Theory calculations and numerical checks completed",
+                            state="complete", expanded=False,
+                        )
+                    st.session_state["tf_theory_comparison_result"] = (
+                        signature, unified, equivalence
                     )
-                    equivalence = build_equivalence_report(
-                        project, transformation_id, unified,
-                        include_independent_mm_audit=True,
+                except Exception as exc:
+                    st.error(
+                        f"Independent comparison was not completed: {type(exc).__name__}: {exc}"
                     )
-                st.session_state["tf_theory_comparison_result"] = (
-                    signature, unified, equivalence
-                )
-            except Exception as exc:
-                st.error(
-                    f"Independent comparison was not completed: {type(exc).__name__}: {exc}"
-                )
-                st.info("Existing twin-mode results remain unchanged. No missing theory prediction was filled in.")
+                    st.info(
+                        "Your existing twin results are unchanged. "
+                        "No theoretical prediction was invented."
+                    )
 
         stored = st.session_state.get("tf_theory_comparison_result")
         if not stored or stored[0] != signature:

@@ -11,10 +11,12 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_explanation_and_comparison_are_separate_from_physics():
     source = (ROOT / "twin_app" / "theory_comparison_ui.py").read_text(encoding="utf-8")
     assert "TheoryComparisonAdapter" in source
-    assert "build_equivalence_report" in source
-    assert "include_independent_mm_audit=True" in source
-    assert "include_ct_closing_gap=True" in source
-    assert "include_ct_supercompatibility=True" in source
+    assert "build_equivalence_report_optimized" in source
+    assert "independent_mm_audit(project, transformation_id)" in source
+    assert "include_closing_gap=True" in source
+    assert "include_supercompatibility=True" in source
+    assert "StagedTheoryComparisonAdapter" in source
+    assert "PTMCMode.ALL_TWINNING" in source
     assert "render_numerical_checks(unified, equivalence)" in source
     assert "No missing theory prediction" in source or "No missing theory prediction was filled in" in source
     assert "Calculated prediction rows" in source
