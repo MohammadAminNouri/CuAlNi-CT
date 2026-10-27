@@ -153,11 +153,65 @@ def assigned_interface_evidence(unified, equivalence):
     return output
 
 
+def ptmc_habit_evidence(unified, *, tolerance=1.0e-7):
+    """Independent re-evaluation of exact PTMC habit tensor branches.
+
+    This verifies each RETURNED solution only, not completeness of the roots,
+    a particular specimen, or exactness of a reported continuum family.
+    """
+    ptmc = getattr(unified, "ptmc_report", None)
+    if ptmc is None:
+        return []
+    records = []
+    for s in ptmc.solutions:
+        F = np.asarray(s.pre_shape_deformation, float).reshape(3, 3)
+        R = np.asarray(s.habit_rotation, float).reshape(3, 3)
+        actual = np.asarray(s.macroscopic_deformation, float).reshape(3, 3)
+        b = np.asarray(s.rank_one_vector, float).reshape(3)
+        m = np.asarray(s.habit_normal_parent_cartesian, float).reshape(3)
+        delta = float(s.dilatational_factor)
+        if not all(np.isfinite(x).all() for x in (F, R, actual, b, m)):
+            raise ValueError("Non-finite PTMC tensor input in a solution branch")
+        if not math.isfinite(delta) or delta <= 0:
+            raise ValueError("Invalid PTMC dilatational factor")
+        target = delta * np.eye(3) + np.outer(b, m)
+        reconstructed = R @ F
+        residual = float(np.linalg.norm(reconstructed-target) /
+                         max(1., np.linalg.norm(reconstructed), np.linalg.norm(target)))
+        macro_gap = float(np.linalg.norm(reconstructed-actual) /
+                          max(1., np.linalg.norm(reconstructed), np.linalg.norm(actual)))
+        svd_gap = float(abs(np.sort(np.linalg.svd(F, compute_uv=False))[1]-delta))
+        rotation_gap = float(np.linalg.norm(R.T@R-np.eye(3)))
+        det = float(np.linalg.det(R))
+        f = s.other_variant_volume_fraction
+        fraction_ok = (f is None or 0. <= float(f) <= 1.)
+        ok = (residual <= tolerance and macro_gap <= tolerance
+              and svd_gap <= tolerance and rotation_gap <= tolerance
+              and abs(det-1.) <= tolerance and fraction_ok)
+        records.append({
+            "Base variant": s.base_variant_index,
+            "Other variant": s.other_variant_index,
+            "Twin branch": s.twin_branch,
+            "PTMC habit branch": s.habit_branch,
+            "LIS mechanism": s.lis_type,
+            "Volume fraction f": f,
+            "delta": delta,
+            "True invariant plane (delta=1)": bool(s.true_invariant_plane),
+            "Independent middle-stretch gap": svd_gap,
+            "Independent A/M rank-one tensor residual": residual,
+            "Independent macroscopic tensor gap": macro_gap,
+            "Independent SO(3) gap": max(rotation_gap,abs(det-1.)),
+            "Audit status": "REPRODUCED" if ok else "REVIEW_REQUIRED",
+        })
+    return records
+
+
 def evidence_report(unified, equivalence):
     """Machine-readable, input-specific audit downstream from all solvers."""
     bj = ball_james_branch_evidence(unified)
     ct = ct_supercompatibility_evidence(unified)
     matches = assigned_interface_evidence(unified, equivalence)
+    ptmc = ptmc_habit_evidence(unified)
     return {
         "audit_contract": {
             "scope": "calculated whole transformation; no EBSD, stress or kinetics",
@@ -179,6 +233,8 @@ def evidence_report(unified, equivalence):
         "BJ independent branch tensor checks": bj,
         "CT exact habit / twin shear-shear pairs": ct,
         "Assigned physical interface comparisons": matches,
+        "PTMC independent habit tensor checks": ptmc,
+        "PTMC branches requiring review": sum(r["Audit status"] != "REPRODUCED" for r in ptmc),
         "BJ branches requiring review": sum(r["Audit status"] != "REPRODUCED" for r in bj),
         "Incomplete cross-theory assignments": sum(
             r["Agreement"] == "INCOMPLETE_UNPROVEN" for r in matches),
@@ -197,6 +253,9 @@ def render_theory_evidence(unified, equivalence):
         "published values. CT A/M shear/shear pairs, BJ rank-one jumps and "
         "physical cross-theory assignments are separate tests."
     )
+    if data["PTMC branches requiring review"]:
+        st.error(f'{data["PTMC branches requiring review"]} PTMC habit tensors failed '
+                 "independent numerical reconstruction. Do not use these as validated habits.")
     if data["BJ branches requiring review"]:
         st.error(
             f'{data["BJ branches requiring review"]} Ball–James twin records did not '
@@ -223,6 +282,15 @@ def render_theory_evidence(unified, equivalence):
             "CC1–CC3 are conditional on the verified rank-one twin construction. "
             "A sampled 101-point f grid never proves compatibility for all f."
         )
+    with st.expander("PTMC: independently reconstructed full habit tensors", expanded=False):
+        entries = data["PTMC independent habit tensor checks"]
+        if entries:
+            st.dataframe(pd.DataFrame(entries), hide_index=True, width="stretch")
+        else:
+            st.info("No discrete PTMC habits to re-evaluate; no conclusion about root completeness.")
+        st.caption("The reconstructed R F_pre = δI + b⊗m checks existing candidates. "
+                   "A continuum family still needs a separate certificate; "
+                   "PTMC at δ≠1 is not a true invariant plane.")
     with st.expander("3. CT ↔ BJ ↔ PTMC: complete physical branch assignments", expanded=False):
         rows = data["Assigned physical interface comparisons"]
         if rows:
