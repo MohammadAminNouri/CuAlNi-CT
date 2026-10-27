@@ -439,7 +439,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             return
 
         _, unified, equivalence = stored
-        st.markdown("### Four scoped theoretical findings")
+        st.markdown("### Four scientifically defensible findings")
         st.caption(
             "Answers concern all theoretical variants, not only the selected Mode. "
             "No experimental EBSD is needed."
