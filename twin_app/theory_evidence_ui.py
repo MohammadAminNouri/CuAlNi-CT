@@ -206,11 +206,72 @@ def ptmc_habit_evidence(unified, *, tolerance=1.0e-7):
     return records
 
 
+def ct_bj_same_twin_implication_evidence(unified, equivalence, *, tolerance=1.0e-7):
+    """Check Cayron's one-way CT => cofactor claim ONLY on assigned twins.
+
+    A satisfied CC1–CC3 conjunction is not the reverse implication. A CT
+    shear/shear zero is only interpretable where an exact CT habit exists and
+    the CT/BJ twin assignment has every required observable.
+    """
+    rows = {r.row_id: r for r in unified.rows}
+    pairs = {}
+    for r in unified.rows:
+        if r.prediction_kind is PredictionKind.CT_SUPERCOMPATIBILITY:
+            key = (r.metadata.get("operator_index"), r.metadata.get("twin_index"))
+            pairs.setdefault(key, []).append(
+                float(r.residuals["ct_supercompatibility_dimensionless"])
+            )
+    result = []
+    for m in equivalence.matches:
+        if (m.family.value != "martensite_martensite_twin"
+                or m.left_theory.value != "cayron_ct"
+                or m.right_theory.value != "ball_james"):
+            continue
+        ct_row = rows.get(m.left_row_id)
+        bj_row = rows.get(m.right_row_id)
+        if ct_row is None or bj_row is None:
+            raise ValueError("Matched CT/BJ twin disappeared from theory rows")
+        key = (ct_row.metadata.get("operator_index"),
+               ct_row.metadata.get("twin_index"))
+        epsilons = pairs.get(key, [])
+        epsilon = min(epsilons) if epsilons else None
+        cc = bj_row.metadata.get("cofactor_all_satisfied")
+        complete = m.all_required_components_within_tolerance is True
+        ct_zero = epsilon is not None and abs(epsilon) <= tolerance
+        if not complete:
+            verdict = "INCOMPLETE_PHYSICAL_ASSIGNMENT"
+        elif epsilon is None:
+            verdict = "NO_CT_EXACT_HABIT_FOR_THIS_TWIN"
+        elif not ct_zero:
+            verdict = "CT_HYPOTHESIS_FALSE_NO_THEOREM_TEST"
+        elif cc is None:
+            verdict = "COFACTOR_STATUS_UNAVAILABLE"
+        elif cc:
+            verdict = "CONSISTENT_WITH_CT_IMPLIES_COFACTOR"
+        else:
+            verdict = "NUMERICAL_CONTRADICTION_REVIEW_FRAMES_AND_TOLERANCES"
+        result.append({
+            "CT twin": m.left_row_id,
+            "BJ twin": m.right_row_id,
+            "CT twin classification": ct_row.metadata.get("twin_classification"),
+            "Minimum exact-habit CT epsilon": epsilon,
+            "CT shear/shear zero at audit tolerance": ct_zero if epsilon is not None else None,
+            "Physical assignment fully within tolerance": complete,
+            "BJ CC1": bj_row.residuals.get("cc1_lambda2_minus_one"),
+            "BJ CC2": bj_row.residuals.get("cc2"),
+            "BJ CC3 margin": bj_row.residuals.get("cc3_margin"),
+            "BJ cofactor conjunction": cc,
+            "One-way implication status": verdict,
+        })
+    return result
+
+
 def evidence_report(unified, equivalence):
     """Machine-readable, input-specific audit downstream from all solvers."""
     bj = ball_james_branch_evidence(unified)
     ct = ct_supercompatibility_evidence(unified)
     matches = assigned_interface_evidence(unified, equivalence)
+    implications = ct_bj_same_twin_implication_evidence(unified, equivalence)
     ptmc = ptmc_habit_evidence(unified)
     return {
         "audit_contract": {
@@ -234,6 +295,7 @@ def evidence_report(unified, equivalence):
         "CT exact habit / twin shear-shear pairs": ct,
         "Assigned physical interface comparisons": matches,
         "PTMC independent habit tensor checks": ptmc,
+        "CT => CC same-twin implication checks": implications,
         "PTMC branches requiring review": sum(r["Audit status"] != "REPRODUCED" for r in ptmc),
         "BJ branches requiring review": sum(r["Audit status"] != "REPRODUCED" for r in bj),
         "Incomplete cross-theory assignments": sum(
@@ -282,6 +344,14 @@ def render_theory_evidence(unified, equivalence):
             "CC1–CC3 are conditional on the verified rank-one twin construction. "
             "A sampled 101-point f grid never proves compatibility for all f."
         )
+    with st.expander("Cayron 2026: one-way CT → cofactor on the SAME assigned twin", expanded=False):
+        rows = data["CT => CC same-twin implication checks"]
+        if rows:
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        else:
+            st.info("No fully referenced CT/BJ M/M twin assignment; the theorem implication was not tested.")
+        st.caption("A cofactor pass does not establish the reverse implication. "
+                   "A partial physical match or missing exact CT habit cannot certify equivalence.")
     with st.expander("PTMC: independently reconstructed full habit tensors", expanded=False):
         entries = data["PTMC independent habit tensor checks"]
         if entries:
