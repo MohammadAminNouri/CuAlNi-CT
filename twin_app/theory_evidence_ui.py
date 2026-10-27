@@ -248,4 +248,6 @@ def render_theory_evidence(unified, equivalence):
             "examples are material- and correspondence-specific. "
             "They are literature benchmarks, not generic Cu–Al–Ni equations."
         )
+    from twin_app.cayron_2026_reference import render_cayron_2026_reference
+    render_cayron_2026_reference()
     return data
