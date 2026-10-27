@@ -350,6 +350,14 @@ def thesis_notes(unified, equivalence, project_payload, signature):
         lines.extend(("", "### " + question, result, "", meaning))
     from twin_app.theory_scientific_explanations import scientific_notes
     lines.extend(("", scientific_notes(unified, equivalence)))
+    from twin_app.theory_evidence_ui import evidence_report
+    audit = evidence_report(unified, equivalence)
+    lines.extend(("", "## Per-branch independent reconstruction audit",
+                  f"BJ geometry/CC branches requiring review: {audit['BJ branches requiring review']}",
+                  f"CT evaluated A/M–M/M pairs: {len(audit['CT exact habit / twin shear-shear pairs'])}",
+                  f"Cross-theory incomplete assignments: {audit['Incomplete cross-theory assignments']}",
+                  "Pass means computational reproduction at tolerance 1e-7, not experimentally verified material behavior.",
+                  "Cayron 2026 Section 5.3 printed O2 Type-I analytical family remains source-inconsistent; do not treat it as a design target."))
     lines.extend((
         "", "## Scientific limitations",
         "The findings assume the entered lattice metrics, crystal settings, "
@@ -431,7 +439,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             return
 
         _, unified, equivalence = stored
-        st.markdown("### Four scientifically defensible findings")
+        st.markdown("### Four scoped theoretical findings")
         st.caption(
             "Answers concern all theoretical variants, not only the selected Mode. "
             "No experimental EBSD is needed."
@@ -453,6 +461,14 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             )
         from twin_app.theory_scientific_explanations import render_scientific_explanations
         render_scientific_explanations(unified, equivalence)
+        from twin_app.theory_evidence_ui import render_theory_evidence
+        try:
+            evidence = render_theory_evidence(unified, equivalence)
+        except (ValueError, ArithmeticError, KeyError) as audit_error:
+            st.error('Additional scientific evidence audit FAILED: '
+                     f'{type(audit_error).__name__}: {audit_error}. '
+                     'These calculations must not be treated as independently verified.')
+            evidence = {'audit_failed': str(audit_error)}
 
         st.download_button(
             "Download numerical thesis notes (.md)",
@@ -539,6 +555,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 "scope": "whole_transformation_not_selected_mode",
                 "unified_report": unified.to_dict(),
                 "branch_comparison": equivalence.to_dict(),
+                "independent_scientific_evidence": evidence,
             }, indent=2, default=str),
             file_name="independent_theory_comparison.json",
             mime="application/json",

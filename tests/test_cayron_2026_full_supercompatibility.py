@@ -254,25 +254,38 @@ def test_o2_type_ii_published_analytic_family_satisfies_ct_and_cofactor_conditio
         assert cc.satisfied, (beta, cc)
 
 
-def test_o2_type_i_published_parameterization_satisfies_classical_cofactor_conditions():
-    reflection_001 = sp.diag(1, 1, -1)
+def test_printed_o2_type_i_family_fails_independent_type_i_cci_condition():
+    """Source provenance guard: generic CC flags are not proof of twin admissibility.
 
+    Cayron Eq. 41/43 with the paper's C and O2-I (001) requires
+    ||U^-1 e_001||^2 = 1. The printed a=c/sin(beta), b=c=sqrt(2)
+    gives exactly 1/2. This is a paper-side internal inconsistency, not an
+    invitation to make the crystallographic solver accept the value.
+    """
     for beta in (92.0, 98.0, 104.0):
         c = np.sqrt(2.0)
         a = c / np.sin(np.deg2rad(beta))
         b = np.sqrt(2.0)
         M_A, M_M = _state(a, b, c, beta)
-
         U = stretch_from_metrics(M_A, M_M, C_PACKAGE)
+        e_001 = np.array([0.0, 0.0, 1.0])
+        value = float(np.linalg.norm(np.linalg.solve(U, e_001)) ** 2)
+        assert abs(value - 0.5) < 2.0e-10
+        assert abs(value - 1.0) > 0.4
+
+        # A generic cofactor evaluator operating on CT-extracted a,n may
+        # pass without having established a consistent rank-one relation
+        # between these particular BJ stretch variants. Its flags are not
+        # sufficient to overrule the independent Type-I CCI check.
         twin = type_i_from_parent_reflection(
-            reflection_001,
-            M_A,
-            M_M,
-            C_PACKAGE,
+            sp.diag(1, 1, -1), M_A, M_M, C_PACKAGE,
         )
         a_twin, n_twin = _cofactor_a_n(twin, M_A)
         cc = evaluate_cofactor_conditions(U, a_twin, n_twin, tol=2e-7)
-        assert cc.satisfied, (beta, cc)
+        assert np.isfinite(cc.cc2_residual)
+        assert np.isfinite(cc.cc3_margin)
+
+
 def test_eq41_eq43_internal_type_i_solution_is_exact_and_also_cofactor_compatible():
     # This is an algebraic diagnostic, NOT attributed to the paper as a
     # published parameterization.  Solving Eq.41 for d_z=0 with m=(001)
