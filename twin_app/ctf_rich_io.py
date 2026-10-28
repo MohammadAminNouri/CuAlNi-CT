@@ -63,7 +63,7 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
         if not np.all(np.isfinite(numeric)):
             if field.lower() in required_numeric:
                 raise ValueError(
-                    f"CTF required field {field} contains missing/nonfinite values"
+                    f"CTF required field {field} contains missing/nonnumeric/nonfinite values"
                 )
             # Optional vendor annotations can be textual. Keep the source CTF
             # intact in the ZIP but do not invent a numeric map for that field.
