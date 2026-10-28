@@ -8,9 +8,12 @@ on:
       - "twin_app/streamlit_app.py"
       - "twin_app/ebsd_ctf_ui.py"
       - "twin_app/ebsd_integration.py"
+      - "twin_app/ctf_independent.py"
       - "twin_app/structure_validation.py"
       - "twin_app/input_explainer.py"
       - "tests/twin_app/test_ctf_step01_workflow_2026.py"
+      - "tests/twin_app/test_independent_ctf_cartography_2026.py"
+      - "tests/twin_app/test_ebsd_ctf_integration.py"
       - ".github/workflows/twin-cif-ctf-input.yml"
   workflow_dispatch:
 
@@ -44,6 +47,7 @@ jobs:
         run: |
           python -m pytest -q --tb=short --maxfail=1 \
             tests/twin_app/test_ctf_step01_workflow_2026.py \
+            tests/twin_app/test_independent_ctf_cartography_2026.py \
             tests/twin_app/test_ebsd_ctf_integration.py \
             tests/twin_app/test_ebsd_contract_2026_10_23.py \
             tests/twin_app/test_cif_pair_gate_2026_10_23.py \

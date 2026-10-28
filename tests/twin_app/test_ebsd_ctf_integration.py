@@ -76,3 +76,11 @@ def test_real_ctf_parser_pipeline_with_independently_generated_synthetic_grains(
     assert len(observation.boundaries)==2
     assert len(observation.grain_assignments)>=3
     assert observation.physical_twin_evidence=='NOT_CERTIFIED_FROM_CTF_ALONE'
+    import io, zipfile
+    assert observation.evidence_archive
+    with zipfile.ZipFile(io.BytesIO(observation.evidence_archive)) as zf:
+        files = set(zf.namelist())
+        assert {"map_fields.npz", "grains.csv", "segmentation_sweep.csv",
+                "grain_variant_assignments.csv", "resolved_config.json",
+                "summary.json", "theory.json"}.issubset(files)
+

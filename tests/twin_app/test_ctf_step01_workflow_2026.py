@@ -69,12 +69,16 @@ def test_or_is_not_generated_by_ctf_and_confirmation_is_fresh():
     assert 'if not has_or:' in CTF_UI
     assert 'parse_explicit_or(matrix_txt)' in CTF_UI
     assert 'key="tf_ctf_v1_confirm_" + selected[:20]' in CTF_UI
-    assert "report is not None and not invalid and matrix_txt.strip() and confirm" in CTF_UI
+    assert 'report is not None and not invalid and model_audit["pass"]' in CTF_UI
+    assert 'not ready' in CTF_UI
     assert '"NOT CERTIFIED:' in CTF_UI
     assert "st.file_uploader(" in CTF_UI
     assert "max_upload_size=35" in CTF_UI
     assert "max_upload_size=2" in APP
     assert "st.cache_data(" in CTF_UI
+    assert "independent_ctf_cartography" in CTF_UI
+    assert 'Analyze indexed EBSD independently' in CTF_UI
+    assert 'Download complete EBSD pipeline (.zip)' in CTF_UI
     assert "run_ctf_observation(" in CTF_UI
 
 

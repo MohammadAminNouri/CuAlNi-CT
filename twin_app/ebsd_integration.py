@@ -8,7 +8,9 @@ from already indexed CTF phase labels. It never changes PTMC/BJ/CT equations.
 """
 from dataclasses import dataclass
 import hashlib
+import io
 import json
+import zipfile
 from pathlib import Path
 import tempfile
 from typing import Any, Mapping
@@ -30,6 +32,7 @@ class EBSDObservation:
     boundaries: tuple[dict[str, Any], ...]
     grain_assignments: tuple[dict[str, Any], ...]
     physical_twin_evidence: str = "NOT_CERTIFIED_FROM_CTF_ALONE"
+    evidence_archive: bytes = b""
 
 
 def parse_explicit_or(text: str) -> np.ndarray:
@@ -64,11 +67,14 @@ def build_ctf_config(
     *, parent_phase_id: int, product_phase_id: int,
     verified_or: np.ndarray, file_name: str = "uploaded.ctf",
     minimum_grain_points: int = 3,
+    segmentation_threshold_deg: float = 3.0,
 ) -> dict[str, Any]:
     if parent_phase_id < 1 or product_phase_id < 1 or parent_phase_id == product_phase_id:
         raise ValueError("Distinct positive AZtec phase IDs are required")
     if not (1 <= minimum_grain_points <= 10000):
         raise ValueError("Minimum grain point count must be between 1 and 10000")
+    if not np.isfinite(segmentation_threshold_deg) or segmentation_threshold_deg <= 0:
+        raise ValueError("Segmentation threshold must be positive")
     if Path(file_name).suffix.lower() != ".ctf" or Path(file_name).name != file_name:
         raise ValueError("A simple .ctf filename is required")
     R = require_so3(verified_or, tolerance=2e-8, name="verified OR")
@@ -87,7 +93,7 @@ def build_ctf_config(
             "matrix_direction": "parent_from_product",
         },
         "segmentation": {
-            "main_threshold_deg": 3.0,
+            "main_threshold_deg": float(segmentation_threshold_deg),
             "sweep_thresholds_deg": [1.0, 2.0, 3.0, 5.0, 8.0],
             "minimum_grain_points": int(minimum_grain_points),
             "neighbor_radius_factor": 1.15,
@@ -137,6 +143,7 @@ def inspect_ctf_upload(file_bytes: bytes, *, filename: str) -> dict[str, Any]:
 def ctf_analysis_signature(
     file_bytes: bytes, project_signature: str, matrix_text: str,
     parent_phase_id: int, product_phase_id: int, minimum_grain_points: int,
+    segmentation_threshold_deg: float = 3.0,
 ) -> str:
     """Bind conclusions to ALL scientific inputs, excluding UI-only controls."""
     payload = {
@@ -146,6 +153,7 @@ def ctf_analysis_signature(
         "parent_phase_id": int(parent_phase_id),
         "product_phase_id": int(product_phase_id),
         "minimum_grain_points": int(minimum_grain_points),
+        "segmentation_threshold_deg": float(segmentation_threshold_deg),
     }
     return hashlib.sha256(json.dumps(
         payload, sort_keys=True, separators=(",", ":")
@@ -156,6 +164,7 @@ def run_ctf_observation(
     file_bytes: bytes, project_payload: Mapping[str, Any], transformation_id: str,
     *, parent_phase_id: int, product_phase_id: int, verified_or: np.ndarray,
     filename: str, minimum_grain_points: int = 3,
+    segmentation_threshold_deg: float = 3.0,
 ) -> EBSDObservation:
     if not file_bytes or len(file_bytes) > MAX_CTF_BYTES:
         raise ValueError("CTF is empty or exceeds the 35 MB per-analysis safety limit")
@@ -166,6 +175,7 @@ def run_ctf_observation(
         parent_phase_id=parent_phase_id, product_phase_id=product_phase_id,
         verified_or=verified_or, file_name=filename,
         minimum_grain_points=minimum_grain_points,
+        segmentation_threshold_deg=segmentation_threshold_deg,
     )
     with tempfile.TemporaryDirectory(prefix="cualni-twin-ctf-") as tmp:
         root = Path(tmp)
@@ -179,8 +189,17 @@ def run_ctf_observation(
                 return ()
             frame = pd.read_csv(p)
             return tuple(frame.where(pd.notna(frame), None).to_dict(orient="records"))
+        # Retain EVERY scientific output before the temporary working
+        # directory disappears: map_fields.npz, grain/boundary tables,
+        # variant assignments, config, provenance and theory library.
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(result.run_directory.iterdir()):
+                if path.is_file():
+                    archive.write(path, arcname=path.name)
         return EBSDObservation(
             sha256=hashlib.sha256(file_bytes).hexdigest(),
+            evidence_archive=output.getvalue(),
             summary=summary,
             boundaries=read_rows("boundaries.csv"),
             grain_assignments=read_rows("grain_variant_assignments.csv"),
