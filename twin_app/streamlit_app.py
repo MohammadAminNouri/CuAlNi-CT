@@ -302,13 +302,82 @@ def main() -> None:
     # when selected, even when a previous calculation already exists.
     source = st.radio(
         "Input method",
-        ("NiTi input example", "Manual lattice data", "Import CIF structures"),
+        ("NiTi input example", "Manual lattice data", "Import CIF structures", "Import CTF phase definitions"),
         horizontal=True, key="tf_v9_input_method",
     )
+    ctf_prefill_file = None
+    ctf_prefill_proposal = None
     with st.expander("Crystal parameters and correspondence",
-                     expanded=existing is None or source == "Import CIF structures"):
+                     expanded=existing is None or source in {
+                         "Import CIF structures", "Import CTF phase definitions"
+                     }):
         imported_spglib = {}
         cif_pair_signature = None
+        if source == "Import CTF phase definitions":
+            from twin_app.ctf_phase_handoff import (
+                ctf_crystal_handoff, apply_ctf_crystal_handoff,
+            )
+            from twin_app.ctf_independent import declared_ctf_phases
+            import hashlib
+            upload = st.file_uploader(
+                "Indexed CTF containing phase definitions", type=["ctf"],
+                max_upload_size=35, key="tf_ctf_first_step",
+            )
+            if upload is not None:
+                raw = upload.getvalue()
+                ctf_prefill_file = (upload.name, raw)
+                try:
+                    definitions = declared_ctf_phases(raw)
+                    if not definitions:
+                        raise ValueError("CTF does not declare usable phase cells")
+                    if len(definitions) < 2:
+                        raise ValueError("At least two declared phases are needed")
+                    from twin_app.ctf_rich_io import (
+                        inspect_ctf_measurements,
+                        suggested_ctf_product_phase_id,
+                    )
+                    catalog = inspect_ctf_measurements(raw, upload.name)
+                    phase_options = {
+                        int(p["phase_id"]): (
+                            f"{p['phase_id']} · {p['name']} · "
+                            f"{p['space_group']} ({p['declared_point_group']})"
+                        )
+                        for p in definitions
+                    }
+                    pids = list(phase_options)
+                    suggested = suggested_ctf_product_phase_id(
+                        catalog["indexed_phase_counts"]
+                    )
+                    p_id = st.selectbox(
+                        "Parent (CTF phase ID)", pids,
+                        index=pids.index(1) if 1 in pids else 0,
+                        format_func=lambda n: phase_options[n],
+                        key="tf_ctf_prefill_parent_id",
+                    )
+                    m_id = st.selectbox(
+                        "Product (CTF phase ID)",pids,
+                        index=pids.index(suggested) if suggested in pids else 1,
+                        format_func=lambda n: phase_options[n],
+                        key="tf_ctf_prefill_product_id",
+                    )
+                    ctf_prefill_proposal = ctf_crystal_handoff(
+                        raw,parent_id=p_id,product_id=m_id,
+                    )
+                    st.caption(
+                        "Prefills declared cells/point groups only. "
+                        "Correspondence C and the physical OR are NOT in the CTF."
+                    )
+                    if st.button("Use declared CTF crystal cells",
+                                 key="tf_ctf_apply_phase_cells"):
+                        apply_ctf_crystal_handoff(
+                            ctf_prefill_proposal, st.session_state,
+                            length_unit=st.session_state.get(
+                                "twin_length_unit","angstrom"
+                            ),
+                        )
+                        st.rerun()
+                except (ValueError, RuntimeError, UnicodeError) as exc:
+                    st.error(f"CTF crystal definitions unavailable: {exc}")
         if source == "Import CIF structures":
             left, right = st.columns(2)
             imported = {}
@@ -459,6 +528,39 @@ def main() -> None:
                     ),
                 }
             cif_admission_reason = None
+            ctf_admission_reason = None
+            if source == "Import CTF phase definitions":
+                valid_ctf = (
+                    ctf_prefill_proposal is not None
+                    and st.session_state.get("tf_ctf_applied_sha256")
+                    == ctf_prefill_proposal["sha256"]
+                    and st.session_state.get("tf_ctf_applied_ids")
+                    == (ctf_prefill_proposal["parent"]["ctf_phase_id"],
+                        ctf_prefill_proposal["product"]["ctf_phase_id"])
+                )
+                if valid_ctf:
+                    ck = "tf_ctf_approve_C_" + _fingerprint({
+                        "ctf":ctf_prefill_proposal["sha256"],
+                        "phase_ids":st.session_state["tf_ctf_applied_ids"],
+                        "project":payload,
+                    })[:20]
+                    st.warning(
+                        "CTF does not establish correspondence C. "
+                        "The initial correspondence editor may still hold "
+                        "the unrelated NiTi example. Enter an independently "
+                        "justified exact C before running CT/BJ/PTMC."
+                    )
+                    approved = st.checkbox(
+                        "I checked the CTF phases, conventional axes and exact "
+                        "parent-to-product correspondence C against independent evidence.",
+                        key=ck,value=False,
+                    )
+                    ctf_admission_reason = (
+                        None if approved else
+                        "Verify the exact correspondence C and confirm its source"
+                    )
+                else:
+                    ctf_admission_reason = "Import and apply both CTF phase definitions first"
             if source == "Import CIF structures":
                 applied = st.session_state.get("tf_v9_applied_cif_pair_signature")
                 pair_applied = cif_pair_signature is not None and applied == cif_pair_signature
@@ -499,14 +601,19 @@ def main() -> None:
         if st.session_state.get("twin_family_result_signature") == signature
         else None
     )
-    with st.expander("Experimental EBSD / CTF (optional)", expanded=False):
+    with st.expander("Experimental EBSD / CTF (optional)",
+                     expanded=source == "Import CTF phase definitions"):
         render_ctf_panel(
             valid_report, payload, transformation.transformation_id, signature,
+            provided_ctf=ctf_prefill_file,
         )
 
     if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
         if source == "Import CIF structures" and cif_admission_reason is not None:
             st.error("Calculation blocked: " + cif_admission_reason)
+            return
+        if source == "Import CTF phase definitions" and ctf_admission_reason is not None:
+            st.error("Calculation blocked: " + ctf_admission_reason)
             return
         st.session_state.pop("twin_family_report", None)
         st.session_state.pop("twin_mode_catalogue", None)

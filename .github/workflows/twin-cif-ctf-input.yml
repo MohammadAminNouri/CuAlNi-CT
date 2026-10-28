@@ -10,12 +10,17 @@ on:
       - "twin_app/ebsd_integration.py"
       - "twin_app/ctf_independent.py"
       - "twin_app/ctf_rich_io.py"
+      - "twin_app/ctf_phase_handoff.py"
+      - "twin_app/ctf_ipf.py"
+      - "twin_app/ctf_blind_or.py"
+      - "pyproject.toml"
       - "twin_app/ctf_fast_grains.py"
       - "twin_app/structure_validation.py"
       - "twin_app/input_explainer.py"
       - "tests/twin_app/test_ctf_step01_workflow_2026.py"
       - "tests/twin_app/test_independent_ctf_cartography_2026.py"
       - "tests/twin_app/test_ctf_rich_io_2026.py"
+      - "tests/twin_app/test_ctf_phase_handoff_ipf_2026.py"
       - "tests/twin_app/test_ctf_fast_grains_2026.py"
       - "tests/twin_app/test_ebsd_ctf_integration.py"
       - ".github/workflows/twin-cif-ctf-input.yml"
@@ -53,6 +58,7 @@ jobs:
             tests/twin_app/test_ctf_step01_workflow_2026.py \
             tests/twin_app/test_independent_ctf_cartography_2026.py \
             tests/twin_app/test_ctf_rich_io_2026.py \
+            tests/twin_app/test_ctf_phase_handoff_ipf_2026.py \
             tests/twin_app/test_ctf_fast_grains_2026.py \
             tests/twin_app/test_ebsd_ctf_integration.py \
             tests/twin_app/test_ebsd_contract_2026_10_23.py \

@@ -42,6 +42,15 @@ def _ctf_catalog(file_bytes: bytes, filename: str) -> dict:
     return inspect_ctf_measurements(file_bytes, filename)
 
 
+@st.cache_data(show_spinner=False, max_entries=3, ttl=3600)
+def _ipf_calculation(raw, filename, phase_id, direction, unit):
+    from twin_app.ctf_ipf import symmetry_ipf_colors
+    return symmetry_ipf_colors(
+        raw,filename,phase_id=phase_id,sample_direction=direction,
+        three_dimensional_angle_unit=unit,
+    )
+
+
 @st.cache_data(show_spinner=False, max_entries=2, ttl=3600)
 def _zip_ctf_evidence(raw_catalog, file_bytes, measured=None):
     return ctf_evidence_bundle(
@@ -162,16 +171,20 @@ def _show_independent_cartography(result):
     )
 
 
-def render_ctf_panel(report, project_payload, transformation_id, signature):
-    """Compact CTF controls in Step 01: upload -> measure -> optional compare."""
-    upload = st.file_uploader(
-        "Oxford / AZtec indexed CTF map", type=["ctf"],
-        key="tf_ctf_v1_file", max_upload_size=35,
-        help="Indexed CTF (2-D Bunge ZXZ Euler degrees), maximum 35 MB.",
-    )
-    if upload is None:
-        return
-    content = upload.getvalue()
+def render_ctf_panel(report, project_payload, transformation_id, signature,
+                     *, provided_ctf=None):
+    """Compact Step-01 EBSD, optionally reusing the same top-level CTF upload."""
+    if provided_ctf is None:
+        upload = st.file_uploader(
+            "Oxford / AZtec indexed CTF map", type=["ctf"],
+            key="tf_ctf_v1_file", max_upload_size=35,
+            help="Indexed CTF, maximum 35 MB.",
+        )
+        if upload is None:
+            return
+        filename, content = upload.name, upload.getvalue()
+    else:
+        filename, content = provided_ctf
     if len(content) > MAX_CTF_BYTES:
         st.error("CTF exceeds the 35 MB analysis limit.")
         return
@@ -303,6 +316,73 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     else:
         st.warning("The CTF has no complete phase definitions. No symmetry-based independent analysis is possible.")
     st.caption("AZtec phase names are indexing assumptions, not independent diffraction results.")
+    if phases_declared:
+        with st.expander("IPF map · phase-symmetry Laue color key", expanded=False):
+            active_ids = sorted(indexed_counts)
+            ipf_id = st.selectbox(
+                "Indexed phase", active_ids,
+                format_func=lambda n: f"CTF phase {n} — "+next(
+                    (p["name"] for p in phases_declared if p["phase_id"]==n),
+                    "not defined",
+                ),
+                key="tf_ctf_ipf_phase",
+            )
+            ref_axis=st.selectbox(
+                "Sample reference direction", ("Z","X","Y"),
+                key="tf_ctf_ipf_sample_axis",
+            )
+            if st.button("Calculate symmetry-aware IPF colors",
+                         key="tf_ctf_ipf_calculate"):
+                try:
+                    ipf=_ipf_calculation(
+                        content,filename,ipf_id,ref_axis,unit,
+                    )
+                    st.session_state["tf_ctf_ipf"] = (
+                        (catalog["file_sha256"],ipf_id,ref_axis,unit),ipf,
+                    )
+                except (ValueError,RuntimeError,ImportError) as exc:
+                    st.error(f"IPF unavailable: {exc}")
+            saved_ipf=st.session_state.get("tf_ctf_ipf")
+            if saved_ipf and saved_ipf[0] == (
+                catalog["file_sha256"],ipf_id,ref_axis,unit,
+            ):
+                ipf=saved_ipf[1]
+                from twin_app.ctf_ipf import plot_symmetry_ipf
+                zvals=np.unique(np.round(ipf["z"],6))
+                ipf_z=(float(st.select_slider(
+                    "IPF Z slice",options=[float(v) for v in zvals],
+                    key="tf_ctf_ipf_z",
+                )) if len(zvals)>1 else None)
+                st.plotly_chart(plot_symmetry_ipf(ipf,z_value=ipf_z),
+                                width="stretch")
+                from orix.quaternion.symmetry import get_point_group
+                from orix.plot import IPFColorKeyTSL
+                from orix.vector import Vector3d
+                sg=next(
+                    p["space_group_number"] for p in phases_declared
+                    if p["phase_id"]==ipf_id
+                )
+                axis={"X":(1,0,0),"Y":(0,1,0),"Z":(0,0,1)}[ref_axis]
+                legend=IPFColorKeyTSL(get_point_group(sg),
+                                      direction=Vector3d(axis))
+                st.pyplot(legend.plot(return_figure=True),clear_figure=True)
+                st.caption(
+                    "Standard TSL Laue IPF convention via orix. "
+                    "Crystal/sample frames follow the raw AZtec settings. "
+                    "The color key does not independently validate phase indexing "
+                    "or specimen-axis registration."
+                )
+                out=io.BytesIO()
+                np.savez_compressed(
+                    out,x=ipf["x"],y=ipf["y"],z=ipf["z"],
+                    rgb=ipf["rgb"],active_mask=ipf["active_mask"],
+                )
+                st.download_button(
+                    "Download phase IPF color arrays (.npz)",
+                    data=out.getvalue(),file_name="ctf_ipf_colors.npz",
+                    mime="application/octet-stream",
+                    key="tf_ctf_ipf_export",
+                )
 
     # A CTF's indexed phase ID is a vendor label, NOT proof that the
     # structure is the martensite. However the UI must not default to the
@@ -412,6 +492,63 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     )
     if measured is not None:
         _show_independent_cartography(measured)
+        if phases_declared:
+            with st.expander(
+                "Explore parent-symmetry embedding from martensite boundaries",
+                expanded=False,
+            ):
+                jumps=measured["neighbor_disorientation"]
+                st.caption(
+                    "Blind inverse hypothesis: tests inter-region operators "
+                    "using parent/product declared symmetries; never supplies "
+                    "a unique measured OR or correspondence C."
+                )
+                if jumps.get("fraction_above_30_deg",0.)>0.25:
+                    st.warning(
+                        "More than 25% of indexed neighbor pairs show >30° "
+                        "jumps. Pseudosymmetry or indexing errors may dominate "
+                        "the inferred orientation regions."
+                    )
+                acknowledge=st.checkbox(
+                    "I will interpret the result only as an exploratory "
+                    "observable symmetry subgroup, not an experimental OR.",
+                    key="tf_ctf_blind_ack",value=False,
+                )
+                if st.button(
+                    "Search child/child operator compatibility",
+                    key="tf_ctf_blind_run",
+                    disabled=not acknowledge,
+                ):
+                    try:
+                        from twin_app.ctf_blind_or import explore_blind_or
+                        with st.spinner("Searching SO(3) observable classes…"):
+                            blind=explore_blind_or(
+                                measured,phases_declared,
+                                parent_phase_id=phase_a,
+                                product_phase_id=phase_m,
+                            )
+                        st.session_state["tf_ctf_blind_result"]=(
+                            (independent_key,phase_a,phase_m),blind,
+                        )
+                    except (ValueError,ArithmeticError,RuntimeError) as exc:
+                        st.error(f"Blind hypothesis search failed: {exc}")
+                saved_blind=st.session_state.get("tf_ctf_blind_result")
+                if (saved_blind and saved_blind[0]==
+                        (independent_key,phase_a,phase_m)):
+                    blind=saved_blind[1]
+                    st.write(f"**Observable status:** {blind['status']}")
+                    st.caption(blind.get("scientific_limit",blind.get("message","")))
+                    st.json({
+                        k:v for k,v in blind.items()
+                        if k not in {"alternatives"}
+                    })
+                    st.download_button(
+                        "Export exploratory OR evidence (.json)",
+                        data=json.dumps(blind,indent=2,default=str),
+                        file_name="ctf_blind_or_observable_class.json",
+                        mime="application/json",
+                        key="tf_ctf_blind_export",
+                    )
     st.download_button(
         "Download complete CTF research package (.zip)",
         data=_zip_ctf_evidence(catalog, content, measured),
