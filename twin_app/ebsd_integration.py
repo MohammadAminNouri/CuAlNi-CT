@@ -170,6 +170,24 @@ def run_ctf_observation(
         raise ValueError("CTF is empty or exceeds the 35 MB per-analysis safety limit")
     if not file_bytes.lstrip().startswith(b"Channel Text File"):
         raise ValueError("Expected an Oxford/AZtec Channel Text File header; do not upload a CIF here")
+    # The backend must independently enforce the same CTF-to-model
+    # crystallographic setting check as the UI, not trust a prior click.
+    # No automatic basis reorientation, OR or parent correspondence is inferred.
+    from .ctf_independent import (
+        declared_ctf_phases, compare_ctf_model_settings,
+    )
+    declared = declared_ctf_phases(file_bytes)
+    if declared:
+        setting_audit = compare_ctf_model_settings(
+            declared, project_payload, transformation_id,
+            parent_phase_id, product_phase_id,
+        )
+        if not setting_audit["pass"]:
+            raise ValueError(
+                "CTF phase cell/point-group settings conflict with the "
+                "selected crystallographic model. Verify conventional "
+                "axes and correspondence before any operator matching."
+            )
     config = build_ctf_config(
         project_payload, transformation_id,
         parent_phase_id=parent_phase_id, product_phase_id=product_phase_id,

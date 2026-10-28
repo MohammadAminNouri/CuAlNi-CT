@@ -196,6 +196,24 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
         )
         invalid = True
 
+    # Report a mismatch even when the user only runs OR-free measured maps.
+    # This does not disable independent EBSD cartography.
+    if phases_declared and phase_a != phase_m:
+        try:
+            active_setting_audit = compare_ctf_model_settings(
+                phases_declared, project_payload, transformation_id,
+                phase_a, phase_m,
+            )
+        except (ValueError, RuntimeError, ArithmeticError) as exc:
+            st.caption(f"Model-to-CTF setting check unavailable: {exc}")
+        else:
+            if not active_setting_audit["pass"]:
+                st.warning(
+                    "The active crystal setup differs from the CTF phase "
+                    "definitions. Measured maps remain available, but "
+                    "EBSD/theory comparison is blocked until settings match."
+                )
+
     # This branch computes directly from the supplied CTF and its
     # declared point groups; no OR, CIF or completed CT solver is required.
     independent_key = hashlib.sha256(

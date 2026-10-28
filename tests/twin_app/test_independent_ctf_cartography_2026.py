@@ -134,3 +134,44 @@ def test_broken_phase_header_fails_closed():
     text=synthetic_2h_ctf().replace(b"\t59\t",b"\t999\t")
     with pytest.raises(ValueError,match="space-group"):
         declared_ctf_phases(text)
+
+
+def test_vectorized_symmetry_quotient_matches_native_grain_criterion():
+    from types import SimpleNamespace
+    from scipy.spatial.transform import Rotation
+    from cualni_cryst.ebsd_analysis import minimum_disorientation
+    from cualni_cryst.ebsd_map import EBSDPhase
+    from cualni_cryst.lattice import Lattice
+    from twin_app.ctf_independent import indexed_neighbor_disorientation
+
+    phase = EBSDPhase.from_point_group(
+        2, "2H", Lattice(5.342, 4.224, 4.39), "mmm",
+    )
+    matrices = Rotation.from_euler(
+        "ZXZ", [[13, 37, 12], [71, 37, 12]], degrees=True,
+    ).as_matrix()
+    m = SimpleNamespace(
+        orientations=matrices,
+        phase_id=np.array([2, 2], dtype=int),
+        indexed=np.array([True, True], dtype=bool),
+    )
+    edges = SimpleNamespace(edges=np.array([[0, 1]], dtype=int))
+    fast = indexed_neighbor_disorientation(
+        m, {2: phase}, edges, threshold_deg=3.,
+    )
+    original = minimum_disorientation(
+        matrices[0], matrices[1], phase.proper_symmetry_cartesian,
+    ).angle_deg
+    assert fast["median_deg"] == pytest.approx(original, abs=1e-8)
+
+
+def test_backend_does_not_trust_ui_and_rejects_mismatched_aztec_cell():
+    from twin_app.ebsd_integration import run_ctf_observation
+    payload = matching_project()
+    payload["phases"][1]["cell"]["a"] = 4.9
+    with pytest.raises(ValueError, match="conflict"):
+        run_ctf_observation(
+            synthetic_2h_ctf(), payload, "A_to_M",
+            parent_phase_id=1, product_phase_id=2,
+            verified_or=np.eye(3), filename="synthetic.ctf",
+        )
