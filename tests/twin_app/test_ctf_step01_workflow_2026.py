@@ -77,7 +77,9 @@ def test_or_is_not_generated_by_ctf_and_confirmation_is_fresh():
     assert "max_upload_size=2" in APP
     assert "st.cache_data(" in CTF_UI
     assert "independent_ctf_cartography" in CTF_UI
-    assert 'Analyze indexed EBSD independently' in CTF_UI
+    assert 'Calculate grain/KAM maps' in CTF_UI
+    assert 'Calculate grain and misorientation maps on upload' in CTF_UI
+    assert 'CTF maps, quality and acquisition data' in CTF_UI
     assert 'Download complete EBSD pipeline (.zip)' in CTF_UI
     assert "run_ctf_observation(" in CTF_UI
 
