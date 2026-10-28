@@ -560,13 +560,10 @@ def render_correspondence_input(
         except (ValueError, TypeError, ZeroDivisionError) as exc:
             st.error(f"Corresponding vectors cannot define C: {exc}")
             st.stop()
-        st.latex(
-            r"C_{\mathrm{entered}}= B_{\mathrm{destination}}"
-            r"B_{\mathrm{source}}^{-1}="
-            + sp.latex(exact_matrix(paired.source_to_destination))
+        st.caption(
+            "These pairs define C exactly as Q P⁻¹. "
+            "Starting pairs are algebraic examples, not experimental evidence."
         )
-        st.caption("The initial integer pairs are algebraically generated, not experimentally observed. "
-                   "Verify cell settings, centering and physical correspondence before using the predictions.")
     else:
         st.markdown(f"**Exact 3 × 3 correspondence · {source_name} → {destination_name}**")
         st.caption("Read source (left) → destination (right). Each COLUMN is a "
@@ -623,106 +620,110 @@ def render_correspondence_input(
         if D != C:
             raise AssertionError("Forward editor disagrees with canonical solver mapping")
         label = r"C_{\mathrm{parent}\to\mathrm{product}}"
+    # One exact transformation, not three independent correspondence matrices.
+    # Paired vectors need one read-only matrix result; the 3x3 input method
+    # already displays its own editable matrix so another copy adds no value.
     st.markdown(f"**Selected direction: {source_name} → {destination_name}**")
-    st.latex(label + "=" + sp.latex(D))
-    st.caption(
-        f"det(selected matrix) = {D.det()}. This is the exact matrix for the "
-        "direction selected above, including any edits you have made."
-    )
+    if method == methods[0]:
+        st.latex(label + "=" + sp.latex(D))
+    else:
+        st.caption("The editable 3 × 3 matrix above is the active correspondence.")
+    st.caption(f"Exact determinant: {D.det()}")
     if direction == "M_TO_A":
-        st.caption(
-            "The calculation uses the inverse of this matrix to express the "
-            "same transformation from parent to product. Reversing the input "
-            "direction alone must not change the calculated physical result."
+        st.caption("The scientific solver uses the exact inverse, parent → product.")
+
+    with st.expander("Check vector mapping and technical details", expanded=False):
+        choice = st.selectbox(
+            f"Direction in {source_name}",
+            ("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]", "Custom [u,v,w]"),
+            key=f"{prefix}_probe_choice",
         )
-    with st.expander("Advanced: exact parent-to-product solver matrix", expanded=False):
-        st.latex(r"C_{\mathrm{parent}\to\mathrm{product}}=" + sp.latex(C))
-        st.caption(
-            "The scientific engine always uses this parent-to-product matrix. "
-            "It remains unchanged when you merely reverse the direction of entry, "
-            "because the inverse is computed exactly."
-        )
-        if direction == "M_TO_A":
-            st.latex(
-                r"C_{\mathrm{product}\to\mathrm{parent}}"
-                r"C_{\mathrm{parent}\to\mathrm{product}}=I"
+        axes = (("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"))
+        if choice == "Custom [u,v,w]":
+            fields = st.columns(3, gap="small")
+            parent_vector = tuple(
+                fields[k].text_input(label.replace("parent", source_name), value=v, key=f"{prefix}_probe_{k}")
+                for k, (label, v) in enumerate(zip(("u (parent)", "v (parent)", "w (parent)"), ("1", "1", "0")))
             )
-        st.caption(
-            f"det(parent-to-product matrix) = {C.det()}. An invertible matrix "
-            "alone does not establish a physically observed correspondence."
-        )
-    st.markdown(f"**Interactive vector mapping · {source_name} → {destination_name}**")
-    choice = st.selectbox(
-        f"Direction in {source_name}",
-        ("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]", "Custom [u,v,w]"),
-        key=f"{prefix}_probe_choice",
-    )
-    axes = (("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1"))
-    if choice == "Custom [u,v,w]":
-        fields = st.columns(3, gap="small")
-        parent_vector = tuple(
-            fields[k].text_input(label.replace("parent", source_name), value=v, key=f"{prefix}_probe_{k}")
-            for k, (label, v) in enumerate(zip(("u (parent)", "v (parent)", "w (parent)"), ("1", "1", "0")))
-        )
-    else:
-        parent_vector = axes[("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]").index(choice)]
+        else:
+            parent_vector = axes[("a-axis [1,0,0]", "b-axis [0,1,0]", "c-axis [0,0,1]").index(choice)]
 
-    try:
-        action = calculate_action(entered_matrix, parent_vector)
-    except (TypeError, ValueError, ZeroDivisionError) as exc:
-        st.error(f"Invalid direction: {exc}; enter rational integers or p/q fractions.")
-    else:
-        st.markdown(f"**{source_name} {vector_text(action.parent)} → {destination_name} {vector_text(action.daughter)}**")
-        st.latex(sp.latex(D) + r"\," + sp.latex(sp.Matrix(action.parent)) + "=" + sp.latex(sp.Matrix(action.daughter)))
+        try:
+            action = calculate_action(entered_matrix, parent_vector)
+        except (TypeError, ValueError, ZeroDivisionError) as exc:
+            st.error(f"Invalid direction: {exc}; enter rational integers or p/q fractions.")
+        else:
+            st.markdown(f"**{source_name} {vector_text(action.parent)} → {destination_name} {vector_text(action.daughter)}**")
 
-        with st.expander("More coordinate mappings and optional 3D drawings", expanded=False):
-            st.caption(f"For the three source axes in {source_name}, each a COLUMN of the entered matrix:")
-            actions = images_of_parent_basis(entered_matrix)
-            for label, obj in zip(("a", "b", "c"), actions):
-                st.write(f"{source_name} {label} → {destination_name} {vector_text(obj.daughter)}")
-            st.caption("These components are expressed on **separate coordinate axes**. "
-                       "They cannot be compared as common-frame Cartesian vectors.")
-            if st.checkbox("Show 3D coordinate-space sketches", value=False,
-                           key=f"{prefix}_show_coordinate_arrows"):
-                import plotly.graph_objects as go
+            if st.checkbox("Show source basis mappings and optional drawings",
+                       key=f"{prefix}_show_extra_mappings", value=False):
+                st.caption(f"For the three source axes in {source_name}, each a COLUMN of the entered matrix:")
+                actions = images_of_parent_basis(entered_matrix)
+                for label, obj in zip(("a", "b", "c"), actions):
+                    st.write(f"{source_name} {label} → {destination_name} {vector_text(obj.daughter)}")
+                st.caption("These components are expressed on **separate coordinate axes**. "
+                           "They cannot be compared as common-frame Cartesian vectors.")
+                if st.checkbox("Show 3D coordinate-space sketches", value=False,
+                               key=f"{prefix}_show_coordinate_arrows"):
+                    import plotly.graph_objects as go
 
-                def arrow_figure(values: Sequence[sp.Rational], title: str):
-                    coords = [float(v) for v in values]
-                    limit = 1.2 * max(1.0, *(abs(v) for v in coords))
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter3d(
-                        x=[0, coords[0]], y=[0, coords[1]], z=[0, coords[2]],
-                        mode="lines+markers", line=dict(color="#38bdf8", width=8),
-                        marker=dict(size=4, color="#38bdf8"), showlegend=False,
-                    ))
-                    fig.update_layout(height=260, margin=dict(l=0, r=0, t=12, b=0),
-                        scene=dict(xaxis=dict(title="u", range=[-limit,limit]),
-                                   yaxis=dict(title="v", range=[-limit,limit]),
-                                   zaxis=dict(title="w", range=[-limit,limit]),
-                                   aspectmode="cube"))
-                    return fig
+                    def arrow_figure(values: Sequence[sp.Rational], title: str):
+                        coords = [float(v) for v in values]
+                        limit = 1.2 * max(1.0, *(abs(v) for v in coords))
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter3d(
+                            x=[0, coords[0]], y=[0, coords[1]], z=[0, coords[2]],
+                            mode="lines+markers", line=dict(color="#38bdf8", width=8),
+                            marker=dict(size=4, color="#38bdf8"), showlegend=False,
+                        ))
+                        fig.update_layout(height=260, margin=dict(l=0, r=0, t=12, b=0),
+                            scene=dict(xaxis=dict(title="u", range=[-limit,limit]),
+                                       yaxis=dict(title="v", range=[-limit,limit]),
+                                       zaxis=dict(title="w", range=[-limit,limit]),
+                                       aspectmode="cube"))
+                        return fig
 
-                left, right = st.columns(2)
-                with left:
-                    st.caption(f"{source_name} direct-coordinate components")
-                    st.plotly_chart(arrow_figure(action.parent, "Parent"),
-                                    width="stretch", key=f"{prefix}_plot_parent")
-                with right:
-                    st.caption(f"{destination_name} direct-coordinate components")
-                    st.plotly_chart(arrow_figure(action.daughter, "Daughter"),
-                                    width="stretch", key=f"{prefix}_plot_daughter")
-                st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
+                    left, right = st.columns(2)
+                    with left:
+                        st.caption(f"{source_name} direct-coordinate components")
+                        st.plotly_chart(arrow_figure(action.parent, "Parent"),
+                                        width="stretch", key=f"{prefix}_plot_parent")
+                    with right:
+                        st.caption(f"{destination_name} direct-coordinate components")
+                        st.plotly_chart(arrow_figure(action.daughter, "Daughter"),
+                                        width="stretch", key=f"{prefix}_plot_daughter")
+                    st.caption("These drawings use separate coordinate axes. No physical angle can be deduced.")
 
-    with st.expander("Advanced: inverse matrix and reciprocal-plane correspondence", expanded=False):
-        st.code("\n".join("[ " + "  ".join(row) + " ]" for row in canonical), language="text")
-        st.write(f"det(C) = {C.det()}")
-        st.code(str(C.inv()), language="text")
-        st.caption("C.inv() gives the reverse DIRECT correspondence, not an independently observed OR.")
-        plane = plane_image(entered_matrix, ("1", "0", "0"))
-        st.write(f"Reciprocal plane (1,0,0) in {source_name} → ({', '.join(plane)}) in {destination_name}.")
-        st.latex(r"\mathbf h_{\mathrm{destination}}=C_{\mathrm{source}\to\mathrm{destination}}^{-T}\mathbf h_{\mathrm{source}}")
-        st.caption("This is a reciprocal covector mapping; do not transform Miller planes by direct C.")
 
+        if st.checkbox("Show solver matrix, inverse and Miller-plane mapping",
+                       value=False, key=f"{prefix}_show_solver_details"):
+            if direction == "M_TO_A":
+                st.latex(
+                    r"C_{\mathrm{parent}\to\mathrm{product}}=" + sp.latex(C)
+                )
+                st.caption("Exact inverse of the selected product → parent matrix.")
+            else:
+                st.caption(
+                    "The parent → product solver matrix is the same C "
+                    "already entered or displayed above."
+                )
+            st.write(f"det(C) = {C.det()}")
+            st.code(str(C.inv()), language="text")
+            st.caption(
+                "C.inv() reverses the direct lattice correspondence, "
+                "not the experimentally measured orientation relationship."
+            )
+            plane = plane_image(entered_matrix, ("1", "0", "0"))
+            st.write(
+                f"Reciprocal plane (1,0,0) in {source_name} "
+                f"→ ({', '.join(plane)}) in {destination_name}."
+            )
+            st.latex(
+                r"\mathbf h_{\mathrm{destination}}="
+                r"C_{\mathrm{source}\to\mathrm{destination}}^{-T}"
+                r"\mathbf h_{\mathrm{source}}"
+            )
+            st.caption("Miller-plane covectors use inverse transpose, not direct C.")
 
     arrow, equation = displayed_relation(direction)
     return CorrespondenceUIResult(

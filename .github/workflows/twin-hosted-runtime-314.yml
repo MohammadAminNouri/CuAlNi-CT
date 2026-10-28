@@ -47,4 +47,7 @@ jobs:
             tests/twin_app/test_streamlit_headless_smoke_2026.py \
             tests/twin_app/test_streamlit_166_deployment_ui_2026.py \
             tests/twin_app/test_workspace_navigation_2026.py \
-            tests/twin_app/test_habit_evidence_layout_2026.py
+            tests/twin_app/test_habit_evidence_layout_2026.py \
+            tests/twin_app/test_correspondence_ui_theme_and_seed_2026.py \
+            tests/twin_app/test_tree_correspondence_2026.py \
+            tests/twin_app/test_correspondence_cayron_ui.py

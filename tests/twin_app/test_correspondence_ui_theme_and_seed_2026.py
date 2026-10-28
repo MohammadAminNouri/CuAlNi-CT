@@ -106,7 +106,7 @@ def test_correspondence_controls_explain_crystal_role_and_do_not_name_people():
         '"Parent crystal → Product crystal"',
         '"Product crystal → Parent crystal"',
         '"Pair 1", "Pair 2", "Pair 3"',
-        "Advanced: exact parent-to-product solver matrix",
+        "Check vector mapping and technical details",
         "Selected direction:",
         "D * C != sp.eye(3)",
         r"C_{\mathrm{parent}\to\mathrm{product}}",
@@ -117,3 +117,50 @@ def test_correspondence_controls_explain_crystal_role_and_do_not_name_people():
         "plane_image(entered_matrix",
     ):
         assert label in text, label
+
+
+def test_single_primary_correspondence_matrix_and_collapsed_advanced_checks():
+    """Paired input displays exactly one C; the matrix editor itself is C."""
+    import inspect
+    from twin_app.input_ui import render_correspondence_input
+    ui = inspect.getsource(render_correspondence_input)
+    visible, technical = ui.split(
+        'with st.expander("Check vector mapping and technical details", expanded=False):',
+        1,
+    )
+    assert 'if method == methods[0]:\n        st.latex(label + "=" + sp.latex(D))' in visible
+    assert 'The editable 3 × 3 matrix above is the active correspondence.' in visible
+    assert 'C_{\\mathrm{entered}}' not in visible
+    assert 'st.latex(sp.latex(D) +' not in ui
+    assert 'Show source basis mappings and optional drawings' in technical
+    assert 'Show solver matrix, inverse and Miller-plane mapping' in technical
+    assert 'if direction == "M_TO_A":' in technical
+    assert 'calculate_action(entered_matrix, parent_vector)' in technical
+    assert 'plane_image(entered_matrix, ("1", "0", "0"))' in technical
+    assert 'D * C != sp.eye(3)' in ui
+    assert 'C * D != sp.eye(3)' in ui
+
+
+def test_consolidating_display_never_changes_forward_or_reverse_math():
+    from twin_app.correspondence_explorer import calculate_action
+    from twin_app.cayron_correspondence import (
+        entered_matrix_from_canonical, plane_image, seed_paired_vectors,
+        calculate_from_paired_vectors, parse_triplet,
+    )
+    canonical = (("1", "1/3", "0"), ("0", "1", "1/5"), ("0", "0", "1"))
+    C = exact_matrix(canonical)
+    for direction, expected in (("A_TO_M", C), ("M_TO_A", C.inv())):
+        pair_a, pair_b = seed_paired_vectors(canonical, direction=direction)
+        recovered = calculate_from_paired_vectors(
+            [parse_triplet(v) for v in pair_a],
+            [parse_triplet(v) for v in pair_b],
+            direction=direction,
+        )
+        assert exact_matrix(recovered.canonical_M_from_A) == C
+        rows = entered_matrix_from_canonical(canonical, direction=direction)
+        actual = exact_matrix(rows)
+        assert actual == expected
+        u = sp.Matrix([3, 5, 7])
+        assert sp.Matrix(calculate_action(rows, ("3", "5", "7")).daughter) == actual * u
+        transformed_plane = plane_image(rows, ("1", "2", "3"))
+        assert sp.Matrix([sp.Rational(x) for x in transformed_plane]) == actual.inv().T * sp.Matrix([1, 2, 3])

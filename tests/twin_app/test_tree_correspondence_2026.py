@@ -88,7 +88,8 @@ def test_coordinate_input_probe_uses_the_actually_selected_source_direction():
     assert 'direction="A_TO_M"' in src
     assert '"Product crystal → Parent crystal": "M_TO_A"' in src
     assert "separate coordinate axes" in src
-    assert "Advanced: exact parent-to-product solver matrix" in src
+    assert "Check vector mapping and technical details" in src
+    assert "Show solver matrix, inverse and Miller-plane mapping" in src
     assert "D * C != sp.eye(3)" in src
     assert "C.inv()" in src
     # Radio selectors are intentional for the input *format* and direction.
