@@ -5,7 +5,7 @@ import pytest
 from twin_app.ctf_rich_io import (
     inspect_ctf_measurements, plot_ctf_numeric_map,
     ctf_field_histogram, raw_catalog_npz, raw_catalog_json,
-    ctf_evidence_bundle,
+    ctf_evidence_bundle, suggested_ctf_product_phase_id,
 )
 def synthetic_2h_ctf():
     lines=[
@@ -144,3 +144,24 @@ def test_optional_vendor_annotation_does_not_block_numeric_maps():
     assert catalog["non_numeric_optional_columns"]==["Tag"]
     assert "TAG" not in catalog["maps"]
     assert "BC" in catalog["maps"]
+
+
+def test_ctf_phase_id_suggestions_for_actual_2h_and_18r_maps():
+    # These counts match the three uploaded single-crystal CTF exports.
+    assert suggested_ctf_product_phase_id({2: 38781}) == 2
+    assert suggested_ctf_product_phase_id({3: 41483}) == 3
+    assert suggested_ctf_product_phase_id({3: 41009}) == 3
+    # Mixed-phase and parent-only cases cannot be auto-assigned.
+    assert suggested_ctf_product_phase_id({2: 10, 3: 20}) == 2
+    assert suggested_ctf_product_phase_id({1: 50}) == 2
+    assert suggested_ctf_product_phase_id({}) == 2
+
+
+def test_ctf_phase_selector_resets_on_new_file_not_on_each_rerun():
+    from pathlib import Path
+    source = (Path(__file__).resolve().parents[2] /
+              "twin_app" / "ebsd_ctf_ui.py").read_text(encoding="utf-8")
+    assert 'file_key = catalog["file_sha256"]' in source
+    assert 'tf_ctf_phase_id_source' in source
+    assert 'st.session_state["tf_ctf_v1_product"] = suggested' in source
+    assert 'suggested_ctf_product_phase_id(indexed_counts)' in source

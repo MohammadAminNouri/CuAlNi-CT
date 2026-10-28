@@ -24,6 +24,20 @@ from cualni_cryst.ebsd_io import _ctf_header_and_table, _header_key_values
 from twin_app.ctf_independent import MAX_CTF_BYTES
 
 
+def suggested_ctf_product_phase_id(indexed_phase_counts: dict[int, int]) -> int:
+    """UI-only phase-ID suggestion; not atomic phase or twin identification.
+
+    One non-parent indexed phase: offer that AZtec ID. Multiple or only
+    phase-1 indexed: keep the conventional phase-2 placeholder for manual
+    review. Never silently relabel or alter the CTF.
+    """
+    observed = sorted(
+        int(phase_id) for phase_id, count in indexed_phase_counts.items()
+        if int(count) > 0
+    )
+    return observed[0] if len(observed) == 1 and observed[0] != 1 else 2
+
+
 def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]:
     if (not file_bytes or len(file_bytes) > MAX_CTF_BYTES
             or Path(filename).name != filename

@@ -22,6 +22,7 @@ from .ctf_independent import (
 from .ctf_rich_io import (
     inspect_ctf_measurements, plot_ctf_numeric_map, ctf_field_histogram,
     raw_catalog_json, raw_catalog_npz, ctf_evidence_bundle,
+    suggested_ctf_product_phase_id,
 )
 from .ebsd_integration import (
     MAX_CTF_BYTES, ctf_analysis_signature, inspect_ctf_upload,
@@ -303,6 +304,21 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
         st.warning("The CTF has no complete phase definitions. No symmetry-based independent analysis is possible.")
     st.caption("AZtec phase names are indexing assumptions, not independent diffraction results.")
 
+    # A CTF's indexed phase ID is a vendor label, NOT proof that the
+    # structure is the martensite. However the UI must not default to the
+    # absent 2H phase when an 18R-only file contains only phase 3.
+    # On a newly uploaded file, suggest its unique indexed non-parent phase;
+    # never override an explicit user adjustment during the same file.
+    suggested = suggested_ctf_product_phase_id(indexed_counts)
+    file_key = catalog["file_sha256"]
+    if st.session_state.get("tf_ctf_phase_id_source") != file_key:
+        st.session_state["tf_ctf_v1_parent"] = 1
+        st.session_state["tf_ctf_v1_product"] = suggested
+        st.session_state["tf_ctf_phase_id_source"] = file_key
+    st.caption(
+        f"Suggested product phase ID {suggested} from indexed CTF labels "
+        "when unique. Verify its real crystallographic phase."
+    )
     a, b, c = st.columns(3)
     phase_a = int(a.number_input(
         "Parent phase ID", min_value=1, value=1, step=1,
@@ -310,8 +326,9 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
         help="The parent may be absent among indexed pixels.",
     ))
     phase_m = int(b.number_input(
-        "Martensite phase ID", min_value=1, value=2, step=1,
+        "Martensite phase ID", min_value=1, value=suggested, step=1,
         key="tf_ctf_v1_product",
+        help="AZtec indexing label only; verify the structure independently.",
     ))
     nmin = int(c.number_input(
         "Minimum pixels per grain", min_value=1, max_value=1000,
