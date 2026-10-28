@@ -113,7 +113,7 @@ def test_model_matches_only_same_declared_cell_axes_and_group():
 def test_wrong_point_group_or_wrong_2h_metric_blocks_comparison():
     payload = matching_project()
     phases = declared_ctf_phases(synthetic_2h_ctf())
-    payload["phases"][1]["lattice"]["a"] = 4.9
+    payload["phases"][1]["cell"]["a"] = 4.9
     mismatch=compare_ctf_model_settings(phases,payload,"A_to_M",1,2)
     assert not mismatch["pass"]
 
