@@ -334,7 +334,7 @@ def main() -> None:
                                 help="Cell geometry only. Confirm the actual point group and basis below.",
                             )
                             st.caption(f"Imported · {parsed.site_count} sites")
-                            else:
+                            if not parsed.symmetry_model:
                                 st.warning("No declared space group. Verify the cell and symmetry.")
                             if parsed.has_partial_occupancy:
                                 st.warning("Partial occupancy: atomic symmetry needs independent verification.")
