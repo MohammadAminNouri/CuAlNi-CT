@@ -68,6 +68,7 @@ def build_ctf_config(
     verified_or: np.ndarray, file_name: str = "uploaded.ctf",
     minimum_grain_points: int = 3,
     segmentation_threshold_deg: float = 3.0,
+    three_dimensional_angle_unit: str | None = None,
 ) -> dict[str, Any]:
     if parent_phase_id < 1 or product_phase_id < 1 or parent_phase_id == product_phase_id:
         raise ValueError("Distinct positive AZtec phase IDs are required")
@@ -82,9 +83,14 @@ def build_ctf_config(
     transformation = state.project.transformation(transformation_id)
     parent = state.project.phase(transformation.parent_phase_id)
     product = state.project.phase(transformation.product_phase_id)
+    if three_dimensional_angle_unit not in {None, "degree", "radian"}:
+        raise ValueError("3-D CTF angle unit must be degree or radian")
+    ctf_input = {"path":file_name,"format":"ctf"}
+    if three_dimensional_angle_unit is not None:
+        ctf_input["three_dimensional_angle_unit"] = three_dimensional_angle_unit
     return {
         "schema_version": 1,
-        "input": {"path": file_name, "format": "ctf"},
+        "input": ctf_input,
         "phases": [_phase(parent, parent_phase_id), _phase(product, product_phase_id)],
         "parent_phase_id": int(parent_phase_id),
         "product_phase_id": int(product_phase_id),
@@ -108,7 +114,8 @@ def build_ctf_config(
     }
 
 
-def inspect_ctf_upload(file_bytes: bytes, *, filename: str) -> dict[str, Any]:
+def inspect_ctf_upload(file_bytes: bytes, *, filename: str,
+                       three_dimensional_angle_unit: str | None = None) -> dict[str, Any]:
     """Inspect real CTF orientations and phase IDs without requiring an OR.
 
     This is an input-readiness diagnostic, NOT grain segmentation, OR discovery
@@ -121,11 +128,19 @@ def inspect_ctf_upload(file_bytes: bytes, *, filename: str) -> dict[str, Any]:
     if Path(filename).name != filename or Path(filename).suffix.lower() != ".ctf":
         raise ValueError("A simple .ctf filename is required")
     from cualni_cryst.ebsd_io import load_ctf
+    from cualni_cryst.ebsd_map import AngleUnit
+    if three_dimensional_angle_unit not in {None,"degree","radian"}:
+        raise ValueError("Invalid explicit 3-D Euler unit")
 
     with tempfile.TemporaryDirectory(prefix="cualni-ctf-preview-") as tmp:
         path = Path(tmp) / filename
         path.write_bytes(file_bytes)
-        mapped = load_ctf(path)
+        mapped = load_ctf(
+            path, three_dimensional_angle_unit=(
+                AngleUnit(three_dimensional_angle_unit)
+                if three_dimensional_angle_unit is not None else None
+            ),
+        )
     indexed = np.asarray(mapped.indexed, dtype=bool)
     phase_ids, counts = np.unique(mapped.phase_id[indexed], return_counts=True)
     return {
@@ -144,6 +159,7 @@ def ctf_analysis_signature(
     file_bytes: bytes, project_signature: str, matrix_text: str,
     parent_phase_id: int, product_phase_id: int, minimum_grain_points: int,
     segmentation_threshold_deg: float = 3.0,
+    three_dimensional_angle_unit: str | None = None,
 ) -> str:
     """Bind conclusions to ALL scientific inputs, excluding UI-only controls."""
     payload = {
@@ -154,6 +170,7 @@ def ctf_analysis_signature(
         "product_phase_id": int(product_phase_id),
         "minimum_grain_points": int(minimum_grain_points),
         "segmentation_threshold_deg": float(segmentation_threshold_deg),
+        "three_dimensional_angle_unit": three_dimensional_angle_unit,
     }
     return hashlib.sha256(json.dumps(
         payload, sort_keys=True, separators=(",", ":")
@@ -165,6 +182,7 @@ def run_ctf_observation(
     *, parent_phase_id: int, product_phase_id: int, verified_or: np.ndarray,
     filename: str, minimum_grain_points: int = 3,
     segmentation_threshold_deg: float = 3.0,
+    three_dimensional_angle_unit: str | None = None,
 ) -> EBSDObservation:
     if not file_bytes or len(file_bytes) > MAX_CTF_BYTES:
         raise ValueError("CTF is empty or exceeds the 35 MB per-analysis safety limit")
@@ -194,6 +212,7 @@ def run_ctf_observation(
         verified_or=verified_or, file_name=filename,
         minimum_grain_points=minimum_grain_points,
         segmentation_threshold_deg=segmentation_threshold_deg,
+        three_dimensional_angle_unit=three_dimensional_angle_unit,
     )
     with tempfile.TemporaryDirectory(prefix="cualni-twin-ctf-") as tmp:
         root = Path(tmp)

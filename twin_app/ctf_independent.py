@@ -174,7 +174,8 @@ def compare_ctf_model_settings(
     }
 
 
-def indexed_neighbor_disorientation(eb, phases, neighbors, *, threshold_deg):
+def indexed_neighbor_disorientation(eb, phases, neighbors, *,
+                                   threshold_deg, computed_angles=None):
     """Exact full proper-symmetry quotient for ALL indexed neighbor edges.
 
     min_{S1,S2 in G} angle(S1^T g1^T g2 S2)
@@ -190,6 +191,26 @@ def indexed_neighbor_disorientation(eb, phases, neighbors, *, threshold_deg):
     a,b=edges[:,0],edges[:,1]
     valid=eb.indexed[a]&eb.indexed[b]&(eb.phase_id[a]==eb.phase_id[b])
     a,b=a[valid],b[valid]
+    if computed_angles is not None:
+        selected=np.asarray(computed_angles,dtype=float)
+        if selected.shape!=(len(edges),):
+            raise ValueError("Precomputed edge-angle shape mismatch")
+        angles=selected[np.isfinite(selected)]
+        if not len(angles):
+            return {"n_indexed_neighbors":0,"median_deg":None,
+                    "fraction_below_segmentation_threshold":None,
+                    "fraction_above_30_deg":None}
+        return {
+            "n_indexed_neighbors":int(len(angles)),
+            "median_deg":float(np.median(angles)),
+            "fraction_below_segmentation_threshold":float(np.mean(angles<=threshold_deg)),
+            "fraction_above_30_deg":float(np.mean(angles>30.)),
+            "p90_deg":float(np.quantile(angles,0.9)),
+            "scientific_scope":(
+                "Full proper-symmetry quotient of adjacent indexed phase-matched "
+                "pixels, not a physical twin/plane certificate."
+            ),
+        }
     pieces=[]
     for phase_id,phase in phases.items():
         take=(eb.phase_id[a]==int(phase_id))
@@ -229,6 +250,7 @@ def independent_ctf_cartography(
     *, misorientation_threshold_deg: float = 3.0,
     minimum_grain_pixels: int = 3,
     kam_neighbor_cutoff_deg: float = 5.0,
+    three_dimensional_angle_unit: str | None = None,
 ) -> dict[str, Any]:
     """Fully analyze measured indexed orientations WITHOUT an OR/theory model.
 
@@ -255,7 +277,15 @@ def independent_ctf_cartography(
     with tempfile.TemporaryDirectory(prefix="ctf-or-free-") as directory:
         path = Path(directory) / filename
         path.write_bytes(content)
-        eb = load_ctf(path)
+        from cualni_cryst.ebsd_map import AngleUnit
+        if three_dimensional_angle_unit not in {None,"degree","radian"}:
+            raise ValueError("Invalid explicit 3-D CTF angle unit")
+        eb = load_ctf(
+            path, three_dimensional_angle_unit=(
+                AngleUnit(three_dimensional_angle_unit)
+                if three_dimensional_angle_unit is not None else None
+            ),
+        )
 
     by_id = {p["phase_id"]: p for p in phases_declared}
     indexed_ids = sorted(set(map(int, eb.phase_id[eb.indexed])))
@@ -275,20 +305,34 @@ def independent_ctf_cartography(
         )
 
     neighbors = build_neighbor_graph(eb, radius_factor=1.15)
-    seg = segment_grains(
-        eb, phases, threshold_deg=misorientation_threshold_deg,
-        neighbor_graph=neighbors, minimum_points=int(minimum_grain_pixels),
-    )
-    # All means are calculated from the actual measured rotations and proper
-    # phase symmetry; no identity OR or theoretical-variant oracle is supplied.
+    # The reference/native algorithm remains authoritative for small maps.
+    # For large real AZtec scans use the EXACT same proper-symmetry quotient
+    # with batched matrix multiplications and connected components, rather
+    # than millions of interpreted Python symmetry loops.
+    accelerated = None
+    if eb.n_points >= 3000:
+        from twin_app.ctf_fast_grains import accelerated_ebsd_maps
+        accelerated = accelerated_ebsd_maps(
+            eb, phases, neighbors, threshold_deg=misorientation_threshold_deg,
+            minimum_points=int(minimum_grain_pixels),
+            kam_max_deg=kam_neighbor_cutoff_deg,
+        )
+        seg, kam = accelerated["segmentation"], accelerated["kam_deg"]
+    else:
+        seg = segment_grains(
+            eb, phases, threshold_deg=misorientation_threshold_deg,
+            neighbor_graph=neighbors, minimum_points=int(minimum_grain_pixels),
+        )
+        kam = kernel_average_misorientation(
+            eb, phases, neighbor_graph=neighbors,
+            maximum_neighbor_misorientation_deg=kam_neighbor_cutoff_deg,
+        )
+    # GOS and orientation means still use the *original* native implementation.
     grains = grain_statistics(eb, seg, phases)
-    kam = kernel_average_misorientation(
-        eb, phases, neighbor_graph=neighbors,
-        maximum_neighbor_misorientation_deg=kam_neighbor_cutoff_deg,
-    )
     edges = extract_boundaries(eb, seg, phases)
     neighbor_audit = indexed_neighbor_disorientation(
         eb, phases, neighbors, threshold_deg=misorientation_threshold_deg,
+        computed_angles=(None if accelerated is None else accelerated["edge_angles_deg"]),
     )
     boundary_pairs = Counter(
         tuple(sorted((int(e.grain_a), int(e.grain_b)))) for e in edges
@@ -304,6 +348,21 @@ def independent_ctf_cartography(
         } for g in grains
     ]
     indexed = eb.indexed
+    grain_gos = np.full(eb.n_points,np.nan,dtype=float)
+    for grain in grains:
+        grain_gos[grain.point_indices] = grain.gos_deg
+    neighbor_max = (
+        accelerated["neighbor_max_deg"] if accelerated is not None
+        else np.full(eb.n_points,np.nan,dtype=float)
+    )
+    boundary_mask = (
+        accelerated["grain_boundary_mask"] if accelerated is not None
+        else np.zeros(eb.n_points,dtype=bool)
+    )
+    if accelerated is None:
+        for edge in edges:
+            boundary_mask[edge.point_a] = True
+            boundary_mask[edge.point_b] = True
     result = {
         "file_sha256": hashlib.sha256(content).hexdigest(),
         "status": "MEASURED_GRAIN_DIAGNOSTICS_NOT_TWIN_CERTIFICATION",
@@ -331,6 +390,9 @@ def independent_ctf_cartography(
             "phase": np.where(indexed, eb.phase_id, 0),
             "grain_id": seg.grain_id,
             "kam_deg": kam,
+            "gos_deg": grain_gos,
+            "neighbor_max_deg": neighbor_max,
+            "grain_boundary_mask": boundary_mask.astype(float),
             "MAD": np.where(indexed, eb.quality.get("MAD", np.full(eb.n_points,np.nan)),np.nan),
             "BC": np.where(indexed, eb.quality.get("BC", np.full(eb.n_points,np.nan)),np.nan),
             "BS": np.where(indexed, eb.quality.get("BS", np.full(eb.n_points,np.nan)),np.nan),
@@ -348,7 +410,11 @@ def plot_ctf_field(maps: dict, field: str):
     """Build one physical-coordinate plot (no fake IPF coloring)."""
     import plotly.graph_objects as go
 
-    supported = {"phase", "grain_id", "kam_deg", "MAD", "BC", "BS"}
+    supported = {
+        "phase", "grain_id", "kam_deg", "gos_deg",
+        "neighbor_max_deg", "grain_boundary_mask",
+        "MAD", "BC", "BS",
+    }
     if field not in supported:
         raise ValueError("Unsupported EBSD map field")
     x, y = np.asarray(maps["x"]), np.asarray(maps["y"])

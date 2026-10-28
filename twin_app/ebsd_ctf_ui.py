@@ -19,6 +19,10 @@ from .ctf_independent import (
     compare_ctf_model_settings, declared_ctf_phases,
     independent_ctf_cartography, plot_ctf_field,
 )
+from .ctf_rich_io import (
+    inspect_ctf_measurements, plot_ctf_numeric_map, ctf_field_histogram,
+    raw_catalog_json, raw_catalog_npz,
+)
 from .ebsd_integration import (
     MAX_CTF_BYTES, ctf_analysis_signature, inspect_ctf_upload,
     parse_explicit_or, run_ctf_observation, summarize_twin_candidates,
@@ -26,16 +30,24 @@ from .ebsd_integration import (
 
 
 @st.cache_data(show_spinner=False, max_entries=4)
-def _ctf_preview(file_bytes: bytes, filename: str) -> dict:
-    return inspect_ctf_upload(file_bytes, filename=filename)
+def _ctf_preview(file_bytes: bytes, filename: str, unit=None) -> dict:
+    return inspect_ctf_upload(
+        file_bytes, filename=filename, three_dimensional_angle_unit=unit,
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=3, ttl=3600)
+def _ctf_catalog(file_bytes: bytes, filename: str) -> dict:
+    return inspect_ctf_measurements(file_bytes, filename)
 
 
 @st.cache_data(show_spinner=False, max_entries=2, ttl=3600)
-def _independent_cartography(file_bytes, filename, threshold, nmin):
+def _independent_cartography(file_bytes, filename, threshold, nmin, unit=None):
     return independent_ctf_cartography(
         file_bytes, filename,
         misorientation_threshold_deg=threshold,
         minimum_grain_pixels=nmin,
+        three_dimensional_angle_unit=unit,
     )
 
 
@@ -80,6 +92,9 @@ def _show_independent_cartography(result):
         "Phase ID (AZtec indexing)": "phase",
         "Segmented grain ID": "grain_id",
         "Kernel average misorientation, °": "kam_deg",
+        "Grain orientation spread, °": "gos_deg",
+        "Maximum indexed-neighbor disorientation, °": "neighbor_max_deg",
+        "Segmented boundary-pixel mask": "grain_boundary_mask",
         "Mean angular deviation (MAD, AZtec)": "MAD",
         "Band contrast (BC)": "BC",
         "Band slope (BS)": "BS",
@@ -88,8 +103,22 @@ def _show_independent_cartography(result):
         "EBSD map", list(field_labels),
         key="tf_ctf_map_channel",
     )
+    derived_maps = result["maps"]
+    zlevels = np.unique(np.round(derived_maps["z"], 6))
+    if len(zlevels) > 1:
+        zselect = float(st.select_slider(
+            "Analysis Z slice", options=[float(z) for z in zlevels],
+            key="tf_ctf_analysis_z",
+        ))
+        mask = np.isclose(derived_maps["z"],zselect,atol=1e-5,rtol=0)
+        shown_maps = {
+            key:np.asarray(values)[mask]
+            for key,values in derived_maps.items()
+        }
+    else:
+        shown_maps = derived_maps
     st.plotly_chart(
-        plot_ctf_field(result["maps"], field_labels[selected]),
+        plot_ctf_field(shown_maps, field_labels[selected]),
         width="stretch",
     )
     with st.expander("Measured grains and boundaries", expanded=False):
@@ -138,12 +167,116 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     if len(content) > MAX_CTF_BYTES:
         st.error("CTF exceeds the 35 MB analysis limit.")
         return
+    # Always show the complete vendor measurement inventory FIRST.
+    # Native orientation and the harder symmetry analysis may be unavailable
+    # on otherwise readable CTFs; do not hide their raw quality maps.
     try:
-        preview = _ctf_preview(content, upload.name)
-        phases_declared = declared_ctf_phases(content)
+        catalog = _ctf_catalog(content, upload.name)
     except (ValueError, RuntimeError, UnicodeError, OSError) as exc:
-        st.error(f"CTF not accepted: {exc}")
+        st.error(f"CTF table could not be read: {exc}")
         return
+
+    st.caption(
+        f"{catalog['indexed_count']:,}/{catalog['n_points']:,} indexed points "
+        f"({100*catalog['indexed_fraction']:.1f}%) · "
+        f"{len(catalog['numeric_columns'])} original measurement columns"
+    )
+    with st.expander("CTF maps, quality and acquisition data", expanded=True):
+        a, b, c = st.columns(3)
+        a.metric("Pixels", f"{catalog['n_points']:,}")
+        b.metric("Unindexed", f"{catalog['unindexed_count']:,}")
+        c.metric("Phase labels", len(catalog["phase_rows"])-int(
+            any(p["phase_id"]==0 for p in catalog["phase_rows"])
+        ))
+        grid = catalog["grid"]
+        st.caption(
+            f"Coordinate grid {grid['n_x']} × {grid['n_y']} × {grid['n_z']}"
+            f" · duplicate coordinates {grid['duplicate_coordinates']}"
+            f" · {'complete' if grid['complete_unique_cartesian_grid'] else 'irregular'}"
+        )
+        possible = [
+            field for field in catalog["maps"] if field not in {"x","y","z"}
+        ]
+        chosen = st.selectbox(
+            "Map channel", possible, key="tf_ctf_vendor_map",
+        )
+        zvalues = np.unique(np.round(catalog["maps"]["z"], 6))
+        layer = (
+            float(st.select_slider(
+                "Z slice (CTF units)", options=[float(v) for v in zvalues],
+                key="tf_ctf_z_slice",
+            ))
+            if len(zvalues)>1 else None
+        )
+        st.plotly_chart(
+            plot_ctf_numeric_map(catalog, chosen, z_value=layer),
+            width="stretch",
+        )
+        with st.expander("Distribution and original acquisition details",expanded=False):
+            st.plotly_chart(
+                ctf_field_histogram(catalog,chosen),
+                width="stretch",
+            )
+            st.dataframe(
+                pd.DataFrame(catalog["quality_summary"]),
+                hide_index=True,width="stretch",
+            )
+            st.dataframe(
+                pd.DataFrame(catalog["phase_rows"]),
+                hide_index=True,width="stretch",
+            )
+            st.json({
+                "grid":catalog["grid"],
+                "acquisition":catalog["header"],
+                "numeric_columns":catalog["numeric_columns"],
+            })
+        left,right = st.columns(2)
+        left.download_button(
+            "Download all raw pixel maps (.npz)",
+            data=raw_catalog_npz(catalog),
+            file_name="ctf_raw_measurements.npz",
+            mime="application/octet-stream",
+            key="tf_ctf_raw_npz",
+        )
+        right.download_button(
+            "Download complete CTF audit (.json)",
+            data=raw_catalog_json(catalog),
+            file_name="ctf_original_header_and_quality.json",
+            mime="application/json",
+            key="tf_ctf_raw_json",
+        )
+        st.caption(
+            "Vendor-reported Euler angles, phase labels and quality values. "
+            "Unindexed Euler/MAD placeholders are masked. No Kikuchi "
+            "reindexing, IPF coloring or parent OR has been inferred."
+        )
+    # 3-D CTF Euler units differ across historical AZtec exports.
+    # Never guess degrees vs radians from the angles themselves.
+    three_d = int(float(catalog["header"].get("ZCELLS","1"))) > 1
+    unit = None
+    if three_d:
+        choice = st.selectbox(
+            "3-D CTF Euler-angle unit",
+            ("Select the documented unit","Degrees","Radians"),
+            key="tf_ctf_3d_angle_units",
+        )
+        unit = {"Degrees":"degree","Radians":"radian"}.get(choice)
+        if unit is None:
+            st.info(
+                "Raw measurement maps are available. Select the documented "
+                "Euler-angle unit to unlock 3-D orientation/grain analysis."
+            )
+            return
+    try:
+        preview = _ctf_preview(content, upload.name, unit)
+    except (ValueError, RuntimeError, UnicodeError, OSError) as exc:
+        st.info(f"Orientation analysis unavailable: {exc}")
+        return
+    try:
+        phases_declared = declared_ctf_phases(content)
+    except (ValueError, RuntimeError, UnicodeError) as exc:
+        phases_declared = ()
+        st.warning(f"CTF phase definitions need review: {exc}")
 
     indexed_counts = preview["phase_counts"]
     st.caption(
@@ -218,17 +351,29 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     # declared point groups; no OR, CIF or completed CT solver is required.
     independent_key = hashlib.sha256(
         content + json.dumps(
-            {"threshold":threshold,"nmin":nmin},sort_keys=True
+            {"threshold":threshold,"nmin":nmin,"euler_unit":unit},sort_keys=True
         ).encode("utf-8")
     ).hexdigest()
-    if st.button(
-        "Analyze indexed EBSD independently",
-        key="tf_ctf_v1_measure", disabled=not bool(phases_declared),
-    ):
+    auto = st.toggle(
+        "Calculate grain and misorientation maps on upload",
+        value=True,key="tf_ctf_auto_measure",
+        help=(
+            "Uses the CTF-declared phase symmetry and measured Euler angles. "
+            "The result is numerical orientation segmentation, NOT "
+            "independent confirmation of physical grains or twins."
+        ),
+    )
+    requested = st.button(
+        "Calculate grain/KAM maps",
+        key="tf_ctf_v1_measure",disabled=not bool(phases_declared),
+    )
+    # Raw maps are always immediate. The expensive phase-symmetry
+    # calculation is cached by bytes, segmentation threshold and min size.
+    if phases_declared and (auto or requested):
         try:
-            with st.spinner("Segmenting measured orientations and computing KAM…"):
+            with st.spinner("Calculating measured orientation regions and KAM…"):
                 result = _independent_cartography(
-                    content, upload.name, threshold, nmin,
+                    content, upload.name, threshold, nmin, unit,
                 )
             st.session_state["tf_ctf_independent"] = (independent_key,result)
         except (ValueError, RuntimeError, ArithmeticError, OSError) as exc:
@@ -280,6 +425,7 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     selected = ctf_analysis_signature(
         content, signature, matrix_txt, phase_a, phase_m, nmin,
         segmentation_threshold_deg=threshold,
+        three_dimensional_angle_unit=unit,
     )
     confirm = st.checkbox(
         "I verified the phase IDs, indexing, crystal axes and OR frames.",
@@ -304,6 +450,7 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
                     verified_or=R,filename=upload.name,
                     minimum_grain_points=nmin,
                     segmentation_threshold_deg=threshold,
+                    three_dimensional_angle_unit=unit,
                 )
             st.session_state["tf_ctf_v1_result"]=(selected,result)
         except (ValueError, RuntimeError, ArithmeticError, OSError) as exc:
@@ -343,6 +490,7 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
             "CTF_parent_phase_id":phase_a,
             "CTF_martensite_phase_id":phase_m,
             "grain_segmentation_threshold_deg": threshold,
+            "ctf_3d_euler_unit":unit,
             "verified_R_parent_from_product":parse_explicit_or(matrix_txt).tolist(),
             "model_consistency":model_audit,
             "audit":audit,"summary":result.summary,
