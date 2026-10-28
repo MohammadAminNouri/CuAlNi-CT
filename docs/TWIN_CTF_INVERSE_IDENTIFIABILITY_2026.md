@@ -145,3 +145,30 @@ magically infer a 3D habit plane from one EBSD map. Nor does it
 independently certify Type I/II, a twinning shear direction or
 interfacial atomic structure; those require a valid crystallographic
 crosswalk and additional physical evidence.
+
+## Conditional direct measured A/M orientation relationship
+
+When an EBSD map actually contains indexed A and M orientation regions
+touching along the same interface, the measured sample-frame rotations
+g_A and g_M imply a parent<-product orientation-relationship candidate
+
+    R_A_from_M = g_A.T @ g_M
+
+in the registered common sample coordinate frame. This is measured in
+the **orientation**, not correspondence, domain. The same physical
+orientation class is defined modulo S_A R S_M^-1, using full proper
+parent and product point-group operations. All observed A/M
+adjacencies are clustered by the independent existing quotient metric;
+at least three are required for a dominant-class report.
+
+The program reports support, residual, alternative OR classes,
+conventional-setting dependence and phase-indexing uncertainty.
+It NEVER automatically fills the separately verified
+correspondence C. A numerically dominant class is not a unique
+absolute representative rotation, nor proof of an atomistic
+transformation mechanism.
+
+For the three studied Site 5/6/7 scans there are zero indexed
+austenite points; thus this **direct measured A/M route is unavailable**.
+Only the optional exploratory child-only parent-symmetry subgroup
+search is possible and its identifiability remains weaker.

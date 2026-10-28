@@ -581,6 +581,52 @@ def render_ctf_panel(report, project_payload, transformation_id, signature,
     )
     if measured is not None:
         _show_independent_cartography(measured)
+        n_parent_regions=sum(
+            int(g["phase_id"])==phase_a for g in measured["grains"]
+        )
+        if not n_parent_regions:
+            st.caption(
+                "No indexed parent region. A direct experimental A/M "
+                "orientation relationship cannot be measured from this CTF."
+            )
+        elif phases_declared:
+            with st.expander(
+                "Estimate observed A/M OR from indexed parent/product boundaries",
+                expanded=False,
+            ):
+                st.caption(
+                    "Uses registered A/M orientation pairs, reduced by "
+                    "parent and product crystal symmetries. Does not infer C."
+                )
+                if st.button(
+                    "Calculate indexed A/M OR equivalence classes",
+                    key="tf_ctf_direct_or_run",
+                ):
+                    try:
+                        from twin_app.ctf_observed_am_or import (
+                            observed_am_or_classes,
+                        )
+                        am=observed_am_or_classes(
+                            measured,phases_declared,
+                            parent_phase_id=phase_a,
+                            product_phase_id=phase_m,
+                        )
+                        st.session_state["tf_ctf_direct_or_result"]=(
+                            (independent_key,phase_a,phase_m),am,
+                        )
+                    except (ValueError,ArithmeticError,RuntimeError) as exc:
+                        st.error(f"A/M OR evaluation failed: {exc}")
+                saved_am=st.session_state.get("tf_ctf_direct_or_result")
+                if saved_am and saved_am[0]==(
+                    independent_key,phase_a,phase_m
+                ):
+                    st.json(saved_am[1])
+                    st.download_button(
+                        "Export indexed A/M OR evidence",
+                        data=json.dumps(saved_am[1],indent=2,default=str),
+                        file_name="ctf_indexed_am_or_classes.json",
+                        mime="application/json",key="tf_ctf_direct_or_export",
+                    )
         if phases_declared:
             with st.expander(
                 "Explore parent-symmetry embedding from martensite boundaries",
