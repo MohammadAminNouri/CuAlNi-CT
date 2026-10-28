@@ -73,6 +73,11 @@ def test_or_free_grain_maps_use_real_orientations_and_declared_symmetry():
     assert results["n_indexed"] == 12
     assert results["n_grains"] == 2, results["grains"]
     assert results["n_distinct_grain_adjacencies"] == 1
+    assert results["n_retained_indexed"] == 12
+    jumps = results["neighbor_disorientation"]
+    assert jumps["n_indexed_neighbors"] == 17
+    assert jumps["fraction_above_30_deg"] > 0.1
+    assert jumps["fraction_below_segmentation_threshold"] < 1.0
     assert {g["phase_id"] for g in results["grains"]} == {2}
     assert sorted(g["pixels"] for g in results["grains"]) == [6,6]
     assert len(results["maps"]["grain_id"]) == 12

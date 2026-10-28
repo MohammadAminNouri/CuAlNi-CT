@@ -58,6 +58,24 @@ def _show_independent_cartography(result):
         f"Grain threshold {result['threshold_deg']}° · KAM neighbor cutoff "
         f"{result['kam_cutoff_deg']}° · CTF-declared phase symmetries only"
     )
+    retained = result["n_retained_indexed"]
+    st.caption(
+        f"{retained:,} of {result['n_indexed']:,} indexed pixels "
+        "belong to orientation regions retained by the minimum-size cutoff."
+    )
+    jumps = result["neighbor_disorientation"]
+    if jumps["median_deg"] is not None:
+        st.caption(
+            f"Adjacent indexed-pixel disorientation: median "
+            f"{jumps['median_deg']:.2f}° · "
+            f"{100*jumps['fraction_above_30_deg']:.1f}% over 30°"
+        )
+        if jumps["fraction_above_30_deg"] > 0.25:
+            st.warning(
+                "Many adjacent indexed pixels have large orientation jumps. "
+                "Check AZtec indexing, pseudosymmetry and fine twins before "
+                "interpreting segmented orientation regions as physical grains."
+            )
     field_labels = {
         "Phase ID (AZtec indexing)": "phase",
         "Segmented grain ID": "grain_id",

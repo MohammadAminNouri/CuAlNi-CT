@@ -65,7 +65,10 @@ def declared_ctf_phases(content: bytes) -> tuple[dict[str, Any], ...]:
             raise ValueError("CTF phase header is truncated")
         cells = lines[index + phase_id - 1].split("\t")
         # Some synthetic/minimal CTF exports have no phase descriptors.
-        if cells[0].strip().lower() == "phase":
+        tokens = lines[index + phase_id - 1].split()
+        if (len(tokens) >= 6 and tokens[0].lower() == "phase"
+                and "euler1" in (x.lower() for x in tokens)):
+            # Some synthetic/legacy CTFs omit atomic phase declarations.
             return ()
         if len(cells) < 5:
             raise ValueError("CTF declared phase requires cell and space-group fields")
@@ -171,6 +174,56 @@ def compare_ctf_model_settings(
     }
 
 
+def indexed_neighbor_disorientation(eb, phases, neighbors, *, threshold_deg):
+    """Exact full proper-symmetry quotient for ALL indexed neighbor edges.
+
+    min_{S1,S2 in G} angle(S1^T g1^T g2 S2)
+        = min_{S in G} angle(g1^T g2 S),
+    since G is closed and trace is cyclic. This vectorized calculation uses
+    all declared proper operators; it does NOT approximate by angle alone.
+    """
+    edges=np.asarray(neighbors.edges,dtype=int).reshape(-1,2)
+    if not len(edges):
+        return {"n_indexed_neighbors":0,"median_deg":None,
+                "fraction_below_segmentation_threshold":None,
+                "fraction_above_30_deg":None}
+    a,b=edges[:,0],edges[:,1]
+    valid=eb.indexed[a]&eb.indexed[b]&(eb.phase_id[a]==eb.phase_id[b])
+    a,b=a[valid],b[valid]
+    pieces=[]
+    for phase_id,phase in phases.items():
+        take=(eb.phase_id[a]==int(phase_id))
+        if not np.any(take):
+            continue
+        ra=np.asarray(eb.orientations[a[take]])
+        rb=np.asarray(eb.orientations[b[take]])
+        rel=np.einsum("nji,njk->nik",ra,rb,optimize=True)
+        proper=np.asarray(phase.proper_symmetry_cartesian,dtype=float)
+        traces=np.einsum("nij,kji->nk",rel,proper,optimize=True)
+        angles=np.rad2deg(np.arccos(np.clip(
+            (np.max(traces,axis=1)-1.)/2.,-1.,1.
+        )))
+        pieces.append(angles)
+    if not pieces:
+        return {"n_indexed_neighbors":0,"median_deg":None,
+                "fraction_below_segmentation_threshold":None,
+                "fraction_above_30_deg":None}
+    angles=np.concatenate(pieces)
+    return {
+        "n_indexed_neighbors":int(len(angles)),
+        "median_deg":float(np.median(angles)),
+        "fraction_below_segmentation_threshold":
+            float(np.mean(angles<=threshold_deg)),
+        "fraction_above_30_deg":float(np.mean(angles>30.)),
+        "p90_deg":float(np.quantile(angles,0.9)),
+        "scientific_scope":(
+            "Symmetry-reduced adjacent-pixel orientation jumps, not "
+            "Kikuchi reindexing, a physical grain-boundary declaration, "
+            "nor an experimental Type I/II classification."
+        ),
+    }
+
+
 def independent_ctf_cartography(
     content: bytes, filename: str,
     *, misorientation_threshold_deg: float = 3.0,
@@ -234,6 +287,9 @@ def independent_ctf_cartography(
         maximum_neighbor_misorientation_deg=kam_neighbor_cutoff_deg,
     )
     edges = extract_boundaries(eb, seg, phases)
+    neighbor_audit = indexed_neighbor_disorientation(
+        eb, phases, neighbors, threshold_deg=misorientation_threshold_deg,
+    )
     boundary_pairs = Counter(
         tuple(sorted((int(e.grain_a), int(e.grain_b)))) for e in edges
     )
@@ -256,6 +312,8 @@ def independent_ctf_cartography(
         "indexed_phase_ids": indexed_ids,
         "n_pixels": eb.n_points,
         "n_indexed": int(np.count_nonzero(indexed)),
+        "n_retained_indexed": int(np.count_nonzero(seg.grain_id>=0)),
+        "neighbor_disorientation": neighbor_audit,
         "n_grains": len(grains),
         "n_neighbor_edges": len(neighbors.edges),
         "n_intergrain_edges": len(edges),
