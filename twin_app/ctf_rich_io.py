@@ -57,7 +57,10 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
         raise ValueError("CTF numeric row count mismatch")
     converted: dict[str, np.ndarray] = {}
     unused_columns: list[str] = []
-    required_numeric = {"phase","x","y","z","euler1","euler2","euler3"}
+    required_numeric = {
+        "phase","x","y","z","euler1","euler2","euler3",
+        "bands","error","mad","bc","bs","grainindex",
+    }
     for field in columns:
         numeric = pd.to_numeric(df[field], errors="coerce").to_numpy(dtype=float)
         if not np.all(np.isfinite(numeric)):
