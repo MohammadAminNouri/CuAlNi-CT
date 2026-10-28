@@ -15,7 +15,8 @@ def test_cif_choice_is_top_level_and_uploads_both_structures():
     editor = APP.index('with st.expander("Crystal parameters and correspondence"')
     assert radio < editor
     assert '"Import CIF structures"' in APP[radio:editor]
-    assert 'expanded=existing is None or source == "Import CIF structures"' in APP
+    assert '"Import CIF structures", "Import CTF phase definitions"' in APP
+    assert 'expanded=existing is None or source in {' in APP
     assert 'st.file_uploader(f"{name.capitalize()} CIF"' in APP
     assert 'cif_pair_signature = _cif_pair_signature(raw_cif)' in APP
     assert 'st.session_state[f"{name}_family"] = cif_families[name]' in APP
