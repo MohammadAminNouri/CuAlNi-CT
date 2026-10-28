@@ -78,3 +78,29 @@ def test_blind_or_requires_observable_boundaries_and_never_returns_unique_C():
     assert result["status"]=="insufficient_evidence"
     assert result["unique_physical_OR"] is False
     assert result["correspondence_C"]=="NOT_INFERRED"
+
+
+def test_ipf_irregular_spacing_retains_actual_measurement_positions():
+    import pytest
+    pytest.importorskip("orix")
+    from twin_app.ctf_ipf import plot_symmetry_ipf
+    data={
+        "x":np.array([0,1,4,0,1,4],float),
+        "y":np.array([0,0,0,1,1,1],float),
+        "z":np.zeros(6),
+        "rgb":np.ones((6,3),float)*.25,
+        "point_group":"mmm",
+        "sample_direction":"Z",
+    }
+    figure=plot_symmetry_ipf(data)
+    assert figure.data[0].type=="scattergl"
+
+
+def test_ctf_changing_file_resuggests_phase_id_without_touching_correspondence():
+    text=(Path(__file__).resolve().parents[2]/
+          "twin_app"/"streamlit_app.py").read_text(encoding="utf-8")
+    assert 'tf_ctf_prefill_file_sha' in text
+    assert 'tf_ctf_prefill_product_id' in text
+    assert 'tf_ctf_approve_C_' in text
+    assert 'apply_ctf_crystal_handoff(' in text
+    assert 'ctf_admission_reason' in text

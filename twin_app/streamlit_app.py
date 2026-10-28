@@ -348,6 +348,17 @@ def main() -> None:
                     suggested = suggested_ctf_product_phase_id(
                         catalog["indexed_phase_counts"]
                     )
+                    # Re-select the phase when switching Site 5 (2H) to
+                    # Site 6 or 7 (18R); retain explicit choice for same file.
+                    current_ctf_sha = hashlib.sha256(raw).hexdigest()
+                    if st.session_state.get("tf_ctf_prefill_file_sha") != current_ctf_sha:
+                        st.session_state["tf_ctf_prefill_parent_id"] = (
+                            1 if 1 in phase_options else pids[0]
+                        )
+                        st.session_state["tf_ctf_prefill_product_id"] = (
+                            suggested if suggested in phase_options else pids[1]
+                        )
+                        st.session_state["tf_ctf_prefill_file_sha"] = current_ctf_sha
                     p_id = st.selectbox(
                         "Parent (CTF phase ID)", pids,
                         index=pids.index(1) if 1 in pids else 0,

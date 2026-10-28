@@ -85,7 +85,17 @@ def plot_symmetry_ipf(result: dict, *, z_value: float | None = None):
     ux,ix=np.unique(np.round(x,6),return_inverse=True)
     uy,iy=np.unique(np.round(y,6),return_inverse=True)
     keys=iy.astype(int)*len(ux)+ix
-    unique_grid=(len(ux)*len(uy)==len(x) and np.unique(keys).size==len(x))
+    # A complete Cartesian grid need not be equally spaced. Image traces
+    # use uniform dx/dy, so preserve nonuniform coordinates as point plots.
+    regular_x=(len(ux)<3 or np.allclose(
+        np.diff(ux),np.diff(ux)[0],rtol=1.e-5,atol=1.e-6
+    ))
+    regular_y=(len(uy)<3 or np.allclose(
+        np.diff(uy),np.diff(uy)[0],rtol=1.e-5,atol=1.e-6
+    ))
+    unique_grid=(len(ux)*len(uy)==len(x)
+                 and np.unique(keys).size==len(x)
+                 and regular_x and regular_y)
     if unique_grid:
         grid=np.full((len(uy),len(ux),3),0.94)
         grid[iy,ix]=rgb
