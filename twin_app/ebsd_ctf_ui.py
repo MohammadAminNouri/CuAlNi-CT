@@ -29,6 +29,7 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
     """One compact Step-01 input, with preview independent of model results."""
     upload = st.file_uploader(
         "Oxford / AZtec indexed CTF map", type=["ctf"], key="tf_ctf_v1_file",
+        max_upload_size=35,
         help="Native CTF (Bunge ZXZ, 2-D degrees). Analysis limit: 35 MB.",
     )
     if upload is None:

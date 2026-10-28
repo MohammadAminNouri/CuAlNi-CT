@@ -317,7 +317,7 @@ def main() -> None:
             st.caption("Upload the parent and product CIFs (2 MB each). The correspondence is entered below.")
             for name, col in (("parent", left), ("product", right)):
                 with col:
-                    uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}")
+                    uploaded = st.file_uploader(f"{name.capitalize()} CIF", type=("cif",), key=f"tf_v9_cif_{name}", max_upload_size=2)
                     if uploaded is not None:
                         try:
                             bytes_cif = uploaded.getvalue()

@@ -72,6 +72,8 @@ def test_or_is_not_generated_by_ctf_and_confirmation_is_fresh():
     assert "report is not None and not invalid and matrix_txt.strip() and confirm" in CTF_UI
     assert '"NOT CERTIFIED:' in CTF_UI
     assert "st.file_uploader(" in CTF_UI
+    assert "max_upload_size=35" in CTF_UI
+    assert "max_upload_size=2" in APP
     assert "st.cache_data(" in CTF_UI
     assert "run_ctf_observation(" in CTF_UI
 
