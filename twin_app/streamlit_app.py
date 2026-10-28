@@ -583,7 +583,7 @@ def main() -> None:
                 if cif_admission_reason:
                     st.caption("CIF: " + cif_admission_reason)
         except (ApplicationError, ValueError, ArithmeticError, AssertionError) as exc:
-            st.error("Invalid crystal input.")
+            st.error("One input is incomplete or incompatible.")
             with st.expander("Which input failed?", expanded=False):
                 st.code(f"{type(exc).__name__}: {exc}")
             return
