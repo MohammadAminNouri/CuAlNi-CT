@@ -8,6 +8,8 @@ on:
       - ".github/workflows/twin-theory-runtime-diagnosis.yml"
       - "twin_app/theory_comparison_ui.py"
       - "twin_app/theory_numerical_ui.py"
+      - "twin_app/streamlit_app.py"
+      - "twin_app/input_ui.py"
       - "tools/profile_twin_theory_runtime.py"
   workflow_dispatch:
 
