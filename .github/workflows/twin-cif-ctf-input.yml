@@ -21,6 +21,7 @@ on:
       - "tests/twin_app/test_independent_ctf_cartography_2026.py"
       - "tests/twin_app/test_ctf_rich_io_2026.py"
       - "tests/twin_app/test_ctf_phase_handoff_ipf_2026.py"
+      - "tests/twin_app/test_input_cif_ui_simplification_2026.py"
       - "tests/twin_app/test_ctf_fast_grains_2026.py"
       - "tests/twin_app/test_ebsd_ctf_integration.py"
       - ".github/workflows/twin-cif-ctf-input.yml"
