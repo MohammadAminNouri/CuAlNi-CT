@@ -152,3 +152,39 @@ def test_p1_tampered_reported_shear_shear_is_detected():
     assert cert["P0_computational_pass"]
     assert cert["P1_computational_pass"] is False
     assert cert["P1_shear_shear"]["max_independent_error"] > .1
+
+
+def test_p1_full_reported_cmc_and_smc_reconstruct_from_same_correspondence():
+    from scipy.linalg import eigh
+    project, unified = minimal_project_and_row()
+    Ma, Mm, C, _, _ = published_orthorhombic_case()
+    G = C.T @ Mm @ C
+    unimodular_invariance = G - Ma
+    spectrum = eigh(G, Ma, eigvals_only=True) - 1.
+    unified.ct_report = NS(
+        cmc_dimensional=unimodular_invariance,
+        analysis=NS(eigenvalues=spectrum),
+    )
+    plane = np.array([1., 1., 0.])
+    plane_unit = plane / np.sqrt(plane @ np.linalg.solve(Ma, plane))
+    d = (np.linalg.inv(Ma) - np.linalg.inv(G)) @ plane_unit
+    habit = NS(prediction_kind=PredictionKind.CT_AM_HABIT,
+               row_id="ct_am_test", habit_plane_parent_crystal=plane,
+               shape_vector_parent_crystal=d)
+    unified.rows = (*unified.rows, habit)
+    cert = certify_existing_theory(project, "A_to_M", unified)
+    assert cert["P1_computational_pass"], cert["P1_CMC_SMC"]
+    assert cert["P1_CMC_SMC"]["CMC_independent_matrix_gap"] < 1e-12
+    assert cert["P1_CMC_SMC"]["SMC_shears_audited"] == 1
+
+    # Falsify a supposedly checked A/M shear vector.
+    habit.shape_vector_parent_crystal = np.asarray(d) + np.array([.01, 0, 0])
+    corrupted_smc = certify_existing_theory(project, "A_to_M", unified)
+    assert corrupted_smc["P1_computational_pass"] is False
+    assert corrupted_smc["P1_CMC_SMC"]["verified"] is False
+
+    # Independently falsify the CT metric output, not just its shear.
+    habit.shape_vector_parent_crystal = d
+    unified.ct_report.cmc_dimensional = np.asarray(unimodular_invariance) + .1*np.eye(3)
+    corrupted_cmc = certify_existing_theory(project, "A_to_M", unified)
+    assert corrupted_cmc["P1_CMC_SMC"]["verified"] is False

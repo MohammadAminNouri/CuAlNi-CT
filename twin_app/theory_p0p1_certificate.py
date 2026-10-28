@@ -204,10 +204,18 @@ def passive_basis_covariance(M_a, M_m, C_m_from_a, parent_ops,
         product_u_r = C_r @ u_r
         product_h_r = np.linalg.solve(C_r.T, h_r)
         checks = {
-            "CMC_covariant": _relative(cmc_r, P_a.T @ cmc @ P_a),
+            # Scale near-zero CMC/SMC residuals to parent *metrics*,
+            # not to near-zero tensors themselves. A compatible lattice
+            # can have CMC ~= 0; relative-to-CMC would give a false failure.
+            "CMC_covariant": float(
+                np.linalg.norm(cmc_r - P_a.T @ cmc @ P_a) /
+                max(np.linalg.norm(Ma_r), np.linalg.norm(pulled_r), 1.)),
             "pulled_product_metric_covariant": _relative(
                 pulled_r, P_a.T @ parent_pulled @ P_a),
-            "SMC_contravariant": _relative(smc_r, ia @ smc @ ia.T),
+            "SMC_contravariant": float(
+                np.linalg.norm(smc_r - ia @ smc @ ia.T) /
+                max(np.linalg.norm(np.linalg.inv(Ma_r)),
+                    np.linalg.norm(np.linalg.inv(pulled_r)), 1.)),
             "generalized_eigenvalues": _relative(mu_r, mu),
             "parent_direct_vector_norm": abs(
                 _metric_norm(u_r, Ma_r) / baseline_length - 1.),
@@ -272,6 +280,44 @@ def certify_existing_theory(project, transformation_id, unified, *,
         raise ValueError("max_shear_pairs must be a positive integer")
     pairs = [r for r in unified.rows
              if r.prediction_kind == PredictionKind.CT_SUPERCOMPATIBILITY]
+    # Independently test actual CT outputs, not just tensor covariance.
+    # This is distinct from both CT's own CMC and SMC implementations.
+    G = C.T @ Mm @ C
+    computed_cmc = G - Ma
+    ctreport = getattr(unified, "ct_report", None)
+    cmc_report_gap = (
+        None if ctreport is None else
+        float(np.linalg.norm(np.asarray(ctreport.cmc_dimensional, float)
+                             - computed_cmc) /
+              max(np.linalg.norm(G), np.linalg.norm(Ma), 1.))
+    )
+    ct_spectrum_gap = (
+        None if ctreport is None else
+        _relative(
+            np.sort(np.asarray(ctreport.analysis.eigenvalues, float)),
+            np.sort(eigh(G, Ma, eigvals_only=True) - 1.))
+    )
+    smc_independent = np.linalg.inv(Ma) - np.linalg.inv(G)
+    habits = [r for r in unified.rows
+              if r.prediction_kind == PredictionKind.CT_AM_HABIT]
+    habit_shear_checks = []
+    for row in habits:
+        expected_d = smc_independent @ _unit_covector(
+            row.habit_plane_parent_crystal, Ma)
+        recorded_d = np.asarray(row.shape_vector_parent_crystal, float)
+        habit_shear_checks.append({
+            "ct_branch": row.row_id,
+            "SMC_shear_difference": float(
+                np.linalg.norm(expected_d - recorded_d) /
+                max(np.linalg.norm(expected_d),
+                    np.linalg.norm(recorded_d), 1.)),
+        })
+    cmc_smc_pass = (
+        (cmc_report_gap is None or cmc_report_gap <= tolerance)
+        and (ct_spectrum_gap is None or ct_spectrum_gap <= tolerance)
+        and all(x["SMC_shear_difference"] <= tolerance
+                for x in habit_shear_checks)
+    )
     inspected = []
     for row in pairs[:max_shear_pairs]:
         expected = float(row.residuals["ct_supercompatibility_dimensionless"])
@@ -311,8 +357,17 @@ def certify_existing_theory(project, transformation_id, unified, *,
     return {
         "P0_computational_pass": basis["pass"],
         "P0_basis_covariance": basis,
-        "P1_computational_pass": bool(pass_shear and pass_bj and pass_ptmc
+        "P1_computational_pass": bool(cmc_smc_pass and pass_shear
+                                        and pass_bj and pass_ptmc
                                         and len(pairs) <= max_shear_pairs),
+        "P1_CMC_SMC": {
+            "CT_CMC_reported": cmc_report_gap is not None,
+            "CMC_independent_matrix_gap": cmc_report_gap,
+            "CMC_generalized_eigenspectrum_gap": ct_spectrum_gap,
+            "SMC_shears_audited": len(habit_shear_checks),
+            "SMC_shear_checks": habit_shear_checks,
+            "verified": bool(cmc_smc_pass),
+        },
         "P1_shear_shear": {
             "total_solver_pairs": len(pairs),
             "audited_pairs": len(inspected),
@@ -360,6 +415,7 @@ def render_certificate(certificate):
         st.write({
             "P0 coordinate/matrix covariance": certificate["P0_computational_pass"],
             "P1 reproduced existing theoretical outputs": certificate["P1_computational_pass"],
+            "P1 CMC/SMC reproduced": certificate["P1_CMC_SMC"]["verified"],
             "P1 CT pairs verified":
                 certificate["P1_shear_shear"]["audited_pairs"],
             "P1 CT pair coverage": certificate["P1_shear_shear"]["coverage"],
@@ -397,6 +453,7 @@ def thesis_certificate_notes(certificate):
         "",
         f"P0 both-phase passive basis covariance: {certificate['P0_computational_pass']}.",
         f"P1 existing CT/BJ/PTMC reconstruction: {certificate['P1_computational_pass']}.",
+        f"CT CMC/SMC independent reproduction: {certificate['P1_CMC_SMC']['verified']}.",
         f"CT shear/shear branches audited: {p['audited_pairs']}/{p['total_solver_pairs']} "
         f"({p['coverage']}); maximum computed disagreement: {p['max_independent_error']}.",
         f"BJ rank-one/cofactor audited: {certificate['P1_Ball_James']['audited_branches']}; "
