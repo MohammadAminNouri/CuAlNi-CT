@@ -114,3 +114,34 @@ not uniquely determine all three independent direct
 correspondence vectors from a CTF header.
 
 Distinct phase comparisons should be made for beta3→2H and beta3→18R.
+
+## Optional registered two-section interface plane reconstruction
+
+The Step-01 EBSD workspace accepts TWO experimentally registered traces
+of the same physical interface in a common sample Cartesian frame,
+each paired with its actual sample-section normal. The code checks:
+- both traces are orthogonal to their corresponding section normals;
+- the sections are nonparallel and the traces independently intersect;
+- a valid crystal-to-sample SO(3) EBSD grain orientation is supplied.
+
+For two measured trace direction vectors t1 and t2, the unoriented
+sample-frame plane normal is
+
+    n_sample = +/- (t1 x t2) / |t1 x t2|,
+
+and the (unrounded) reciprocal-index covector in the indexed product
+conventional cell is
+
+    h = B_M.T @ g_M.T @ n_sample,
+
+where g_M is the indexed crystal-to-sample orientation and
+B_M.T @ B_M = M_M. The result includes an approximate first-order
+angular error amplification proportional to 1/sin(angle(t1,t2)),
+explicitly NOT a full confidence interval.
+
+One single-section CTF offers neither independent second trace nor
+section registration. Thus this separate user-supplied method cannot
+magically infer a 3D habit plane from one EBSD map. Nor does it
+independently certify Type I/II, a twinning shear direction or
+interfacial atomic structure; those require a valid crystallographic
+crosswalk and additional physical evidence.

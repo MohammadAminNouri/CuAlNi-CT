@@ -150,6 +150,95 @@ def _show_independent_cartography(result):
             "These are orientation-segmented grains, not Cayron CT variants. "
             "A 2-D trace does not determine a unique 3-D twin plane."
         )
+    with st.expander(
+        "3D interface plane from two registered specimen sections",
+        expanded=False,
+    ):
+        st.caption(
+            "Requires two traces of the SAME interface in distinct, "
+            "registered physical sections. A single 2D CTF cannot "
+            "provide a measured 3D habit or twin plane."
+        )
+        gr=result["grains"]
+        if gr:
+            options=[int(g["grain_id"]) for g in gr]
+            chosen_gid=st.selectbox(
+                "Indexed orientation region",options,
+                key="tf_ctf_plane_grain",
+            )
+            g_row=next(g for g in gr if int(g["grain_id"])==chosen_gid)
+            phase=next(
+                (p for p in result["declared_phases"]
+                 if p["phase_id"]==g_row["phase_id"]),None,
+            )
+            if phase is not None:
+                l,r=st.columns(2)
+                with l:
+                    t1=st.text_input(
+                        "Section 1 trace XYZ",value="",placeholder="tx ty tz",
+                        key="tf_ctf_two_trace_1",
+                    )
+                    s1=st.text_input(
+                        "Section 1 normal XYZ",value="",placeholder="nx ny nz",
+                        key="tf_ctf_two_surface_1",
+                    )
+                with r:
+                    t2=st.text_input(
+                        "Section 2 trace XYZ",value="",placeholder="tx ty tz",
+                        key="tf_ctf_two_trace_2",
+                    )
+                    s2=st.text_input(
+                        "Section 2 normal XYZ",value="",placeholder="nx ny nz",
+                        key="tf_ctf_two_surface_2",
+                    )
+                uncertainty=st.number_input(
+                    "Trace-direction uncertainty (degrees)",
+                    min_value=0.,max_value=44.,step=0.5,value=1.,
+                    key="tf_ctf_two_trace_uncertainty",
+                )
+                inputs=(t1,s1,t2,s2,float(uncertainty),chosen_gid)
+                key=hashlib.sha256(json.dumps(inputs).encode()).hexdigest()
+                if st.button(
+                    "Reconstruct candidate measured 3D interface normal",
+                    key="tf_ctf_two_trace_run",
+                    disabled=not all((t1,s1,t2,s2)),
+                ):
+                    try:
+                        from twin_app.ctf_plane_trace import (
+                            reconstruct_registered_interface_plane,
+                        )
+                        from cualni_cryst.lattice import Lattice
+                        def parse_vector(text):
+                            items=[float(t) for t in text.replace(","," ").split()]
+                            if len(items)!=3:
+                                raise ValueError("Every XYZ vector needs exactly three numbers")
+                            return items
+                        cell=Lattice(
+                            *phase["lengths_angstrom"],
+                            *phase["angles_deg"],length_unit="angstrom",
+                        )
+                        plane=reconstruct_registered_interface_plane(
+                            parse_vector(t1),parse_vector(s1),
+                            parse_vector(t2),parse_vector(s2),
+                            g_crystal_to_sample=np.asarray(
+                                g_row["mean_crystal_to_sample_rotation"],
+                            ),
+                            lattice=cell,
+                            trace_uncertainty_deg=float(uncertainty),
+                        )
+                        st.session_state["tf_ctf_two_trace_result"]=(key,plane)
+                    except (ValueError,ArithmeticError,RuntimeError) as exc:
+                        st.error(f"Cannot reconstruct registered plane: {exc}")
+                saved=st.session_state.get("tf_ctf_two_trace_result")
+                if saved and saved[0]==key:
+                    st.json(saved[1])
+                    st.download_button(
+                        "Export two-section plane evidence (.json)",
+                        data=json.dumps(saved[1],indent=2),
+                        file_name="ctf_two_section_plane_evidence.json",
+                        mime="application/json",
+                        key="tf_ctf_two_trace_export",
+                    )
     st.download_button(
         "Export all pixel maps (.npz)",
         data=_map_download(result),
