@@ -8,6 +8,7 @@ The comparison covers the whole input transformation, not the selected UI mode.
 
 import json
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -447,6 +448,30 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
         render_cayron_paper_comparison(unified, equivalence)
         from twin_app.theory_primary_sources import render_academic_sources, citation_rows
         render_academic_sources()
+        # P0/P1 are independent READ-ONLY audits of the current, validated
+        # crystallographic project and the existing theoretical solution rows.
+        from twin_app.theory_p0p1_certificate import (
+            certify_existing_theory, render_certificate, thesis_certificate_notes,
+        )
+        try:
+            from cualni_cryst.project_io import project_from_dict
+            p0_project = project_from_dict(
+                dict(project_payload), source="twin_app:theory_p0p1_certificate"
+            ).project
+            certificate = certify_existing_theory(
+                p0_project, transformation_id, unified,
+            )
+        except (ValueError, ArithmeticError, np.linalg.LinAlgError,
+                AssertionError, KeyError, IndexError, TypeError) as cert_exc:
+            certificate = {
+                "audit_failed": f"{type(cert_exc).__name__}: {cert_exc}"
+            }
+            st.error(
+                "P0/P1 INDEPENDENT CERTIFICATION FAILED; the calculations "
+                "must not be called independently validated. "
+                + certificate["audit_failed"]
+            )
+        render_certificate(certificate)
         with st.expander("Earlier aggregated findings (secondary reference)", expanded=False):
             st.markdown("### Four scientifically defensible findings")
             st.caption(
@@ -481,7 +506,8 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
 
         st.download_button(
             "Download numerical thesis notes (.md)",
-            data=thesis_notes(unified, equivalence, project_payload, signature),
+            data=(thesis_notes(unified, equivalence, project_payload, signature)
+                  + "\n" + thesis_certificate_notes(certificate)),
             file_name="theory_thesis_notes.md",
             mime="text/markdown",
             key="tf_thesis_notes",
@@ -565,6 +591,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 "unified_report": unified.to_dict(),
                 "branch_comparison": equivalence.to_dict(),
                 "independent_scientific_evidence": evidence,
+                "P0_P1_independent_certificate": certificate,
                 "academic_primary_sources": citation_rows(),
             }, indent=2, default=str),
             file_name="independent_theory_comparison.json",
