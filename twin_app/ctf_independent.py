@@ -327,8 +327,14 @@ def independent_ctf_cartography(
             eb, phases, neighbor_graph=neighbors,
             maximum_neighbor_misorientation_deg=kam_neighbor_cutoff_deg,
         )
-    # GOS and orientation means still use the *original* native implementation.
-    grains = grain_statistics(eb, seg, phases)
+    # Large-map means follow the identical native symmetry-alignment and
+    # SO(3) polar-mean equations, vectorized over each region's pixels.
+    # For small maps, retain the original native reference implementation.
+    if accelerated is not None:
+        from twin_app.ctf_fast_grains import accelerated_grain_statistics
+        grains = accelerated_grain_statistics(eb, seg, phases)
+    else:
+        grains = grain_statistics(eb, seg, phases)
     edges = extract_boundaries(eb, seg, phases)
     neighbor_audit = indexed_neighbor_disorientation(
         eb, phases, neighbors, threshold_deg=misorientation_threshold_deg,
@@ -386,7 +392,7 @@ def independent_ctf_cartography(
             for (a,b),count in sorted(boundary_pairs.items())
         ],
         "maps": {
-            "x": eb.x, "y": eb.y,
+            "x": eb.x, "y": eb.y, "z": eb.z,
             "phase": np.where(indexed, eb.phase_id, 0),
             "grain_id": seg.grain_id,
             "kam_deg": kam,

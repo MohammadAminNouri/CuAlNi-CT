@@ -7,12 +7,15 @@ from numpy.testing import assert_allclose
 
 from cualni_cryst.ebsd_analysis import (
     build_neighbor_graph, kernel_average_misorientation,
-    segment_grains, minimum_disorientation,
+    segment_grains, minimum_disorientation, grain_statistics,
 )
 from cualni_cryst.ebsd_io import load_ctf
 from cualni_cryst.ebsd_map import EBSDPhase, AngleUnit
 from cualni_cryst.lattice import Lattice
-from twin_app.ctf_fast_grains import accelerated_ebsd_maps, edge_disorientations
+from twin_app.ctf_fast_grains import (
+    accelerated_ebsd_maps, edge_disorientations,
+    accelerated_grain_statistics,
+)
 from twin_app.ctf_independent import independent_ctf_cartography
 
 
@@ -71,6 +74,19 @@ def test_exact_disorientation_and_segmentation_vs_native_reference():
     )
     assert_allclose(fast["kam_deg"],kam,atol=1e-5,equal_nan=True)
     assert np.count_nonzero(fast["grain_boundary_mask"])>0
+    measured=grain_statistics(eb,native,ph)
+    accelerated=accelerated_grain_statistics(eb,fast["segmentation"],ph)
+    assert len(measured)==len(accelerated)
+    for original,computed in zip(measured,accelerated):
+        assert original.size==computed.size
+        assert_allclose(original.centroid,computed.centroid,atol=1e-9)
+        assert minimum_disorientation(
+            original.mean_orientation,computed.mean_orientation,
+            p.proper_symmetry_cartesian,
+        ).angle_deg < 1e-4
+        assert abs(original.gos_deg-computed.gos_deg) < 1e-4
+        assert abs(original.maximum_spread_deg-computed.maximum_spread_deg) < 1e-4
+
 
 
 def test_independent_output_preserves_quality_and_spread_fields():

@@ -127,3 +127,72 @@ def accelerated_ebsd_maps(data, phases, neighbor_graph, *,
         "grain_boundary_mask":boundary_mask,
         "edge_angles_deg":angles,
     }
+
+
+
+def accelerated_grain_statistics(data, segmentation, phases):
+    """Vectorized native-equivalent symmetry-aligned grain means and GOS.
+
+    Same optimization as ebsd_analysis.symmetry_aligned_mean:
+    nearest proper-symmetry representative at each iteration, chordal
+    mean, SO(3) polar projection. GOS uses the exact symmetry quotient.
+    No physical grain/twin designation is implied by an EBSD region.
+    """
+    from cualni_cryst.ebsd_analysis import Grain
+    labels=np.asarray(segmentation.grain_id,dtype=int)
+    if not np.any(labels>=0):
+        return ()
+    order=np.argsort(labels,kind="stable")
+    sorted_labels=labels[order]
+    begin=int(np.searchsorted(sorted_labels,0))
+    out=[]
+    for gid in range(segmentation.n_grains):
+        left=int(np.searchsorted(sorted_labels,gid,side="left"))
+        right=int(np.searchsorted(sorted_labels,gid,side="right"))
+        indices=order[left:right]
+        if not len(indices):
+            continue
+        id_values=np.unique(np.asarray(data.phase_id[indices]))
+        if len(id_values)!=1:
+            raise ValueError("Region contains multiple EBSD phases")
+        ident=int(id_values[0])
+        if ident not in phases:
+            raise ValueError(f"Indexed phase {ident} is not defined")
+        sym=np.asarray(phases[ident].proper_symmetry_cartesian,float)
+        raw=np.asarray(data.orientations[indices],float)
+        mean=raw[0].copy()
+        for _ in range(50):
+            candidates=np.einsum(
+                "nij,kjl->nkil",raw,sym,optimize=True,
+            )
+            traces=np.einsum("ij,nkij->nk",mean,candidates,optimize=True)
+            aligned=candidates[np.arange(len(raw)),np.argmax(traces,axis=1)]
+            avg=np.mean(aligned,axis=0)
+            U,_,Vt=np.linalg.svd(avg)
+            correction=np.diag([1.,1.,float(np.sign(np.linalg.det(U@Vt)))])
+            updated=U@correction@Vt
+            angle=np.rad2deg(np.arccos(np.clip(
+                (np.trace(mean.T@updated)-1.)/2.,-1.,1.,
+            )))
+            mean=updated
+            if angle<=1.e-9:
+                break
+        residual_candidates=np.einsum(
+            "nij,kjl->nkil",raw,sym,optimize=True,
+        )
+        traces=np.einsum(
+            "ij,nkij->nk",mean,residual_candidates,optimize=True,
+        )
+        angles=np.rad2deg(np.arccos(np.clip(
+            (np.max(traces,axis=1)-1.)/2.,-1.,1.,
+        )))
+        out.append(Grain(
+            grain_id=gid, phase_id=ident,
+            point_indices=np.asarray(indices,dtype=int),
+            size=int(len(indices)),
+            centroid=np.mean(data.coordinates[indices],axis=0),
+            mean_orientation=mean,
+            gos_deg=float(np.mean(angles)),
+            maximum_spread_deg=float(np.max(angles)),
+        ))
+    return tuple(out)
