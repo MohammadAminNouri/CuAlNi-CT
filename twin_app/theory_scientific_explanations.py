@@ -306,21 +306,16 @@ def scientific_notes(unified, equivalence):
 def render_scientific_explanations(unified, equivalence):
     import streamlit as st
 
-    st.markdown("### How each theory reaches its conclusion")
-    st.caption(
-        "Each section uses the numerical results above. Read in order: "
-        "result → equations → mathematical reasoning → defensible conclusion. "
-        "All results cover the full entered transformation, not just the selected twin mode."
-    )
+    st.markdown("### Equations and results")
     for entry in scientific_explanations(unified, equivalence):
         with st.expander(entry["name"], expanded=False):
-            st.markdown("**1. Calculated result**")
+            st.markdown("**Calculated result**")
             st.write(entry["result"])
-            st.markdown("**2. Governing equations**")
+            st.markdown("**Equations**")
             for equation in entry["equations"]:
                 st.latex(equation)
-            st.markdown("**3. How the equation produces the result**")
+            st.markdown("**Interpretation**")
             st.write(entry["logic"])
-            st.markdown("**4. Scientific conclusion**")
+            st.markdown("**Conclusion**")
             st.write(entry["conclusion"])
             st.caption("Source / implementation: " + entry["reference"])

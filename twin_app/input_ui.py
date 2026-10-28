@@ -120,6 +120,13 @@ def _coordinate_rule(matrix: tuple[tuple[str, str, str], ...]) -> str:
 def _render_operation_summary(inventory: SymmetryInventory, *, parent: bool, cell: tuple[float, float, float, float, float, float]) -> None:
     """Scientific meaning beside the selected group, not a large operations dump."""
     guide = group_guide(inventory, parent=parent)
+    st.caption(f"{guide.symbol} · {guide.order} symmetry operations · metric residual "
+               f"{inventory.metric_preservation_maximum_residual:.1e}")
+    if not st.toggle(
+        "Show point-group details", value=False,
+        key=f"tf_group_details_{'parent' if parent else 'product'}",
+    ):
+        return
     with st.container(border=True):
         st.markdown(f"**{guide.symbol} · {guide.family.capitalize()} crystal class**")
         st.caption(f"Selected Hermann–Mauguin point group · {guide.setting}")
@@ -267,7 +274,6 @@ def render_phase_input(
         for family in FAMILY_ORDER
         if any(str(row["crystal_family"]).lower() == family for row in metadata)
     ]
-    st.caption("Crystal system = shape of the unit cell; point group = rotations and reflections that keep it unchanged.")
     family = st.selectbox(
         "Crystal system",
         families,
@@ -339,7 +345,6 @@ def render_phase_input(
         "monoclinic": "built-in monoclinic groups use the unique-b setting: α = γ = 90°.",
         "triclinic": "all six cell parameters are independent.",
     }
-    st.caption(family_notes[family])
 
     label = st.text_input(
         "Phase label",
@@ -359,7 +364,7 @@ def render_phase_input(
     lattice = Lattice(a, b, c, alpha, beta, gamma, label=label, length_unit=length_unit)
     inventory = build_symmetry_inventory(point_group, lattice.metric())
     volume, condition = validate_metric_parameters((a, b, c), (alpha, beta, gamma))
-    st.caption(f"Valid positive-definite cell metric · volume {volume:.5g} {length_unit}³ · normalized metric condition {condition:.3g}")
+    st.caption(f"Cell volume {volume:.5g} {length_unit}³ · metric condition {condition:.3g}")
     with selected_group_explanation:
         _render_operation_summary(inventory, parent=(role == "parent"), cell=(a,b,c,alpha,beta,gamma))
     return PhaseUIResult(phase=phase, inventory=inventory)
@@ -481,13 +486,7 @@ def render_correspondence_input(
             )
 
     st.subheader("Crystallographic correspondence")
-    st.caption(
-        "Specify how direct-lattice directions in the parent crystal correspond "
-        "to directions in the product crystal. Either input method produces "
-        "the same exact correspondence matrix."
-    )
-    st.caption("This C is NOT the orientation matrix T or the distortion F. "
-               "Parent and product indices use their respective conventional crystal bases.")
+    st.caption("Direct lattice correspondence C, not an orientation matrix. Use exact fractions where possible.")
     method = st.radio(
         "Input format", methods, horizontal=True, key=method_key,
         on_change=synchronize_editors,
@@ -514,8 +513,6 @@ def render_correspondence_input(
             r"C_{\mathrm{product}\to\mathrm{parent}}"
             r"\mathbf u_{\mathrm{product}}"
         )
-    st.caption(f"Reading order: **{source_name} → {destination_name}**. "
-               "Source is always on the left, destination on the right.")
     st.session_state[last_method_key] = method
     st.session_state[last_direction_key] = direction
     if st.session_state.get(warning_key):
@@ -531,8 +528,7 @@ def render_correspondence_input(
 
     if method == methods[0]:
         st.markdown(f"**Three corresponding direct-space lattice vectors · {source_name} → {destination_name}**")
-        st.caption("Each pair gives the source and destination components of one direct lattice vector. "
-                   "Use independent vectors in exact integer/fraction notation, in the basis of each crystal.")
+        st.caption("Enter three independent corresponding vectors in the two crystal bases.")
         default_source, default_dest = seed_paired_vectors(baseline, direction=direction)
         guides = st.columns([0.85, 2.6, 0.4, 2.6], gap="small")
         guides[1].markdown(f"**Source · {source_name}**")

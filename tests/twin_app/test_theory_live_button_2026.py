@@ -37,10 +37,10 @@ def test_default_niti_theory_button_finishes_and_renders_numeric_results():
         for h in app.subheader
     )
     assert any(
-        "Four scientifically defensible findings" in getattr(x, "value", "")
+        "Cayron's compatibility argument" in getattr(x, "value", "")
         for x in app.markdown
     )
     assert any(
-        "How each theory reaches its conclusion" in getattr(x, "value", "")
+        "Equations and results" in getattr(x, "value", "")
         for x in app.markdown
     )

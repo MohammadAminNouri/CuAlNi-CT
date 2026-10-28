@@ -205,12 +205,6 @@ def render_input_provenance(project_payload):
             "Enter independently checked Cu–Al–Ni parent/product metrics "
             "and the correct transformation correspondence, then recalculate."
         )
-    else:
-        st.caption(
-            "Material chemistry and phase identity are not established by these "
-            "lattice inputs alone. Use verified 2H/18R metrics and correspondence "
-            "before interpreting the outputs as Cu–Al–Ni."
-        )
 
 
 def thesis_findings(unified, equivalence):
@@ -384,34 +378,13 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
     st.subheader("04  /  Compare crystallographic theories")
     render_input_provenance(project_payload)
     with st.container(border=True):
-        st.caption(
-            "Interpret the numerical evidence for this transformation. "
-            "Do not compare a martensite twin (M/M), a single-variant "
-            "austenite interface (A/M), and a PTMC two-variant laminate "
-            "as if they were identical problems."
-        )
-        with st.expander("Which physical question does each theory answer?", expanded=False):
-            for name, description in THEORIES:
-                st.markdown(f"**{name}** — {description}")
-        with st.expander("Methods, assumptions and agreement criteria", expanded=False):
-            st.markdown(
-                "**CT:** correspondence variants, operators and metric compatibility. "
-                "**Ball–James:** stretch tensors, M/M and A/M rank-one interfaces. "
-                "**PTMC:** lattice-invariant twinning, laminate fraction and A/M habit solutions. "
-                "**Cofactor:** CC1 (middle stretch), CC2 and CC3 margins for BJ twin branches."
-            )
-            st.markdown(
-                "The same entered lattice metrics and correspondence feed every independent "
-                "backend. PTMC additionally assumes a lattice-invariant twin mechanism. "
-                "Without an independent natural OR, closing-gap solutions remain candidates. "
-                "Numerical agreement is **not** experimental confirmation or proof of theory equivalence."
-            )
+        st.caption("Cayron CT · Ball–James · PTMC · Cofactor")
 
         if st.button("Calculate theories and numerical checks (no EBSD)",
                      key="tf_theory_compare_run", type="secondary"):
             saved = st.session_state.get("tf_theory_comparison_result")
             if saved is not None and saved[0] == signature:
-                st.success("Numerical comparison is already calculated for these inputs.")
+                st.caption("Comparison already calculated for these inputs.")
             else:
                 st.session_state.pop("tf_theory_comparison_result", None)
                 try:
@@ -420,7 +393,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                             project_payload, transformation_id, progress=status.write,
                         )
                         status.update(
-                            label="Theory calculations and numerical checks completed",
+                            label="Theory calculations complete",
                             state="complete", expanded=False,
                         )
                     st.session_state["tf_theory_comparison_result"] = (
@@ -430,17 +403,11 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                     st.error(
                         f"Independent comparison was not completed: {type(exc).__name__}: {exc}"
                     )
-                    st.info(
-                        "Your existing twin results are unchanged. "
-                        "No theoretical prediction was invented."
-                    )
+
 
         stored = st.session_state.get("tf_theory_comparison_result")
         if not stored or stored[0] != signature:
-            st.caption(
-                "Press Calculate to produce actual numerical results for this input. "
-                "This covers the full transformation; it is not restricted to the selected Mode."
-            )
+            st.caption("Run the comparison to view theory-specific results.")
             return
 
         _, unified, equivalence = stored
@@ -472,27 +439,6 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 + certificate["audit_failed"]
             )
         render_certificate(certificate)
-        with st.expander("Earlier aggregated findings (secondary reference)", expanded=False):
-            st.markdown("### Four scientifically defensible findings")
-            st.caption(
-                "Answers concern all theoretical variants, not only the selected Mode. "
-                "No experimental EBSD is needed."
-            )
-            for i, (question, result, meaning) in enumerate(
-                thesis_findings(unified, equivalence), start=1
-            ):
-                st.markdown(f"**{i}. {question}**")
-                st.write(result)
-                st.caption("Interpretation and useful next numerical check: " + meaning)
-        with st.expander("How to turn these results into thesis evidence", expanded=False):
-            st.markdown(
-                "1. **Unique PTMC habits:** reduce sign/symmetry-equivalent branches "
-                "and report actual unique habit-plane families.\n"
-                "2. **Comparable twins:** transform CT/BJ interface observables "
-                "to common coordinate frames and evaluate full residuals.\n"
-                "3. **Robustness:** rerun with justified 2H/18R lattice-parameter "
-                "ranges; identify which predictions persist."
-            )
         from twin_app.theory_scientific_explanations import render_scientific_explanations
         render_scientific_explanations(unified, equivalence)
         from twin_app.theory_evidence_ui import render_theory_evidence

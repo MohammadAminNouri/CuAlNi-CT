@@ -108,6 +108,25 @@ def cell_compatible_with_family(
     raise ValueError(f"Unknown crystal family: {family!r}")
 
 
+
+def cif_compatible_families(
+    lengths: Sequence[float], angles_deg: Sequence[float],
+) -> tuple[str, ...]:
+    """Geometrically compatible conventional systems for an imported CIF cell.
+
+    The ordering offers a specific conventional setting first, and a general
+    fallback. It does NOT infer a point group, atomic symmetry, OR or C.
+    """
+    preferences = (
+        "cubic", "tetragonal", "orthorhombic", "hexagonal", "trigonal",
+        "monoclinic", "triclinic",
+    )
+    return tuple(
+        family for family in preferences
+        if cell_compatible_with_family(lengths, angles_deg, family)
+    )
+
+
 _LENGTH_IN_ANGSTROM = {
     "angstrom": 1.0,
     "nanometer": 10.0,
