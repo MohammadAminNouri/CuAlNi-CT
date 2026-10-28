@@ -491,14 +491,18 @@ def main() -> None:
     if previous is not None and previous != signature:
         st.caption("Inputs changed. Recalculate to update results.")
 
-    # Experimental data belong with CIF/manual inputs, not below predictions.
+    # EBSD belongs to Step 01 with the crystal and CIF inputs, not
+    # to the theoretical output inventory. The model/CTF results stay separate.
     from twin_app.ebsd_ctf_ui import render_ctf_panel
     valid_report = (
         st.session_state.get("twin_family_report")
         if st.session_state.get("twin_family_result_signature") == signature
         else None
     )
-    render_ctf_panel(valid_report, payload, transformation.transformation_id, signature)
+    with st.expander("Experimental EBSD / CTF (optional)", expanded=False):
+        render_ctf_panel(
+            valid_report, payload, transformation.transformation_id, signature,
+        )
 
     if st.button("Calculate physical twinning modes and habit planes", type="primary", width="stretch"):
         if source == "Import CIF structures" and cif_admission_reason is not None:

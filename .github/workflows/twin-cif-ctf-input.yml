@@ -1,0 +1,52 @@
+name: Twin CIF and EBSD CTF input contract
+
+on:
+  push:
+    branches:
+      - feature/twin-family-tree-app-v1
+    paths:
+      - "twin_app/streamlit_app.py"
+      - "twin_app/ebsd_ctf_ui.py"
+      - "twin_app/ebsd_integration.py"
+      - "twin_app/structure_validation.py"
+      - "twin_app/input_explainer.py"
+      - "tests/twin_app/test_ctf_step01_workflow_2026.py"
+      - ".github/workflows/twin-cif-ctf-input.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: twin-cif-ctf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  input-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install app and scientific test dependencies
+        run: python -m pip install --prefer-binary -e ".[app,dev]"
+      - name: Verify tracked source
+        run: python tools/rebuild_twin_manifest.py --check
+      - name: Run real CTF and CIF safety tests
+        run: |
+          python -m pytest -q --tb=short --maxfail=1 \
+            tests/twin_app/test_ctf_step01_workflow_2026.py \
+            tests/twin_app/test_ebsd_ctf_integration.py \
+            tests/twin_app/test_ebsd_contract_2026_10_23.py \
+            tests/twin_app/test_cif_pair_gate_2026_10_23.py \
+            tests/twin_app/test_input_cif_ui_simplification_2026.py \
+            tests/twin_app/test_v9_scientific_inputs_and_branches.py \
+            tests/twin_app/test_streamlit_headless_smoke_2026.py

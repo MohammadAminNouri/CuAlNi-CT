@@ -102,6 +102,56 @@ def build_ctf_config(
     }
 
 
+def inspect_ctf_upload(file_bytes: bytes, *, filename: str) -> dict[str, Any]:
+    """Inspect real CTF orientations and phase IDs without requiring an OR.
+
+    This is an input-readiness diagnostic, NOT grain segmentation, OR discovery
+    or certification of any twin. Uses the SAME native loader as run_pipeline.
+    """
+    if not file_bytes or len(file_bytes) > MAX_CTF_BYTES:
+        raise ValueError("CTF is empty or exceeds the 35 MB analysis limit")
+    if not file_bytes.lstrip().startswith(b"Channel Text File"):
+        raise ValueError("Expected an Oxford/AZtec Channel Text File header")
+    if Path(filename).name != filename or Path(filename).suffix.lower() != ".ctf":
+        raise ValueError("A simple .ctf filename is required")
+    from cualni_cryst.ebsd_io import load_ctf
+
+    with tempfile.TemporaryDirectory(prefix="cualni-ctf-preview-") as tmp:
+        path = Path(tmp) / filename
+        path.write_bytes(file_bytes)
+        mapped = load_ctf(path)
+    indexed = np.asarray(mapped.indexed, dtype=bool)
+    phase_ids, counts = np.unique(mapped.phase_id[indexed], return_counts=True)
+    return {
+        "sha256": hashlib.sha256(file_bytes).hexdigest(),
+        "filename": filename,
+        "total_pixels": int(len(mapped.phase_id)),
+        "indexed_pixels": int(np.count_nonzero(indexed)),
+        "phase_counts": {int(p): int(n) for p, n in zip(phase_ids, counts)},
+        "orientation_convention": str(mapped.metadata.get("orientation_convention", "")),
+        "phase_identification": "CTF phase IDs are labels; 2H/18R identity not verified.",
+        "independent_or_available": False,
+    }
+
+
+def ctf_analysis_signature(
+    file_bytes: bytes, project_signature: str, matrix_text: str,
+    parent_phase_id: int, product_phase_id: int, minimum_grain_points: int,
+) -> str:
+    """Bind conclusions to ALL scientific inputs, excluding UI-only controls."""
+    payload = {
+        "ctf_sha256": hashlib.sha256(file_bytes).hexdigest(),
+        "model_signature": project_signature,
+        "or_text": matrix_text.strip(),
+        "parent_phase_id": int(parent_phase_id),
+        "product_phase_id": int(product_phase_id),
+        "minimum_grain_points": int(minimum_grain_points),
+    }
+    return hashlib.sha256(json.dumps(
+        payload, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
+
+
 def run_ctf_observation(
     file_bytes: bytes, project_payload: Mapping[str, Any], transformation_id: str,
     *, parent_phase_id: int, product_phase_id: int, verified_or: np.ndarray,
