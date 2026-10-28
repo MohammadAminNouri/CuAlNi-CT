@@ -489,7 +489,7 @@ def main() -> None:
     signature = _fingerprint({"project": payload, "weak_basis": _basis_payload(weak_basis_ui)})
     previous = st.session_state.get("twin_family_result_signature")
     if previous is not None and previous != signature:
-        st.caption("Inputs changed. Recalculate to update results.")
+        st.caption("Inputs changed: previous calculation is hidden until you recalculate.")
 
     # EBSD belongs to Step 01 with the crystal and CIF inputs, not
     # to the theoretical output inventory. The model/CTF results stay separate.
