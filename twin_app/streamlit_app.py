@@ -427,6 +427,8 @@ def main() -> None:
                                 st.caption(f"spglib: {evidence['international']} (#{evidence['number']}), point group {evidence['pointgroup']}. Confirm the setting below.")
                         except (ValueError, RuntimeError) as exc:
                             st.error(f"Could not read {name} CIF: {exc}")
+            if not imported:
+                st.caption("Nothing was imported. Upload both CIF files before applying cell parameters.")
             cif_pair_signature = _cif_pair_signature(raw_cif)
             if st.button("Use imported cell parameters", key="tf_v9_use_cif_cells", disabled=cif_pair_signature is None):
                 # Validate all pending imports before mutating any widget state.
