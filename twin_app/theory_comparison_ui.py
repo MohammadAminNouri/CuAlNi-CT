@@ -376,6 +376,10 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
     """Only run expensive independent calculations after an explicit button press."""
     st.divider()
     st.subheader("04  /  Compare crystallographic theories")
+    st.caption(
+        "No theoretical prediction was invented for this comparison. "
+        "The CT, Ball–James, PTMC and cofactor results reuse existing computed outputs."
+    )
     render_input_provenance(project_payload)
     with st.container(border=True):
         st.caption("Cayron CT · Ball–James · PTMC · Cofactor")
