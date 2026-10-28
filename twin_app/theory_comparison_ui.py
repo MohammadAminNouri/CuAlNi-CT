@@ -347,6 +347,8 @@ def thesis_notes(unified, equivalence, project_payload, signature):
         )
     from twin_app.cayron_paper_comparison_ui import cayron_paper_thesis_notes
     lines.extend(("", cayron_paper_thesis_notes(unified, equivalence)))
+    from twin_app.theory_primary_sources import thesis_reference_notes
+    lines.extend(("", thesis_reference_notes()))
     lines.append("## Numerical findings and defensible interpretation")
     for question, result, meaning in thesis_findings(unified, equivalence):
         lines.extend(("", "### " + question, result, "", meaning))
@@ -443,6 +445,8 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
         _, unified, equivalence = stored
         from twin_app.cayron_paper_comparison_ui import render_cayron_paper_comparison
         render_cayron_paper_comparison(unified, equivalence)
+        from twin_app.theory_primary_sources import render_academic_sources, citation_rows
+        render_academic_sources()
         with st.expander("Earlier aggregated findings (secondary reference)", expanded=False):
             st.markdown("### Four scientifically defensible findings")
             st.caption(
@@ -561,6 +565,7 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
                 "unified_report": unified.to_dict(),
                 "branch_comparison": equivalence.to_dict(),
                 "independent_scientific_evidence": evidence,
+                "academic_primary_sources": citation_rows(),
             }, indent=2, default=str),
             file_name="independent_theory_comparison.json",
             mime="application/json",
