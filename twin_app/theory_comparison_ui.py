@@ -345,6 +345,8 @@ def thesis_notes(unified, equivalence, project_payload, signature):
             "**WARNING: built-in NiTi B2→B19′ starter model detected; "
             "these numerical outputs are not Cu–Al–Ni thesis data.**"
         )
+    from twin_app.cayron_paper_comparison_ui import cayron_paper_thesis_notes
+    lines.extend(("", cayron_paper_thesis_notes(unified, equivalence)))
     lines.append("## Numerical findings and defensible interpretation")
     for question, result, meaning in thesis_findings(unified, equivalence):
         lines.extend(("", "### " + question, result, "", meaning))
@@ -439,17 +441,20 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
             return
 
         _, unified, equivalence = stored
-        st.markdown("### Four scientifically defensible findings")
-        st.caption(
-            "Answers concern all theoretical variants, not only the selected Mode. "
-            "No experimental EBSD is needed."
-        )
-        for i, (question, result, meaning) in enumerate(
-            thesis_findings(unified, equivalence), start=1
-        ):
-            st.markdown(f"**{i}. {question}**")
-            st.write(result)
-            st.caption("Interpretation and useful next numerical check: " + meaning)
+        from twin_app.cayron_paper_comparison_ui import render_cayron_paper_comparison
+        render_cayron_paper_comparison(unified, equivalence)
+        with st.expander("Earlier aggregated findings (secondary reference)", expanded=False):
+            st.markdown("### Four scientifically defensible findings")
+            st.caption(
+                "Answers concern all theoretical variants, not only the selected Mode. "
+                "No experimental EBSD is needed."
+            )
+            for i, (question, result, meaning) in enumerate(
+                thesis_findings(unified, equivalence), start=1
+            ):
+                st.markdown(f"**{i}. {question}**")
+                st.write(result)
+                st.caption("Interpretation and useful next numerical check: " + meaning)
         with st.expander("How to turn these results into thesis evidence", expanded=False):
             st.markdown(
                 "1. **Unique PTMC habits:** reduce sign/symmetry-equivalent branches "
