@@ -381,6 +381,10 @@ def render_theory_comparison(project_payload, transformation_id: str, signature:
         "The CT, Ball–James, PTMC and cofactor results reuse existing computed outputs."
     )
     render_input_provenance(project_payload)
+    # Optional inverse design is a separate, evidence-limited project sweep.
+    # It never mutates the user's input cells or the already-computed report.
+    from twin_app.metric_design_ui import render_lattice_design_advisor
+    render_lattice_design_advisor(project_payload, transformation_id, signature)
     with st.container(border=True):
         st.caption("Cayron CT · Ball–James · PTMC · Cofactor")
 
