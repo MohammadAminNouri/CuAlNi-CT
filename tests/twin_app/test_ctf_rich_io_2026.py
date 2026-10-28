@@ -5,6 +5,7 @@ import pytest
 from twin_app.ctf_rich_io import (
     inspect_ctf_measurements, plot_ctf_numeric_map,
     ctf_field_histogram, raw_catalog_npz, raw_catalog_json,
+    ctf_evidence_bundle,
 )
 def synthetic_2h_ctf():
     lines=[
@@ -113,3 +114,33 @@ def test_malformed_data_rejected_not_guess_filled():
         inspect_ctf_measurements(data.replace(b"0.9 100 80",b"oops 100 80"),"a.ctf")
     with pytest.raises(ValueError,match="filename"):
         inspect_ctf_measurements(data,"../a.ctf")
+
+
+
+def test_complete_research_package_preserves_original_file_and_data():
+    import io,zipfile,json
+    original=synthetic_2h_ctf()
+    catalog=inspect_ctf_measurements(original,"study.ctf")
+    payload=ctf_evidence_bundle(catalog,original)
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        names=set(archive.namelist())
+        assert {
+            "source.ctf", "raw_ctf_header_and_quality.json",
+            "raw_numeric_pixel_fields.npz", "raw_phase_statistics.csv",
+            "raw_quality_statistics.csv",
+        }.issubset(names)
+        assert archive.read("source.ctf")==original
+    with pytest.raises(ValueError,match="does not match"):
+        ctf_evidence_bundle(catalog,original+b"extra")
+
+
+def test_optional_vendor_annotation_does_not_block_numeric_maps():
+    data=synthetic_2h_ctf().replace(
+        b"Euler3 MAD BC BS\n", b"Euler3 MAD BC BS Tag\n",
+    )
+    data=data.replace(b"0.9 100 80\n",b"0.9 100 80 qualitative\n")
+    catalog=inspect_ctf_measurements(data,"annotated.ctf")
+    assert catalog["n_points"]==12
+    assert catalog["non_numeric_optional_columns"]==["Tag"]
+    assert "TAG" not in catalog["maps"]
+    assert "BC" in catalog["maps"]

@@ -56,12 +56,19 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
     if len(df) != len(records):
         raise ValueError("CTF numeric row count mismatch")
     converted: dict[str, np.ndarray] = {}
+    unused_columns: list[str] = []
+    required_numeric = {"phase","x","y","z","euler1","euler2","euler3"}
     for field in columns:
-        if df[field].isna().any():
-            raise ValueError(f"CTF contains missing {field} values")
         numeric = pd.to_numeric(df[field], errors="coerce").to_numpy(dtype=float)
         if not np.all(np.isfinite(numeric)):
-            raise ValueError(f"CTF field {field} contains nonnumeric/nonfinite values")
+            if field.lower() in required_numeric:
+                raise ValueError(
+                    f"CTF required field {field} contains missing/nonfinite values"
+                )
+            # Optional vendor annotations can be textual. Keep the source CTF
+            # intact in the ZIP but do not invent a numeric map for that field.
+            unused_columns.append(field)
+            continue
         converted[field] = numeric
     phase_raw = converted[lookup["phase"]]
     if np.any(phase_raw != np.rint(phase_raw)) or np.any(phase_raw < 0):
@@ -80,6 +87,8 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
     }
     for field in columns:
         canonical = field.upper()
+        if field not in converted:
+            continue
         if field.lower() in {"phase", "x", "y", "z"}:
             continue
         value = converted[field].copy()
@@ -95,8 +104,9 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
     }
     quality_summary = []
     for field in columns:
-        if field.lower() in {"phase", "x", "y", "z",
-                             "euler1", "euler2", "euler3"}:
+        if field not in converted or field.lower() in {
+            "phase", "x", "y", "z","euler1", "euler2", "euler3"
+        }:
             continue
         observed = converted[field][indexed]
         if not len(observed):
@@ -172,7 +182,8 @@ def inspect_ctf_measurements(file_bytes: bytes, filename: str) -> dict[str, Any]
         "unindexed_count": int(len(x)-indexed_count),
         "indexed_phase_counts": declared_phase_counts,
         "phase_rows": phase_rows,
-        "numeric_columns": list(columns),
+        "numeric_columns": list(converted),
+        "non_numeric_optional_columns": unused_columns,
         "quality_summary": quality_summary,
         "header": meta,
         "raw_header": header,
@@ -264,3 +275,55 @@ def raw_catalog_npz(catalog: dict) -> bytes:
     output=io.BytesIO()
     np.savez_compressed(output,**catalog["maps"])
     return output.getvalue()
+
+
+
+def ctf_evidence_bundle(
+    catalog: dict, original_file: bytes,
+    *, independent: dict | None = None,
+) -> bytes:
+    """One complete self-contained research export, preserving original bytes.
+
+    Original CTF is authoritative. NPZ maps mask unindexed orientation values
+    on purpose, but untouched vendor columns remain in source.ctf. No
+    transformations, OR or physical twin claims are added in the bundle.
+    """
+    import json
+    import zipfile
+
+    if hashlib.sha256(original_file).hexdigest()!=catalog["file_sha256"]:
+        raise ValueError("Original file does not match measured CTF audit")
+    stream=io.BytesIO()
+    with zipfile.ZipFile(
+        stream,"w",compression=zipfile.ZIP_DEFLATED,
+        compresslevel=6,
+    ) as z:
+        z.writestr("source.ctf",original_file)
+        z.writestr("raw_ctf_header_and_quality.json",raw_catalog_json(catalog))
+        z.writestr("raw_numeric_pixel_fields.npz",raw_catalog_npz(catalog))
+        z.writestr("raw_phase_statistics.csv",
+                   pd.DataFrame(catalog["phase_rows"]).to_csv(index=False))
+        z.writestr("raw_quality_statistics.csv",
+                   pd.DataFrame(catalog["quality_summary"]).to_csv(index=False))
+        if independent is not None:
+            maps=io.BytesIO()
+            np.savez_compressed(
+                maps,**{key:np.asarray(value)
+                        for key,value in independent["maps"].items()},
+            )
+            z.writestr("derived_orientation_grain_kam_maps.npz",
+                       maps.getvalue())
+            z.writestr("derived_grain_table.csv",
+                       pd.DataFrame(independent["grains"]).to_csv(index=False))
+            z.writestr("derived_grain_adjacency.csv",
+                       pd.DataFrame(
+                           independent["adjacent_grain_pairs"]
+                       ).to_csv(index=False))
+            z.writestr(
+                "derived_method_and_limits.json",
+                json.dumps(
+                    {k:v for k,v in independent.items() if k!="maps"},
+                    indent=2,default=str,ensure_ascii=False,
+                ),
+            )
+    return stream.getvalue()

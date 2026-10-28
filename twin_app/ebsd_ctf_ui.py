@@ -21,7 +21,7 @@ from .ctf_independent import (
 )
 from .ctf_rich_io import (
     inspect_ctf_measurements, plot_ctf_numeric_map, ctf_field_histogram,
-    raw_catalog_json, raw_catalog_npz,
+    raw_catalog_json, raw_catalog_npz, ctf_evidence_bundle,
 )
 from .ebsd_integration import (
     MAX_CTF_BYTES, ctf_analysis_signature, inspect_ctf_upload,
@@ -39,6 +39,13 @@ def _ctf_preview(file_bytes: bytes, filename: str, unit=None) -> dict:
 @st.cache_data(show_spinner=False, max_entries=3, ttl=3600)
 def _ctf_catalog(file_bytes: bytes, filename: str) -> dict:
     return inspect_ctf_measurements(file_bytes, filename)
+
+
+@st.cache_data(show_spinner=False, max_entries=2, ttl=3600)
+def _zip_ctf_evidence(raw_catalog, file_bytes, measured=None):
+    return ctf_evidence_bundle(
+        raw_catalog, file_bytes, independent=measured,
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=2, ttl=3600)
@@ -381,8 +388,20 @@ def render_ctf_panel(report, project_payload, transformation_id, signature):
         except Exception as exc:
             st.error(f"EBSD measurement failed ({type(exc).__name__}): {exc}")
     saved_independent = st.session_state.get("tf_ctf_independent")
-    if saved_independent and saved_independent[0] == independent_key:
-        _show_independent_cartography(saved_independent[1])
+    measured = (
+        saved_independent[1]
+        if saved_independent and saved_independent[0] == independent_key
+        else None
+    )
+    if measured is not None:
+        _show_independent_cartography(measured)
+    st.download_button(
+        "Download complete CTF research package (.zip)",
+        data=_zip_ctf_evidence(catalog, content, measured),
+        file_name="ctf_complete_research_package.zip",
+        mime="application/zip",
+        key="tf_ctf_complete_bundle",
+    )
 
     st.divider()
     st.markdown("**Compare with crystallographic theory (optional)**")

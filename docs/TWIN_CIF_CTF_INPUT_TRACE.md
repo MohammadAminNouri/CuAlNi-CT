@@ -140,3 +140,37 @@ Primary scientific context:
   Cayron, Acta Materialia 316 (2026) 122399;
   Ball & James, Arch. Rat. Mech. Anal. 100 (1987) 13-52;
   Chen et al., JMPS 61 (2013) 2566-2587.
+
+## D. Complete CTF map and research export
+
+1. On upload, independent of OR or theory, twin_app/ctf_rich_io.py reads the full
+   Oxford/HKL CTF numeric table plus header and reports all vendor-supplied
+   numeric columns. This includes phase, indexed/unindexed, Euler1/2/3,
+   Bands/Error/MAD/BC/BS when present, raw acquisition settings, grid
+   completeness, duplicate spatial coordinates, quality distributions,
+   phase counts and quality percentiles. Original unindexed pattern
+   quality is preserved; unindexed Euler/MAD placeholders are masked.
+2. Complete unique rectangular spatial coordinates are displayed as
+   pixel heatmaps. Incomplete/irregular scans use measured coordinate
+   points rather than fabricated interpolated pixels. Three-dimensional
+   CTF files use explicit Z-slices and must have a declared user-chosen
+   degree/radian Euler convention before orientation calculations.
+3. When declared symmetry is sufficient, the OR-free EBSD analysis
+   independently calculates full proper-symmetry quotient neighbor
+   disorientations, orientation-connected regions, symmetry-aligned
+   grain mean orientations, GOS, KAM, neighborhood-maximum disorientation,
+   and segmented boundary pixels. These are numerical orientation
+   regions; no Type I/II twin identification is inferred.
+4. Large scans use batched exact symmetry matrices and sparse connected
+   components for segmentation; the native disorientation and GOS
+   methods remain independent numerical test references.
+5. The complete CTF research ZIP contains the untouched original CTF
+   file, its header/acquisition audit, all numeric pixel arrays in NPZ,
+   per-phase and quality CSV tables and, if calculated, derived maps,
+   grain tables, adjacency tables and method limits. Separate OR-dependent
+   pipeline outputs have their own complete ZIP.
+
+The program does not perform raw-pattern Kikuchi reindexing, invent an
+orientation relationship, establish atomic phase identity or determine
+three-dimensional twin/habit planes from a 2-D indexed CTF. Raw Euler
+colors and maps are not deceptively labeled as validated IPF maps.
