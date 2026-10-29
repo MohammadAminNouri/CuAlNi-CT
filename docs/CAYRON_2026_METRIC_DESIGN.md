@@ -108,3 +108,28 @@ variant populations remain independent questions.
 Do not apply NiTi's B2->B19' **C1 b=sqrt(2)** source branch to the
 orthorhombic Cu-Al-Ni 2H or modified monoclinic 18R input without
 rederiving it for that structure and its exact correspondence.
+
+## Conservative cross-theory and cross-state inference (29 Oct 2026)
+
+The CT--Ball--James physical branch matcher reports two logically distinct
+facts: (i) whether all required M/M comparison observables are available,
+and (ii) whether those observables agree at the declared geometric
+tolerances. **Completeness does not imply agreement.** A candidate can
+be included in a conservative continuation recommendation only when its
+pair is complete AND its compared geometry agrees within tolerance.
+Its CT shear/shear and BJ cofactor tests must still be read separately,
+for exactly that assigned pair.
+
+A CT/BJ assignment is established *within an individual candidate cell*.
+That does not establish that the assigned physical twin is continuously
+the same across changes to a, b, c or beta. The current app therefore
+flags cross-state twin identity as unverified, never certifies a
+cross-state improvement relative to the original twin, and labels a
+proposed increase/decrease as a sampled candidate hypothesis. Establishing
+branch continuity requires an explicit geometry-aware cross-state matcher,
+not merely reusing integer twin/operator indices.
+
+When beta is the secondary variable, the app uses a degree range and
+labels it as such; a lattice-length percentage range cannot be applied to
+beta. The original product cell remains intact, and proposed cells carry
+hypothetical provenance rather than measured-data provenance.
