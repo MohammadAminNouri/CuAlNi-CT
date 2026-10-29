@@ -43,7 +43,10 @@ def _matched_branch_summary(state) -> dict | None:
     ]
     selected = min(
         fully_matched or available,
-        key=lambda x: float(x.ct_supercompatibility_residual),
+        key=lambda x: (
+            not (x.ct_supercompatible and x.cofactor_compatible),
+            float(x.ct_supercompatibility_residual),
+        ),
     )
     return {
         "operator_index": selected.ct_operator_index,
@@ -198,7 +201,11 @@ def continue_supercompatibility_design(
         and r["paired_CT_BJ_branch"]["ct_shear_shear_epsilon"] is not None
         and r["matching_is_complete"]
     ]
+    # A candidate satisfying BOTH full conditions on a complete matched
+    # relation outranks a smaller CT epsilon that fails the cofactor audit.
+    # If no full pass exists, report the best sampled residual as exploratory.
     qualified.sort(key=lambda r: (
+        not r["paired_CT_BJ_branch"]["both_satisfied_for_this_matched_pair"],
         r["paired_CT_BJ_branch"]["ct_shear_shear_epsilon"],
         abs(r["secondary_delta"]),
     ))
