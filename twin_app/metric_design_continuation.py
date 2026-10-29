@@ -40,6 +40,7 @@ def _matched_branch_summary(state) -> dict | None:
         x for x in available
         if x.match_completeness == "full"
         and not x.missing_required_components
+        and getattr(x, "match_geometry_within_tolerance", None) is True
     ]
     selected = min(
         fully_matched or available,
@@ -59,11 +60,15 @@ def _matched_branch_summary(state) -> dict | None:
         "cofactor_satisfied_for_this_pair":bool(selected.cofactor_compatible),
         "ct_satisfied_for_this_pair":bool(selected.ct_supercompatible),
         "match_completeness": selected.match_completeness,
+        "match_geometry_within_tolerance": getattr(
+            selected, "match_geometry_within_tolerance", None
+        ),
         "unmatched_required_components": list(selected.missing_required_components),
         "both_satisfied_for_this_matched_pair": bool(
             selected.ct_supercompatible and selected.cofactor_compatible
             and selected.match_completeness == "full"
             and not selected.missing_required_components
+            and getattr(selected, "match_geometry_within_tolerance", None) is True
         ),
     }
 
@@ -190,6 +195,7 @@ def continue_supercompatibility_design(
                     pair is not None
                     and pair["match_completeness"] == "full"
                     and not pair["unmatched_required_components"]
+                    and pair["match_geometry_within_tolerance"] is True
                 ),
             })
         except (AssertionError,ValueError,ArithmeticError,np.linalg.LinAlgError) as exc:
