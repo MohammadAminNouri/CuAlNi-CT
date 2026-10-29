@@ -1,17 +1,17 @@
-# ARPGE / GenOVa / Crystals integration branch
+# AR / Gen / Cry integration branch
 
 This branch is based on `feature/twin-family-tree-app-v1`; it does NOT
 modify `main`. The aim is one coherent **three-stage** research workflow.
 
-1. **Crystals:** phases, measured cells, point-group symmetry and metric geometry.
-2. **GenOVa:** exact lattice correspondence, cosets, operators, groupoid tables.
-3. **ARPGE:** EBSD ingestion and, separately, parent reconstruction with an
+1. **Cry:** phases, measured cells, point-group symmetry and metric geometry.
+2. **Gen:** exact lattice correspondence, cosets, operators, groupoid tables.
+3. **AR:** EBSD ingestion and, separately, parent reconstruction with an
    independently established experimental orientation relationship.
 
 ## What is presently executable
 
 - `src/cualni_cryst/legacy_suite_bridge.py` reuses existing exact and metric engines.
-- `app/pages/3_Integrated_ARPGE_GenOVa_Crystals.py` provides a single three-stage
+- `app/pages/3_AR_Gen_Cry.py` provides a single three-stage
   Streamlit interface. Run with `streamlit run app/streamlit_app.py`.
 - `tests/test_legacy_suite_bridge.py` covers exact groupoid consistency,
   metric geometry and unsafe-format rejection.
@@ -46,9 +46,9 @@ against independently justified crystallographic inputs before use.
 ## Priority validation
 
 - Exact correspondence vs experimental OR: **never equate the two**.
-- GenOVa variants and operators vs existing groupoid engine.
-- Crystals twin Type I/II candidates vs independent metric/rank-one oracles.
-- ARPGE segmentation, parent orientation and variant labels vs known EBSD fixtures.
+- Gen variants and operators vs existing groupoid engine.
+- Cry twin Type I/II candidates vs independent metric/rank-one oracles.
+- AR segmentation, parent orientation and variant labels vs known EBSD fixtures.
 - 2H and modified 18R: explicitly define phase settings, lattice parameters,
   and experimental OR; the source archive does not supply a validated CuAlNi fit.
 
