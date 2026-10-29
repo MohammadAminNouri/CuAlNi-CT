@@ -261,6 +261,28 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
                 data=cont[1]
                 st.markdown("**Suggested direction from the sampled, matched branches**")
                 st.write(data["proposed_direction"])
+                exploratory = data.get("ct_only_exploratory_target")
+                if exploratory is not None:
+                    st.markdown("**Exploratory CT-only lattice target (not verified supercompatibility)**")
+                    st.write(
+                        f"Sample {exploratory['sample_id']}: change "
+                        f"{exploratory['secondary_parameter']} by "
+                        f"{exploratory['secondary_parameter_delta']:+.8g} "
+                        f"({'degrees' if secondary.endswith('_offset_deg') else 'relative scale'}). "
+                        f"Recomputed minimum CT shear/shear ε within this state: "
+                        f"{exploratory['best_CT_epsilon_in_that_state']:.8g}."
+                    )
+                    st.dataframe(pd.DataFrame([
+                        {"Cell parameter": name, "Proposed value": value}
+                        for name,value in exploratory["proposed_cell"].items()
+                    ]),hide_index=True,width="stretch")
+                    st.warning(
+                        "This target minimizes the sampled CT shear/shear residual over "
+                        "possibly different twin branches at different lattice states. "
+                        "It does NOT prove the same twin improves, satisfy BJ cofactor "
+                        "conditions, or attain full supercompatibility. Investigate "
+                        "physical branch continuity before using it as a design target."
+                    )
                 st.caption(data["scientific_limit"])
                 st.warning(
                     data.get("candidate_comparison_scope",
