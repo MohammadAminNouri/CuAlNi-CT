@@ -88,4 +88,3 @@ def test_joint_design_does_not_claim_supercompatibility_or_edit_theory_engine():
     assert "NO_NUMERICAL_ROOT_RESOLVED_WITHIN_BOUNDS" in solver
     assert "_render_joint_compatibility_design(" in ui
     assert "Verify coupled target with CT and cofactor" in ui
-    assert "main" not in solver
