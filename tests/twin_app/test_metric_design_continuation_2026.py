@@ -124,3 +124,29 @@ def test_pair_summaries_do_not_mix_cofactor_residuals_from_unrelated_branches():
     assert row["operator_index"]==1
     assert row["CC1_abs_lambda2_minus_one"]==3.
     assert not row["both_satisfied_for_this_matched_pair"]
+
+
+def test_fully_matched_branch_not_masked_by_smaller_partial_residual():
+    # The lowest epsilon alone is not valid branch evidence when matching
+    # is incomplete. Select the best FULL match for the design comparison.
+    partial=Record(
+        ct_operator_index=4,ct_twin_index=2,ct_best_habit_index=0,
+        ct_supercompatibility_residual=1e-10,
+        cofactor_cc1_abs=0.,cofactor_cc2_abs=0.,cofactor_cc3_margin=1.,
+        cofactor_compatible=True,ct_supercompatible=True,
+        match_completeness="partial",
+        missing_required_components=("twin_plane",),
+    )
+    complete=Record(
+        ct_operator_index=5,ct_twin_index=3,ct_best_habit_index=1,
+        ct_supercompatibility_residual=0.015,
+        cofactor_cc1_abs=1e-8,cofactor_cc2_abs=4e-5,cofactor_cc3_margin=.1,
+        cofactor_compatible=False,ct_supercompatible=False,
+        match_completeness="full",
+        missing_required_components=(),
+    )
+    result=_matched_branch_summary(Record(pair_results=(partial,complete)))
+    assert result["operator_index"]==5
+    assert result["ct_shear_shear_epsilon"]==pytest.approx(.015)
+    assert result["match_completeness"]=="full"
+    assert not result["both_satisfied_for_this_matched_pair"]
