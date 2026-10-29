@@ -76,7 +76,7 @@ def cmc_smc_paper_audit(
     signatures=[-1 if x < -tolerance else 1 if x>tolerance else 0 for x in defect]
     neg=signatures.count(-1)
     pos=signatures.count(1)
-    compatible=(zero_count>0 and (neg==0 or pos==0 or (neg>0 and pos>0)))
+    compatible=(zero_count==3 or zero_count==2 or (zero_count==1 and neg==1 and pos==1))
     # For rank-two CMC with null middle eigenvalue: two planes.
     # For rank one: one plane. For rank zero: infinitely many.
     if zero_count==3:
