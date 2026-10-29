@@ -69,6 +69,10 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
             original, transformation_id, signature,
             length_percent/100.0, angle_window,
         )
+        _render_metric_failure_diagnosis(
+            original, transformation_id, signature,
+            length_percent/100.0, angle_window,
+        )
         key=(signature,length_percent,angle_window)
         if st.button(
             "Find λ₂=1 lattice targets",
@@ -286,6 +290,31 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
                 st.dataframe(
                     pd.DataFrame(displays),hide_index=True,width="stretch",
                 )
+                from twin_app.metric_failure_diagnostics import (
+                    summarize_sampled_changes, _cell,
+                )
+                cause_report = summarize_sampled_changes(
+                    data, _cell(original, transformation_id),
+                )
+                st.markdown("**Why each sampled target remains non-supercompatible**")
+                st.dataframe(pd.DataFrame([
+                    {
+                        "Sample": item["sample_id"],
+                        "Physical cell change": ", ".join(
+                            f"{k}: {v:+.7g}" for k, v in
+                            item["physical_cell_deltas"].items()
+                        ),
+                        "Failure / missing evidence": (
+                            "; ".join(item["unmet_or_unevaluable_gates"])
+                            or "No unresolved mathematical gate for this assigned pair"
+                        ),
+                        "CT ε": item["CT_epsilon"],
+                        "CC1": item["CC1_abs"],
+                        "CC2": item["CC2_abs"],
+                        "CC3": item["CC3_margin"],
+                    } for item in cause_report["samples"]
+                ]), hide_index=True, width="stretch")
+                st.caption(cause_report["scope"])
                 fig=go.Figure()
                 fig.add_trace(go.Scatter(
                     x=[r["secondary_delta"] for r in displays],
@@ -651,3 +680,153 @@ def _render_joint_compatibility_design(
                 mime="application/json",
                 key="tf_joint_metric_download",
             )
+
+
+def _render_metric_failure_diagnosis(
+    original, transformation_id, signature, length_bound, angle_bound,
+) -> None:
+    """Diagnostic reason -> quantified hypothetical metric change -> independent audit."""
+    from twin_app.metric_failure_diagnostics import (
+        metric_failure_analysis, supercompatibility_failure_analysis,
+    )
+    from twin_app.metric_design_targets import state_at_parameter
+    from cualni_cryst.supercompatibility_atlas import evaluate_supercompatibility_state
+
+    key = (signature, length_bound, angle_bound)
+    with st.container(border=True):
+        st.markdown("**Why compatibility fails · which parameter and by how much?**")
+        st.caption(
+            "Step A identifies the exact middle-stretch defect from the entered "
+            "parent/product metric and correspondence. It tests each allowed "
+            "parameter change within your bounds and reports an actual proposed "
+            "cell in the entered units. Step B separately checks the CT habit, "
+            "M/M twins, shear/shear equation and Ball–James cofactors."
+        )
+        if st.button(
+            "Diagnose A/M failure and calculate parameter corrections",
+            key="tf_failure_diagnose_metric",
+        ):
+            try:
+                with st.spinner("Measuring the lambda2 defect and solving bounded metric targets…"):
+                    result=metric_failure_analysis(
+                        original, transformation_id,
+                        length_relative_bound=length_bound,
+                        angle_bound_deg=angle_bound,
+                    )
+                st.session_state["tf_failure_metric_report"]=(key,result)
+            except Exception as exc:
+                st.error(f"Failed metric diagnosis: {type(exc).__name__}: {exc}")
+        stored=st.session_state.get("tf_failure_metric_report")
+        if stored and stored[0]==key:
+            metric=stored[1]
+            st.write(metric["reason"])
+            st.metric("Original λ₂−1",f"{metric['lambda2_minus_one']:+.9g}")
+            candidates=metric["candidate_changes"]
+            if candidates:
+                st.markdown("**Numerically verified corrections for A/M λ₂=1**")
+                st.dataframe(pd.DataFrame([{
+                    "Change parameter":c["parameter"],
+                    "Change magnitude":f"{c['abs_change']:.7g} {c['change_unit']}",
+                    "Exact cell change":c["physical_change"],
+                    "Recomputed |λ₂−1|":c["lambda2_residual"],
+                    "Supercompatibility": "NOT VERIFIED",
+                } for c in candidates]),hide_index=True,width="stretch")
+                st.caption(
+                    "These rows vary one independent parameter at a time. "
+                    "The coupled A/M optimizer above can combine parameters; "
+                    "neither option is an alloy-composition prescription."
+                )
+                index=st.selectbox(
+                    "Select one proposed cell for the full mathematical audit",
+                    range(len(candidates)),
+                    format_func=lambda i: (
+                        f"{candidates[i]['parameter']}: "
+                        f"{candidates[i]['physical_change']}"
+                    ),
+                    key="tf_failure_metric_candidate",
+                )
+                selected=candidates[index]
+                target_key=(
+                    key,selected["parameter"],selected["target_parameter_value"],
+                )
+                if st.button(
+                    "Identify remaining CT shear/shear and CC1–CC3 failures at this cell",
+                    key="tf_failure_verify_candidate",
+                ):
+                    try:
+                        new_state=state_at_parameter(
+                            original, transformation_id, selected["parameter"],
+                            selected["target_parameter_value"],
+                        )
+                        with st.spinner("Re-solving existing CT and Ball–James equations…"):
+                            audit=evaluate_supercompatibility_state(
+                                new_state, transformation_id,
+                                state_id="inverse_metric_diagnostic",
+                                metadata={
+                                    "proposed_cell":selected["proposed_cell"],
+                                    "hypothetical":True,
+                                },
+                            ).to_dict()
+                        st.session_state["tf_failure_target_audit"]=(target_key,audit)
+                    except Exception as exc:
+                        st.error(f"Target CT/BJ verification failed: {type(exc).__name__}: {exc}")
+                saved=st.session_state.get("tf_failure_target_audit")
+                if saved and saved[0]==target_key:
+                    assessment=supercompatibility_failure_analysis(saved[1])
+                    _display_condition_diagnosis(assessment)
+                    st.download_button(
+                        "Export full diagnosis and proposed cell",
+                        data=json.dumps({
+                            "entered_signature":signature,
+                            "metric_diagnosis":metric,
+                            "target":selected,
+                            "exact_theory_audit":saved[1],
+                            "failure_analysis":assessment,
+                        }, indent=2,default=str),
+                        file_name="compatibility_failure_and_target_audit.json",
+                        mime="application/json",
+                        key="tf_failure_export_target",
+                    )
+            else:
+                st.info(
+                    "No independent parameter target reached λ₂=1 inside the tested bounds. "
+                    "That does not prove nonexistence. Try broader physically admissible "
+                    "bounds or coupled changes and inspect the full audit."
+                )
+            st.caption(metric["warning"])
+        if st.button(
+            "Explain current full CT/Ball–James compatibility",
+            key="tf_failure_current_verify",
+        ):
+            try:
+                with st.spinner("Auditing exact CMC, CT M/M and shear/shear, and cofactor conditions…"):
+                    audit=evaluate_supercompatibility_state(
+                        original,transformation_id,
+                        state_id="entered_crystal_metric",
+                    ).to_dict()
+                st.session_state["tf_failure_current_audit"]=(signature,audit)
+            except Exception as exc:
+                st.error(f"Current-state compatibility audit failed: {type(exc).__name__}: {exc}")
+        current=st.session_state.get("tf_failure_current_audit")
+        if current and current[0]==signature:
+            st.markdown("**Why the entered state does or does not satisfy each condition**")
+            _display_condition_diagnosis(
+                supercompatibility_failure_analysis(current[1])
+            )
+
+
+def _display_condition_diagnosis(analysis: dict) -> None:
+    st.caption(analysis["cause_note"])
+    st.markdown(f"**Result: {analysis['status'].replace('_',' ')}**")
+    st.dataframe(pd.DataFrame([
+        {
+            "Mathematical condition":x["condition"],
+            "State":x["status"],
+            "Calculated observation":(
+                json.dumps(x["observed"], default=str)
+                if isinstance(x["observed"], dict) else x["observed"]
+            ),
+            "Why it failed or cannot be concluded":x["interpretation"],
+        } for x in analysis["conditions"]
+    ]),hide_index=True,width="stretch")
+    st.caption(analysis["recommended_sequence"])
