@@ -55,7 +55,10 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
             "A/M/M supercompatibility."
         )
         _render_full_paper_equation_audit(original, transformation_id, signature)
-
+        # Independent source-specific Cu-Al-Ni papers: no specimen values are
+        # inserted into the user's input or crystallographic inference.
+        from twin_app.cualni_campaign_ui import render_cualni_literature_campaign
+        render_cualni_literature_campaign(signature)
 
         length_percent = float(st.slider(
             "Maximum allowed lattice-length change (%)",
