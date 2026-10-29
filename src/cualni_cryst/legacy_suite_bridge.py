@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Unified modern-Python interface modeled on the Crystals/GenOVa/ARPGE workflow.
+"""Unified modern-Python interface modeled on the Cry/Gen/AR workflow.
 
 Original legacy sources are NOT embedded here. The existing CuAlNi-CT exact
 group, metric and EBSD engines are used, with explicit coordinate conventions.
@@ -85,7 +85,7 @@ def crystal_geometry(phase: Phase, uvw: tuple[float, float, float],
 
 
 def variant_groupoid(parent: Phase, product: Phase, c_text: str) -> dict:
-    """GenOVa-type exact cosets, double cosets, and operator adjacency."""
+    """Gen-type exact cosets, double cosets, and operator adjacency."""
     corr = exact_correspondence(c_text)
     result = correspondence_groupoid(
         parent.verified_symmetry(), product.verified_symmetry(), corr
