@@ -167,6 +167,7 @@ def test_complete_same_pair_supercompatibility_outweighs_smaller_failed_epsilon(
         cofactor_cc1_abs=2e-3,cofactor_cc2_abs=2e-3,
         cofactor_cc3_margin=-1.,cofactor_compatible=False,
         ct_supercompatible=True,match_completeness="full",
+        match_geometry_within_tolerance=True,
         missing_required_components=(),
     )
     passed=Record(
@@ -175,6 +176,7 @@ def test_complete_same_pair_supercompatibility_outweighs_smaller_failed_epsilon(
         cofactor_cc1_abs=1e-11,cofactor_cc2_abs=1e-11,
         cofactor_cc3_margin=1.,cofactor_compatible=True,
         ct_supercompatible=True,match_completeness="full",
+        match_geometry_within_tolerance=True,
         missing_required_components=(),
     )
     selected=_matched_branch_summary(Record(pair_results=(failed,passed)))
