@@ -54,6 +54,8 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
             "λ₂=1 is the single-variant A/M condition, not full "
             "A/M/M supercompatibility."
         )
+        _render_full_paper_equation_audit(original, transformation_id, signature)
+
 
         length_percent = float(st.slider(
             "Maximum allowed lattice-length change (%)",
@@ -852,3 +854,84 @@ def _display_condition_diagnosis(analysis: dict) -> None:
         } for x in analysis["conditions"]
     ]),hide_index=True,width="stretch")
     st.caption(analysis["recommended_sequence"])
+
+
+def _render_full_paper_equation_audit(
+    original, transformation_id: str, signature: str,
+) -> None:
+    """Cayron's intermediate equations, completely separate from our CT solver."""
+    from twin_app.paper_methodology_2022_2026 import (
+        audit_project_paper_equations,
+    )
+    with st.expander(
+        "Full paper-method audit · 2022/2026 CMC, SMC and all A/M habits",
+        expanded=False,
+    ):
+        st.markdown(
+            "**2022 correspondence:** The rational parent/product correspondence "
+            "generates symmetry cosets (M variants) and double cosets (operators). "
+            "A correspondence is not an observed orientation relationship."
+        )
+        st.markdown(
+            "**2026 compatibility:** CMC Eq.32 → CMC quadratic degeneracy "
+            "Eqs.35–39 → each A/M IPS habit → SMC Eqs.40–41 → "
+            "M/M transformation twin → shear/shear Eq.42/43. "
+            "BJ CC1/CC2/CC3 must also refer to the same valid twin."
+        )
+        if st.button(
+            "Compute all CMC/SMC intermediate values independently",
+            key="tf_full_paper_cmcsms_run",
+        ):
+            try:
+                with st.spinner("Recalculating Cayron's direct-metric equations…"):
+                    result=audit_project_paper_equations(original,transformation_id)
+                st.session_state["tf_full_paper_cmcsms"]=(signature,result)
+            except Exception as exc:
+                st.error(f"Paper equations unavailable: {type(exc).__name__}: {exc}")
+        saved=st.session_state.get("tf_full_paper_cmcsms")
+        if not saved or saved[0]!=signature:
+            return
+        d=saved[1]
+        st.markdown(f"**CMC classification:** {d['degeneracy_class'].replace('_',' ')}")
+        st.dataframe(pd.DataFrame([
+            {"Check":"Principal stretches λ₁, λ₂, λ₃",
+             "Value":", ".join(f"{x:.10g}" for x in d["principal_stretches"])},
+            {"Check":"λ₂−1","Value":f"{d['lambda2_minus_one']:+.10g}"},
+            {"Check":"CMC inertia (negative, zero, positive)",
+             "Value":str(d["cmc_inertia"])},
+            {"Check":"Degeneracy order","Value":d["degeneracy_order"]},
+            {"Check":"Individual A/M compatible","Value":d["individual_AM_compatible"]},
+            {"Check":"Number of A/M habit planes",
+             "Value":d["theoretical_habit_plane_count"]},
+        ]),hide_index=True,width="stretch")
+        left,right=st.columns(2)
+        with left:
+            st.markdown("**CMC · Eq. 32**")
+            st.code("\n".join("  ".join(f"{v:+.9g}" for v in row)
+                              for row in d["CMC_matrix"]),language="text")
+        with right:
+            st.markdown("**SMC · Eq. 41**")
+            st.code("\n".join("  ".join(f"{v:+.9g}" for v in row)
+                              for row in d["SMC_matrix"]),language="text")
+        for i,h in enumerate(d["habit_planes"],1):
+            with st.expander(f"Individual A/M IPS habit {i}",expanded=i==1):
+                st.write("Habit-plane covector · parent reciprocal crystal:",
+                         h["habit_plane_parent_reciprocal"])
+                st.write("IPS shear vector · parent direct crystal:",
+                         h["IPS_shear_parent_direct"])
+                st.write("Parent-metric shear magnitude:",
+                         h["IPS_shear_metric_norm"])
+                st.write("pᵀd (IPS normal strain):",
+                         h["volume_change_p_dot_d"])
+                st.caption(
+                    "This IPS shear is NOT the martensite–martensite twin shear. "
+                    "Eq.42 requires the selected M/M twin plane and direction."
+                )
+        st.warning(d["scientific_limit"])
+        st.download_button(
+            "Export complete source-equation audit (JSON)",
+            data=json.dumps(d,indent=2,default=str),
+            file_name="cayron_2022_2026_full_cmc_smc_audit.json",
+            mime="application/json",
+            key="tf_full_paper_cmcsms_download",
+        )
