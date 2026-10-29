@@ -349,3 +349,96 @@ def optimize_one_tracked_twin(
             "inverse design, not a global proof or cofactor/EBSD certificate."
         ),
     }
+
+
+def verify_candidate_same_twin_cofactor(
+    original: Any, transformation_id: str,
+    inverse_report: dict,
+    *, length_bound: float, angle_bound_deg: float,
+    uniform_scale_bound: float,
+) -> dict:
+    """Re-run Ball–James only at the *final* cell, preserving CT identity.
+
+    A cofactor pass on another CT generator or another CMC habit is not
+    accepted. Even if numerically BOTH, experimental crystal control and
+    uncertainty are outside the scope of these purely lattice calculations.
+    """
+    candidate=inverse_report.get("candidate")
+    if candidate is None:
+        raise ValueError("No resolved tracked-twin candidate to verify")
+    project,_=_scaled_state(
+        original,transformation_id,
+        candidate["independent_parameters"],
+        relative_length_bound=length_bound,
+        angle_bound_deg=angle_bound_deg,
+        max_uniform_scale_offset=uniform_scale_bound,
+    )
+    from cualni_cryst.supercompatibility_atlas import evaluate_supercompatibility_state
+    audit=evaluate_supercompatibility_state(
+        project,transformation_id,state_id="same_twin_inverse_final",
+        metadata={"hypothetical":True,"generator":inverse_report["generator_key"]},
+    )
+    generator=inverse_report["generator_key"]
+    habit=np.asarray(candidate["selected_habit_parent_reciprocal"],float)
+    ma=original.phase(original.transformation(transformation_id).parent_phase_id).lattice.metric()
+    # The atlas stores a local CMC habit_index (not an experimental label).
+    # Verify geometry directly rather than trusting a potentially permuted index.
+    exact_rows=[]
+    from cualni_cryst.ct import analyze_austenite_martensite
+    t=project.transformation(transformation_id)
+    am=analyze_austenite_martensite(
+        project.phase(t.parent_phase_id).lattice.metric(),
+        project.phase(t.product_phase_id).lattice.metric(),
+        t.correspondence,tol=project.numerical_policy.exact_eigenvalue)
+    for i,plane in enumerate(am.exact_habit_planes):
+        try:
+            angle=_projective_angle(habit,plane,ma,True)
+        except ValueError:
+            continue
+        if angle<1.e-4:
+            exact_rows.append(i)
+    if len(exact_rows)!=1:
+        return {
+            "status":"NO_UNAMBIGUOUS_CMC_HABIT_FOR_BJ_VERIFICATION",
+            "matched_habit_indices":exact_rows,
+            "matched_generator":generator,
+            "all_BJ_cofactor_pass_count":audit.cofactor_compatible_branch_count,
+            "same_pair_full_supercompatibility_verified":False,
+        }
+    rows=[p for p in audit.pair_results if (
+        p.ct_generator_key==generator
+        and p.ct_best_habit_index==exact_rows[0]
+    )]
+    eligible=[p for p in rows if (
+        p.match_completeness=="full"
+        and not p.missing_required_components
+        and p.match_geometry_within_tolerance is True
+    )]
+    same_pair=[p for p in eligible if p.ct_supercompatible and p.cofactor_compatible]
+    return {
+        "status":(
+            "CT_BJ_SAME_PAIR_NUMERICALLY_SATISFIED"
+            if same_pair else
+            "CT_BRANCH_PRESENT_BUT_COFACTOR_OR_MATCH_UNRESOLVED"
+            if rows else "NO_CT_BJ_ASSIGNMENT_FOR_THE_TRACKED_GENERATOR"
+        ),
+        "matched_generator":generator,
+        "matched_CMC_habit_index":exact_rows[0],
+        "CT_AM_exact":audit.ct_am_exact_compatible,
+        "CT_any_branch_pass":audit.ct_supercompatible,
+        "BJ_any_branch_pass":audit.cofactor_compatible,
+        "all_BJ_cofactor_pass_count":audit.cofactor_compatible_branch_count,
+        "candidate_matched_pair_count":len(rows),
+        "physically_comparable_candidate_pairs":len(eligible),
+        "qualified_same_pair_count":len(same_pair),
+        "same_pair_full_supercompatibility_verified":bool(
+            audit.ct_am_exact_compatible and same_pair
+        ),
+        "pairs":[p.to_dict() for p in rows],
+        "warning":(
+            "This certificate, if present, is numerical for the specified "
+            "lattice metric and physical twin assignment. It is not an "
+            "experimentally obtained phase or an alloy/composition recipe. "
+            "No complete assignment means UNRESOLVED, not disproven."
+        ),
+    }
