@@ -55,6 +55,7 @@ class AtlasPairResult:
     missing_required_components: tuple[str, ...]
     classification: AtlasClass
     match_geometry_within_tolerance: bool | None = None
+    ct_generator_key: str | None = None
     ct_eq42_vector_diagnostics: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,6 +75,7 @@ class AtlasPairResult:
             "twin_shear_relative": self.twin_shear_relative,
             "match_completeness": self.match_completeness,
             "match_geometry_within_tolerance": self.match_geometry_within_tolerance,
+            "ct_generator_key": self.ct_generator_key,
             "ct_eq42_vector_diagnostics": self.ct_eq42_vector_diagnostics,
             "missing_required_components": list(self.missing_required_components),
             "classification": self.classification.value,
@@ -341,6 +343,7 @@ def _matched_pair_results(
                 twin_shear_relative=match.residuals.shear_relative,
                 match_completeness=match.completeness.value,
                 match_geometry_within_tolerance=match.all_required_components_within_tolerance,
+                ct_generator_key=ct_row.metadata.get("ct_generator_key"),
                 ct_eq42_vector_diagnostics=eq42,
                 missing_required_components=match.missing_required_components,
                 classification=(
