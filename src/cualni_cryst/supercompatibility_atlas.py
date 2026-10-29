@@ -107,8 +107,20 @@ class AtlasStateResult:
                 AtlasClass.CT_ONLY,
                 AtlasClass.COFACTOR_ONLY,
                 AtlasClass.NEITHER,
+                AtlasClass.NOT_EVALUABLE,
             )
         }
+
+    @property
+    def not_comparable_pair_count(self) -> int:
+        return sum(
+            pair.classification is AtlasClass.NOT_EVALUABLE
+            for pair in self.pair_results
+        )
+
+    @property
+    def comparable_pair_count(self) -> int:
+        return self.matched_relation_count - self.not_comparable_pair_count
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -129,6 +141,8 @@ class AtlasStateResult:
             "pair_agreement_count": self.pair_agreement_count,
             "pair_disagreement_count": self.pair_disagreement_count,
             "matched_pair_counts": self.matched_pair_counts,
+            "not_comparable_pair_count": self.not_comparable_pair_count,
+            "comparable_pair_count": self.comparable_pair_count,
             "pair_results": [item.to_dict() for item in self.pair_results],
             "metadata": dict(self.metadata),
             "error": self.error,
@@ -264,7 +278,15 @@ def _matched_pair_results(
                 match_completeness=match.completeness.value,
                 match_geometry_within_tolerance=match.all_required_components_within_tolerance,
                 missing_required_components=match.missing_required_components,
-                classification=_classification(bool(ct_ok), bj_ok),
+                classification=(
+                    _classification(bool(ct_ok), bj_ok)
+                    if (
+                        match.completeness.value == "full"
+                        and not match.missing_required_components
+                        and match.all_required_components_within_tolerance is True
+                    )
+                    else AtlasClass.NOT_EVALUABLE
+                ),
             )
         )
     return tuple(output)
@@ -375,12 +397,16 @@ def evaluate_supercompatibility_state(
         cofactor_compatible_branch_count=len(cofactor_satisfied_rows),
         matched_relation_count=len(pair_results),
         pair_agreement_count=(
-            sum(item.ct_supercompatible == item.cofactor_compatible for item in pair_results)
-            if ct_am_exact else 0
+            sum(
+                item.ct_supercompatible == item.cofactor_compatible
+                for item in pair_results if item.classification is not AtlasClass.NOT_EVALUABLE
+            ) if ct_am_exact else 0
         ),
         pair_disagreement_count=(
-            sum(item.ct_supercompatible != item.cofactor_compatible for item in pair_results)
-            if ct_am_exact else 0
+            sum(
+                item.ct_supercompatible != item.cofactor_compatible
+                for item in pair_results if item.classification is not AtlasClass.NOT_EVALUABLE
+            ) if ct_am_exact else 0
         ),
         pair_results=pair_results,
         metadata={} if metadata is None else dict(metadata),
