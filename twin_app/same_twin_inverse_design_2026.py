@@ -165,6 +165,10 @@ def optimize_one_tracked_twin(
         key=tuple(round(float(z),9) for z in x)
         if key in results:
             return results[key]
+        if evaluated>=max_evaluations:
+            return {"x":[float(v) for v in x],
+                    "status":"EVALUATION_BUDGET_EXHAUSTED",
+                    "reason":"Maximum numerical state evaluations reached"}
         evaluated+=1
         record={"x":[float(v) for v in x],"status":"NOT_EVALUABLE"}
         try:
@@ -222,8 +226,11 @@ def optimize_one_tracked_twin(
             starts.append(x2)
     # Allocate independent budget across starts; do not report local status
     # as a proof of global optimality.
+    starts=starts[:max(1,min(len(starts),max_evaluations//12))]
     per=max(12,int(max_evaluations//len(starts)))
     for start in starts:
+        if evaluated>=max_evaluations:
+            break
         try:
             _minimize_with_budget(objective,start,max_evaluations=per)
         except (ValueError,ArithmeticError,np.linalg.LinAlgError):
