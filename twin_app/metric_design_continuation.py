@@ -230,6 +230,50 @@ def continue_supercompatibility_design(
     # this is the same continuous physical twin in another candidate.
     # Consequently no cross-state improvement claim is certified here.
     improved=None
+    # Diagnostic fallback when the CT/BJ geometrical matcher cannot support
+    # a joint branch. This is a separate CT-ONLY hypothesis based on the
+    # smallest computed A/M/M epsilon anywhere in that *individual* state.
+    # It is not a matched or continuously tracked twin, and never certifies SC.
+    ct_only = [
+        row for row in samples
+        if row.get("exact_CT_AM") is True
+        and row.get("best_CT_epsilon_any_branch") is not None
+        and isfinite(float(row["best_CT_epsilon_any_branch"]))
+    ]
+    ct_only.sort(key=lambda r: (
+        float(r["best_CT_epsilon_any_branch"]),
+        abs(float(r["secondary_delta"])),
+    ))
+    ct_best = ct_only[0] if ct_only else None
+    center_epsilon = center.get("best_CT_epsilon_any_branch")
+    if center_epsilon is None or not isfinite(float(center_epsilon)):
+        center_epsilon = None
+    ct_fallback = (
+        None if ct_best is None else {
+            "sample_id": int(ct_best["sample_id"]),
+            "secondary_parameter": secondary_parameter,
+            "secondary_parameter_value": float(ct_best["secondary_value"]),
+            "secondary_parameter_delta": float(ct_best["secondary_delta"]),
+            "primary_parameter_value": float(ct_best["primary_value"]),
+            "proposed_cell": {key: float(ct_best[key]) for key in (
+                "a","b","c","alpha_deg","beta_deg","gamma_deg"
+            )},
+            "lambda2_residual": float(ct_best["lambda2_residual"]),
+            "best_CT_epsilon_in_that_state": float(
+                ct_best["best_CT_epsilon_any_branch"]
+            ),
+            "center_CT_epsilon_any_branch": (
+                None if center_epsilon is None else float(center_epsilon)
+            ),
+            "lower_sampled_CT_epsilon_than_center": (
+                None if center_epsilon is None else
+                float(ct_best["best_CT_epsilon_any_branch"]) < float(center_epsilon)
+            ),
+            "same_physical_twin_across_states_verified": False,
+            "cofactor_and_CT_on_same_pair_verified": False,
+            "status": "EXPLORATORY_CT_ONLY_NEVER_CERTIFIED_SUPERCOMPATIBILITY",
+        }
+    )
     return {
         "source_doi":"10.1016/j.actamat.2026.122399",
         "primary_lambda2_constraint":primary_parameter,
@@ -241,6 +285,7 @@ def continue_supercompatibility_design(
         ),
         "proposed_direction":advice,
         "reduction_against_baseline_if_comparable":improved,
+        "ct_only_exploratory_target":ct_fallback,
         "branch_identity_across_states_verified":False,
         "candidate_comparison_scope":(
             "Ranked states each contain a CT-BJ match within that state. "
