@@ -420,7 +420,8 @@ def evaluate_one(p:dict) -> dict:
         "source_access":p["source_access"],
         "validation_level":p["validation_level"],
         "paper_numeric_input_reproduced":False,
-        "paper_3d_twin_or_habit_prediction_validated":False,
+        "paper_theoretical_3d_twin_habit_prediction_reproduced":False,
+        "experimental_3d_twin_habit_observation_validated":False,
         "full_ct_amm_eq42_experimentally_comparable":False,
         "full_bj_cc123_experimentally_comparable":False,
         "reason":p["limitation"],
@@ -435,6 +436,7 @@ def evaluate_one(p:dict) -> dict:
         out["numeric_checks"]["2H_cell"]=_metric_evidence(
             o["product_cell_A"],"orthorhombic")
         out["paper_numeric_input_reproduced"]=True
+        out["paper_theoretical_3d_twin_habit_prediction_reproduced"]=True
         out["outcome"]="HANE_SHIELD_1999_BALL_JAMES_MALLARD_PTMC_NUMERICALLY_REPRODUCED"
     elif p["id"]=="otsuka_nakamura_shimizu_1974":
         if o["beta_deg"] is not None:
