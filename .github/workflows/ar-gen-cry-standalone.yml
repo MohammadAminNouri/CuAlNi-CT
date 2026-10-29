@@ -1,0 +1,93 @@
+name: AR Gen Cry independent app acceptance
+
+on:
+  push:
+    branches:
+      - feature/arpge-genova-crystals-python3-integration
+    paths:
+      - ar_gen_cry_app.py
+      - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/legacy_suite_bridge.py
+      - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_ar_gen_cry_app.py
+      - tests/test_legacy_suite_bridge.py
+      - .github/workflows/ar-gen-cry-standalone.yml
+  pull_request:
+    branches:
+      - feature/twin-family-tree-app-v1
+    paths:
+      - ar_gen_cry_app.py
+      - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/legacy_suite_bridge.py
+      - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_ar_gen_cry_app.py
+      - tests/test_legacy_suite_bridge.py
+      - .github/workflows/ar-gen-cry-standalone.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ar-gen-cry-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standalone-app:
+    name: Scientific and UI gates / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+      PYTHONPATH: "src"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install science and Streamlit requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Compile new standalone code only
+        run: |
+          python -m py_compile ar_gen_cry_app.py src/cualni_cryst/ar_gen_cry_pipeline.py
+          python -m py_compile src/cualni_cryst/legacy_suite_bridge.py
+      - name: Cry/Gen/AR hard tests and Streamlit AppTest
+        run: |
+          python -m pytest -q --tb=short --maxfail=1 \
+            tests/test_ar_gen_cry_pipeline.py \
+            tests/test_ar_gen_cry_app.py \
+            tests/test_legacy_suite_bridge.py
+      - name: Real headless Streamlit HTTP health
+        shell: bash
+        run: |
+          set -euo pipefail
+          streamlit run ar_gen_cry_app.py \
+            --server.headless=true --server.address=127.0.0.1 \
+            --server.port=8787 > /tmp/ar-gen-cry-streamlit.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          success=0
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:8787/_stcore/health; then
+              success=1
+              break
+            fi
+            sleep 1
+          done
+          if test "$success" -ne 1; then
+            cat /tmp/ar-gen-cry-streamlit.log
+            exit 1
+          fi
+          kill -0 "$server"
