@@ -166,3 +166,73 @@ def audit_project_paper_equations(project: Any, transformation_id: str,
     pm=project.phase(t.product_phase_id).lattice.metric()
     c=t.correspondence.C_M_from_A
     return cmc_smc_paper_audit(pa,pm,c,tolerance=tolerance)
+
+
+def shear_shear_equation_42_audit(
+    parent_metric: Any,
+    habit_plane_parent_reciprocal: Any,
+    ips_shear_parent_direct: Any,
+    twin_plane_parent_reciprocal: Any,
+    twin_shear_direction_parent_direct: Any,
+    twin_shear_magnitude: float,
+    *, tolerance: float=2.e-8,
+) -> dict:
+    """Independent Cayron 2026 Eq.42 vector equality, not only Eq.49 score.
+
+    m,p are covectors, d,a are direct-space vectors. The parent metric
+    converts the normalized twin-plane covector into its direct normal n.
+    Longitudinal mismatch measures the wrong shear amplitude; transverse
+    mismatch measures the wrong shear direction. Both are required to vanish
+    for full A/M/M compatibility of this SPECIFIED A/M habit and M/M twin.
+    """
+    M=_symmetric_spd(parent_metric,"Parent")
+    Minv=np.linalg.inv(M)
+    m=_unit_reciprocal(np.asarray(habit_plane_parent_reciprocal,float).reshape(3),Minv)
+    p=_unit_reciprocal(np.asarray(twin_plane_parent_reciprocal,float).reshape(3),Minv)
+    n=Minv@p
+    d=np.asarray(ips_shear_parent_direct,float).reshape(3)
+    eta=np.asarray(twin_shear_direction_parent_direct,float).reshape(3)
+    if not np.all(np.isfinite(d)) or not np.all(np.isfinite(eta)):
+        raise ValueError("Nonfinite shear direction")
+    if not np.isfinite(twin_shear_magnitude) or abs(twin_shear_magnitude)<=1e-14:
+        raise ValueError("Twin shear must be finite and nonzero")
+    eta=eta/np.sqrt(eta@M@eta)
+    factor=2.*float(m@n)
+    left=factor*d
+    right=float(twin_shear_magnitude)*eta
+    err=left-right
+    mag=lambda x:float(np.sqrt(max(0.,x@M@x)))
+    along=float(left@M@eta)
+    perpendicular=left-along*eta
+    long_error=along-float(twin_shear_magnitude)
+    transverse=mag(perpendicular)
+    epsilon=mag(err)/abs(float(twin_shear_magnitude))
+    lhs_norm=mag(left)
+    rhs_norm=mag(right)
+    denom=lhs_norm*rhs_norm
+    cosine=None if denom <1.e-14 else float(np.clip((left@M@right)/denom,-1.,1.))
+    angle=None if cosine is None else float(np.degrees(np.arccos(cosine)))
+    return {
+        "source":"Cayron 2026 Eq.42 / Eq.49 independent direct-metric decomposition",
+        "coupling_2_m_dot_n":factor,
+        "m_parent_unit_reciprocal":m.tolist(),
+        "twin_normal_parent_unit_direct":n.tolist(),
+        "IPS_d_parent_direct":d.tolist(),
+        "twin_eta_parent_unit_direct":eta.tolist(),
+        "lhs_2_mn_d":left.tolist(),
+        "rhs_twin_s_eta":right.tolist(),
+        "difference_vector":err.tolist(),
+        "longitudinal_magnitude_gap":long_error,
+        "transverse_direction_gap":transverse,
+        "direction_angle_deg":angle,
+        "lhs_parent_metric_norm":lhs_norm,
+        "rhs_parent_metric_norm":rhs_norm,
+        "epsilon_normalized_by_twin_shear":epsilon,
+        "direction_and_amplitude_both_satisfied":bool(epsilon<=tolerance),
+        "interpretation":(
+            "Longitudinal gap is the difference along the signed twin "
+            "shear direction. Transverse gap is the component perpendicular "
+            "to that direction. If either is nonzero, Eq.42 does not close. "
+            "Sign conventions must match the specified physical twin branch."
+        ),
+    }
