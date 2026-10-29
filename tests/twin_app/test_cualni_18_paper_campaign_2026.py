@@ -182,3 +182,25 @@ def test_campaign_is_additive_to_existing_twin_ui_and_safety_guard():
     assert "source-verified correspondence" in src
     assert "mallard_law_twins" in src
     assert "ptmc_volume_fractions" in src
+
+
+def test_campaign_ui_preserves_main_ct_bj_ptmc_advisors_and_exposes_results():
+    root=Path(__file__).resolve().parents[2]
+    entry=(root/"twin_app"/"metric_design_ui.py").read_text()
+    panel=(root/"twin_app"/"cualni_campaign_ui.py").read_text()
+    ast.parse(entry)
+    ast.parse(panel)
+    for name in (
+        "render_cualni_literature_campaign(signature)",
+        "_render_joint_compatibility_design(",
+        "_render_same_twin_supercompatibility_inverse(",
+        "_render_full_paper_equation_audit(",
+    ):
+        assert name in entry
+    for name in (
+        "run_campaign()",
+        "paper_numeric_input_reproduced",
+        "full_Cayron_AMM_or_BJ_experimental_predictions_validated",
+        "Export all 18 source-linked scientific results",
+    ):
+        assert name in panel
