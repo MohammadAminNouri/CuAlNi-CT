@@ -90,7 +90,7 @@ def find_joint_lambda2_target(
                 state = state_at_joint_target(project, transformation_id, unpack(x))
                 spectrum = metric_stretches(state, transformation_id)
                 cache[key] = (spectrum, "")
-            except (ValueError, ArithmeticError, np.linalg.LinAlgError) as exc:
+            except (AssertionError, ValueError, ArithmeticError, np.linalg.LinAlgError) as exc:
                 cache[key] = (None, f"{type(exc).__name__}: {exc}")
         return cache[key]
 
