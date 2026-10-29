@@ -28,7 +28,7 @@ def test_uniform_scale_sweep_is_explicit_and_preserves_every_state():
     assert all(state.matched_relation_count >= 0 for state in report.states)
     assert all(
         state.pair_agreement_count + state.pair_disagreement_count
-        == state.matched_relation_count
+        + state.not_comparable_pair_count == state.matched_relation_count
         for state in report.states
     )
 
