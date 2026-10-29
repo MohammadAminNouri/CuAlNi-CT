@@ -91,7 +91,12 @@ def render_cualni_literature_campaign(signature: str) -> None:
                 "Paper":r["id"],
                 "Evaluation":r["outcome"],
                 "Source metric / input reproduced":r["paper_numeric_input_reproduced"],
-                "3D twin / habit validated":r["paper_3d_twin_or_habit_prediction_validated"],
+                "Published 3D theoretical habit reproduced":r[
+                    "paper_theoretical_3d_twin_habit_prediction_reproduced"
+                ],
+                "Observed 3D twin / habit validated":r[
+                    "experimental_3d_twin_habit_observation_validated"
+                ],
                 "Why full comparison is unavailable":r["reason"],
             } for r in result["source_records"]
         ]),hide_index=True,width="stretch")
