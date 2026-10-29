@@ -20,7 +20,7 @@ def _ready_project():
     return state_at_parameter(initial,TRANSFORMATION,"uniform_scale",scale)
 
 
-def _fake_evaluator(*, complete=True, exact=True):
+def _fake_evaluator(*, complete=True, exact=True, geometry=True):
     def inner(project, transformation_id, *, state_id, metadata):
         index=int(state_id.rsplit("-",1)[-1])
         T=project.transformation(transformation_id)
@@ -34,6 +34,7 @@ def _fake_evaluator(*, complete=True, exact=True):
             cofactor_cc3_margin=.2,cofactor_compatible=True,
             ct_supercompatible=index==2,
             match_completeness="full" if complete else "partial",
+            match_geometry_within_tolerance=geometry if complete else None,
             missing_required_components=() if complete else ("twin_plane",),
         )
         return Record(
@@ -70,7 +71,8 @@ def test_continuation_uses_real_lambda2_root_and_specific_matched_branch():
 def test_partial_or_missing_am_is_not_silently_promoted_to_supercompatibility():
     project=_ready_project()
     secondary=independent_product_lattice_parameters(project,TRANSFORMATION)[0]
-    for evaluator in (_fake_evaluator(complete=False),_fake_evaluator(exact=False)):
+    for evaluator in (_fake_evaluator(complete=False),_fake_evaluator(exact=False),
+                      _fake_evaluator(geometry=False)):
         result=continue_supercompatibility_design(
             project,TRANSFORMATION,
             primary_parameter="uniform_scale",
@@ -112,6 +114,7 @@ def test_pair_summaries_do_not_mix_cofactor_residuals_from_unrelated_branches():
         cofactor_cc2_abs=4.,cofactor_cc3_margin=-9.,
         cofactor_compatible=False,ct_supercompatible=True,
         match_completeness="full",missing_required_components=(),
+        match_geometry_within_tolerance=True,
     )
     b=Record(
         ct_operator_index=6,ct_twin_index=8,ct_best_habit_index=7,
@@ -119,6 +122,7 @@ def test_pair_summaries_do_not_mix_cofactor_residuals_from_unrelated_branches():
         cofactor_cc2_abs=1.e-11,cofactor_cc3_margin=3.,
         cofactor_compatible=True,ct_supercompatible=False,
         match_completeness="full",missing_required_components=(),
+        match_geometry_within_tolerance=True,
     )
     row=_matched_branch_summary(Record(pair_results=(a,b)))
     assert row["operator_index"]==1
@@ -135,6 +139,7 @@ def test_fully_matched_branch_not_masked_by_smaller_partial_residual():
         cofactor_cc1_abs=0.,cofactor_cc2_abs=0.,cofactor_cc3_margin=1.,
         cofactor_compatible=True,ct_supercompatible=True,
         match_completeness="partial",
+        match_geometry_within_tolerance=None,
         missing_required_components=("twin_plane",),
     )
     complete=Record(
@@ -143,6 +148,7 @@ def test_fully_matched_branch_not_masked_by_smaller_partial_residual():
         cofactor_cc1_abs=1e-8,cofactor_cc2_abs=4e-5,cofactor_cc3_margin=.1,
         cofactor_compatible=False,ct_supercompatible=False,
         match_completeness="full",
+        match_geometry_within_tolerance=True,
         missing_required_components=(),
     )
     result=_matched_branch_summary(Record(pair_results=(partial,complete)))
@@ -172,3 +178,18 @@ def test_complete_same_pair_supercompatibility_outweighs_smaller_failed_epsilon(
     selected=_matched_branch_summary(Record(pair_results=(failed,passed)))
     assert selected["operator_index"]==2
     assert selected["both_satisfied_for_this_matched_pair"]
+
+
+def test_observable_completeness_not_equal_to_geometric_agreement():
+    disagreeing=Record(
+        ct_operator_index=7,ct_twin_index=1,ct_best_habit_index=0,
+        ct_supercompatibility_residual=0.0,
+        cofactor_cc1_abs=0.0,cofactor_cc2_abs=0.0,
+        cofactor_cc3_margin=1.0,cofactor_compatible=True,
+        ct_supercompatible=True,match_completeness="full",
+        match_geometry_within_tolerance=False,missing_required_components=(),
+    )
+    result=_matched_branch_summary(Record(pair_results=(disagreeing,)))
+    assert result["match_completeness"]=="full"
+    assert result["match_geometry_within_tolerance"] is False
+    assert result["both_satisfied_for_this_matched_pair"] is False
