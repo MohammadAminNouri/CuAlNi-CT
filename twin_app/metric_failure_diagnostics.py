@@ -56,6 +56,19 @@ def metric_failure_analysis(
                 length_relative_bound=length_relative_bound,
                 angle_bound_deg=angle_bound_deg, tolerance=tolerance,
             )
+            if not result.candidates:
+                trials.append({
+                    "parameter": parameter,
+                    "status": result.status,
+                    "smallest_sampled_abs_lambda2_minus_one": float(
+                        result.minimum_abs_residual
+                    ),
+                    "reason": (
+                        "No lambda2=1 root verified inside this bounded "
+                        "single-parameter search. Tangencies and points "
+                        "outside the search interval remain possible."
+                    ),
+                })
             for candidate in result.candidates:
                 proposed = state_at_parameter(
                     project, transformation_id, parameter,
@@ -183,6 +196,36 @@ def supercompatibility_failure_analysis(
             eps,
             "The residual is dimensionless; exact closure must be assessed "
             "for one specific A/M habit and M/M twin, not by mixing branches.",
+        ))
+    # The atlas also publishes extrema taken from potentially DIFFERENT
+    # Ball-James twin rows. Show them to identify possible bottlenecks but
+    # NEVER combine these minima into one fictitious cofactor-compliant twin.
+    bj_any = report.get("cofactor_compatible")
+    rows.append(_condition(
+        "Ball–James cofactor CC1–CC3 on any one valid BJ twin",
+        "BJ_BRANCH_EXISTS" if bj_any is True else "NO_BJ_PASS_VERIFIED",
+        bj_any,
+        "A BJ-only cofactor pass does not certify Cayron A/M/M shear/shear "
+        "or the identity of a comparable CT M/M twin.",
+    ))
+    for name, observed, meaning in (
+        ("CC1: |λ₂−1|, minimum across BJ twins",
+         report.get("cofactor_best_cc1_abs"),
+         "This metric eigenvalue equality is necessary, but alone not sufficient."),
+        ("CC2: equality residual, minimum across BJ twins",
+         report.get("cofactor_best_cc2_abs"),
+         "CC2 additionally couples the transformation stretch to a "
+         "specific physically valid M/M twin system."),
+        ("CC3: inequality margin, maximum across BJ twins",
+         report.get("cofactor_best_cc3_margin"),
+         "CC3 is a branch-specific inequality; the margin's sign is "
+         "not a joint cofactor pass by itself."),
+    ):
+        rows.append(_condition(
+            name, "UNAVAILABLE" if observed is None else "AGGREGATE_DIAGNOSTIC_ONLY",
+            observed,
+            meaning + " The extremum may belong to a different twin than the other "
+            "reported extrema. Only a complete same-branch CC audit is conclusive.",
         ))
     pairs = list(report.get("pair_results") or ())
     qualified = [p for p in pairs if (
