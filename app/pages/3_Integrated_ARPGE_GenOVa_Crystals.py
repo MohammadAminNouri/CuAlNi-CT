@@ -3,6 +3,8 @@ from __future__ import annotations
 """Coherent three-stage Streamlit laboratory; preserves the existing application."""
 
 import sys
+import json
+import numpy as np
 import tempfile
 from pathlib import Path
 
@@ -14,7 +16,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from cualni_cryst.legacy_suite_bridge import (
-    Phase, crystal_geometry, inspect_ebsd, variant_groupoid
+    Phase, crystal_geometry, inspect_ebsd, variant_groupoid, reconstruct_ebsd_parent
 )
 
 st.set_page_config(page_title="Crystals · GenOVa · ARPGE", layout="wide")
@@ -80,10 +82,34 @@ with st.expander("03 · ARPGE: EBSD inspection and reconstruction handoff", expa
             path = Path(folder) / ("upload" + Path(file.name).suffix.lower())
             path.write_bytes(file.getvalue())
             try:
-                _, report = inspect_ebsd(path)
+                ebsd, report = inspect_ebsd(path)
                 st.json(report)
-                st.info("Parent reconstruction requires a validated parent/product OR, "
-                        "phase frame convention, and variant library. No guessed OR is used.")
+                st.info("Optional single-parent reconstruction below requires independently "
+                        "verified Cartesian OR matrices and an explicit common reference frame.")
+                phase_ids = sorted(int(v) for v in np.unique(
+                    ebsd.phase_id[ebsd.indexed]) if int(v) > 0)
+                if phase_ids:
+                    phase_id = st.selectbox("Indexed product phase ID", phase_ids)
+                    or_text = st.text_area(
+                        "Verified OR matrices R_(parent←product) as JSON list of 3×3 rotations",
+                        placeholder='[[[1,0,0],[0,1,0],[0,0,1]]]',
+                        value="",
+                    )
+                    approved = st.checkbox(
+                        "I verified these ORs, their coordinate convention, "
+                        "and the input phase identities independently."
+                    )
+                    max_points = st.slider("Maximum sampled EBSD points", 2, 48, 12)
+                    if st.button("Exploratory parent reconstruction", disabled=not approved):
+                        try:
+                            matrices = np.asarray(json.loads(or_text), dtype=float)
+                            recon = reconstruct_ebsd_parent(
+                                ebsd, parent, product, phase_id, matrices,
+                                maximum_points=max_points,
+                            )
+                            st.json(recon)
+                        except (ValueError, TypeError, ArithmeticError, AssertionError) as exc:
+                            st.error(f"Parent reconstruction stopped: {exc}")
             except (ValueError, UnicodeError, OSError) as exc:
                 st.error(str(exc))
 st.caption("Historical original Python 2 code is not executed in the Streamlit server.")

@@ -14,6 +14,8 @@ import sympy as sp
 
 from .correspondence import Correspondence
 from .ebsd_io import load_ang, load_ctf
+from .ebsd_map import EBSDPhase
+from .ebsd_reconstruction import VariantOR, reconstruct_parent
 from .group_theory import correspondence_groupoid
 from .lattice import Lattice
 from .point_groups import point_group_operations, metric_preservation_residual
@@ -119,3 +121,69 @@ def inspect_ebsd(path: str | Path) -> tuple[object, dict]:
         "status": "EBSD input only; parent reconstruction requires validated experimental ORs",
     }
     return ebsd, report
+
+
+def reconstruct_ebsd_parent(
+    ebsd: object,
+    parent: Phase,
+    product: Phase,
+    phase_id: int,
+    or_parent_from_product: np.ndarray,
+    *,
+    maximum_points: int = 20,
+    tolerance_deg: float = 3.0,
+) -> dict:
+    """Exploratory robust reconstruction from EXPLICIT Cartesian OR variants.
+
+    The OR matrices map product Cartesian crystal vectors to parent Cartesian
+    crystal vectors. They must not be confused with C_(M<-A) in direct lattice
+    coordinates. The existing robust parent solver is used without guessed ORs.
+    This does not segment complete grains or validate the supplied OR.
+    """
+    matrices = np.asarray(or_parent_from_product, float)
+    if matrices.ndim != 3 or matrices.shape[1:] != (3, 3):
+        raise ValueError("OR input must have shape (N,3,3)")
+    if not 1 <= len(matrices) <= 6:
+        raise ValueError("Provide 1 to 6 verified Cartesian OR variants")
+    if not 2 <= maximum_points <= 96:
+        raise ValueError("maximum_points must be between 2 and 96")
+    if not 0 < tolerance_deg <= 15:
+        raise ValueError("Tolerance must be in (0,15] degrees")
+    indices = np.flatnonzero(ebsd.indexed & (ebsd.phase_id == int(phase_id)))
+    if len(indices) < 2:
+        raise ValueError("At least two indexed product-phase points are required")
+    if len(indices) > maximum_points:
+        indices = indices[np.linspace(0, len(indices)-1, maximum_points, dtype=int)]
+    variants = [
+        VariantOR(i + 1, matrix, label=f"Experimental OR variant {i+1}")
+        for i, matrix in enumerate(matrices)
+    ]
+    p_sym = EBSDPhase.from_point_group(1, parent.name, parent.lattice(),
+                                      parent.point_group).proper_symmetry_cartesian
+    m_sym = EBSDPhase.from_point_group(2, product.name, product.lattice(),
+                                      product.point_group).proper_symmetry_cartesian
+    result = reconstruct_parent(
+        ebsd.orientations[indices],
+        variants,
+        m_sym,
+        p_sym,
+        inlier_tolerance_deg=tolerance_deg,
+        maximum_seed_candidates=64,
+        maximum_iterations=20,
+    )
+    return {
+        "sampled_points": len(indices),
+        "product_points_total": int(np.count_nonzero(
+            ebsd.indexed & (ebsd.phase_id == int(phase_id)))),
+        "parent_crystal_to_sample_rotation": result.parent_orientation.tolist(),
+        "weighted_inlier_fraction": result.weighted_inlier_fraction,
+        "mean_inlier_residual_deg": result.mean_inlier_residual_deg,
+        "maximum_inlier_residual_deg": result.maximum_inlier_residual_deg,
+        "iterations": result.iterations,
+        "assigned_variant_labels": [
+            x.variant_index for x in result.variant_assignments
+        ],
+        "status": "Exploratory single-parent fit to sampled pixels; "
+                  "NOT a spatial parent-grain reconstruction, indexed OR "
+                  "identification, or independently validated crystallographic result.",
+    }
