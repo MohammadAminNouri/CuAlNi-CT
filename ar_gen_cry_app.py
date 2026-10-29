@@ -56,6 +56,19 @@ def clear_from_cry() -> None:
         st.session_state.pop(key, None)
 
 
+def clear_from_ar() -> None:
+    for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
+        st.session_state.pop(key, None)
+
+
+class _SyntheticEBSD:
+    name = "synthetic_demo.ang"
+    size = len(DEMO_ANG)
+
+    def getvalue(self) -> bytes:
+        return DEMO_ANG
+
+
 def clear_from_gen() -> None:
     for key in ("gen_result", "ar_fit_result"):
         st.session_state.pop(key, None)
@@ -307,7 +320,8 @@ elif step == STEPS[1]:
         )
 
 elif step == STEPS[2]:
-    st.subheader("3. AR · Inspect EBSD data")
+    st.markdown(":teal[**03 / AR**]")
+    st.subheader("EBSD inspection")
     st.write("Upload Oxford CTF or EDAX ANG orientations to inspect phase counts. "
              "An experimental parent fit is optional and requires a verified orientation relationship.")
     if not cry:
@@ -317,8 +331,18 @@ elif step == STEPS[2]:
     if not gen:
         st.info("Gen has not been run. You may inspect EBSD independently; "
                 "the complete chain will remain marked incomplete.")
-    uploaded = st.file_uploader("EBSD map (.ctf or .ang), maximum 8 MiB",
-                                type=["ctf", "ang"], key="ar_upload")
+    ar_mode = st.radio(
+        "EBSD source", ("Upload file", "Synthetic demo"), horizontal=True,
+        key="ar_source_mode", on_change=clear_from_ar,
+    )
+    if ar_mode == "Synthetic demo":
+        st.caption("Three generated identity orientations · not measured NiTi or Cu–Al–Ni data.")
+        uploaded = _SyntheticEBSD()
+    else:
+        uploaded = st.file_uploader(
+            "EBSD file (.ctf or .ang), up to 8 MiB",
+            type=["ctf", "ang"], key="ar_upload", on_change=clear_from_ar,
+        )
     if uploaded is not None:
         current_sha = hashlib.sha256(uploaded.getvalue()).hexdigest()
         previous_sha = st.session_state.get("ar_sha256")
@@ -336,6 +360,10 @@ elif step == STEPS[2]:
             except (ValueError, ArithmeticError, UnicodeError, OSError) as exc:
                 st.error(f"AR import failed: {exc}")
             else:
+                result["input_kind"] = (
+                    "synthetic_software_demo" if ar_mode == "Synthetic demo"
+                    else "user_ebsd_upload"
+                )
                 st.session_state["ar_result"] = result
                 st.session_state["ar_bytes"] = blob
                 st.session_state["ar_sha256"] = hashlib.sha256(blob).hexdigest()
@@ -345,7 +373,11 @@ elif step == STEPS[2]:
     if ar:
         if uploaded is not None and hashlib.sha256(uploaded.getvalue()).hexdigest() != st.session_state.get("ar_sha256"):
             st.warning("File changed. Inspect the new upload before attempting a parent fit.")
-        st.json(ar)
+        p, i = st.columns(2)
+        p.metric("EBSD points", ar["points"])
+        i.metric("Indexed", ar["indexed_points"])
+        with st.expander("Phase counts and import details"):
+            st.json(ar)
         with st.expander("Optional experimental parent fit", expanded=False):
             st.caption("Exploratory single-parent fit, not a complete segmented parent-grain map.")
             chosen = st.number_input("Indexed product phase ID", min_value=1,
