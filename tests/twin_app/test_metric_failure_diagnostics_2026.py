@@ -118,3 +118,33 @@ def test_failure_diagnosis_ui_remains_additive_to_all_existing_advisors():
         "Identify remaining CT shear/shear and CC1–CC3 failures at this cell",
     ):
         assert token in ui
+
+
+def test_eq42_absolute_small_gap_does_not_pass_for_tiny_twin_shear():
+    """The acceptance threshold is dimensionless epsilon, not raw vector units."""
+    pair={
+        "ct_row_id":"ct_shear","ball_james_row_id":"bj_1",
+        "match_completeness":"full","missing_required_components":[],
+        "match_geometry_within_tolerance":True,
+        "ct_supercompatibility_residual":.01,"ct_supercompatible":False,
+        "cofactor_compatible":False,
+        "ct_eq42_vector_diagnostics":{
+            "coupling_2_m_dot_n":1.,
+            "twin_shear_magnitude":1e-10,
+            "longitudinal_magnitude_gap":1e-12,
+            "transverse_direction_gap":0.,
+            "epsilon_normalized_by_twin_shear":.01,
+            "direction_angle_deg":0.,
+            "lhs_2_mn_d":[1e-10,0.,0.],
+            "rhs_twin_s_eta":[1e-10,0.,0.],
+        },
+    }
+    result=supercompatibility_failure_analysis({
+        "ct_am_exact_compatible":True,"ct_supercompatible":False,
+        "ct_best_supercompatibility_residual":.01,
+        "pair_results":[pair],
+    })
+    equation=next(x for x in result["conditions"]
+                  if x["condition"].startswith("Cayron Eq.42 causes"))
+    assert equation["status"]=="SHEAR_SHEAR_NOT_CLOSED"
+    assert "relative gap" in equation["interpretation"]
