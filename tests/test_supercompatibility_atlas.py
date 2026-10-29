@@ -51,3 +51,24 @@ def test_symmetry_preserving_grid_varies_only_independent_product_cell_parameter
         assert state_id
         assert axis in parameters
         candidate.validate().assert_passed()
+
+
+def test_no_state_level_false_supercompatibility_from_different_twin_branches():
+    """Never aggregate Eq.42 on one twin with BJ CC2 on another twin."""
+    from cualni_cryst.supercompatibility_atlas import (
+        AtlasClass, evaluate_supercompatibility_state,
+    )
+    p=james_hane_6m_reference_project()
+    state=evaluate_supercompatibility_state(p,"do3_to_6m_reference")
+    if state.classification is AtlasClass.BOTH:
+        assert any(
+            pair.classification is AtlasClass.BOTH
+            and pair.match_completeness=="full"
+            and pair.match_geometry_within_tolerance is True
+            and not pair.missing_required_components
+            and pair.ct_supercompatible
+            and pair.cofactor_compatible
+            for pair in state.pair_results
+        )
+    assert (state.pair_agreement_count+state.pair_disagreement_count+
+            state.not_comparable_pair_count==state.matched_relation_count)
