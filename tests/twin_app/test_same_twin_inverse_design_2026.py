@@ -149,3 +149,35 @@ def test_ui_is_additive_and_contains_original_and_new_controls():
     ast.parse(backend)
     assert 'cofactor_same_pair_certified":False' in backend
     assert 'search_exhaustive":False' in backend
+
+
+def test_known_exact_lambda2_input_retains_one_fixed_twin_as_a_valid_candidate(
+    original,anchors
+):
+    """Positive control: the unchanged reference must not be dropped by Powell."""
+    known=state_at_parameter(
+        original,TRANSFORMATION,"uniform_scale",
+        1./metric_stretches(original,TRANSFORMATION)[1],
+    )
+    reference=next(x for x in anchors if x.initial_shear>.02)
+    # Anchor ids are exact parent symmetry keys and remain valid at the
+    # analytically corrected source state, independent of metric changes.
+    result=optimize_one_tracked_twin(
+        known,TRANSFORMATION,branch_id=reference.branch_id,
+        habit_index=0,relative_length_bound=.035,
+        angle_bound_deg=1.,max_uniform_scale_offset=.05,
+        max_evaluations=12,continuity_steps=5,
+    )
+    assert result["candidate"] is not None, result
+    candidate=result["candidate"]
+    assert result["branch_id"]==reference.branch_id
+    assert result["states_evaluated"]<=12
+    assert abs(candidate["lambda2_residual"])<2e-8
+    assert candidate["candidate_epsilon"]>=0.
+    assert candidate["data_status"]=="HYPOTHETICAL_TEST"
+    assert len(candidate["continuation_path"])==5
+    assert candidate["factor_by_factor_counterfactuals"]
+    assert candidate["same_parent_symmetry_generator"]==reference.generator_key
+    assert not result["cofactor_same_pair_certified"]
+    for row in candidate["continuation_path"]:
+        assert abs(row["lambda2_minus_one"])<2e-8
