@@ -44,7 +44,7 @@ def test_each_registered_paper_is_actually_evaluated_with_scope_and_provenance(
     result=evaluate_one(p)
     assert result["doi"]==p["doi"]
     assert result["outcome"] and result["reason"]
-    assert not result["paper_3d_twin_or_habit_prediction_validated"]
+    assert not result["experimental_3d_twin_habit_observation_validated"]
     assert not result["full_ct_amm_eq42_experimentally_comparable"]
     assert not result["full_bj_cc123_experimentally_comparable"]
 
@@ -67,6 +67,13 @@ def test_hane_shield_1999_independent_numerical_source_benchmark(results):
     assert bj["compound_unordered_pairs"]==3
     assert bj["type_I_II_unordered_pairs"]==12
     assert bj["computed_twinned_habit_solution_records"]==96
+    assert record["paper_theoretical_3d_twin_habit_prediction_reproduced"] is True
+    assert not record["experimental_3d_twin_habit_observation_validated"]
+    for mode in ("I","II"):
+        shape=bj["independent_published_habit_shape_comparison"][mode]
+        assert shape["max_abs_sorted_component_error"]<.003
+        assert len(shape["calculated_habit_shape_pairs"])==2
+
     assert len(bj["all_type_I_II_twin_pair_ptmc_results"])==24
     shears_comp=[
         s["shear"] for p in bj["pair_results"]
@@ -164,7 +171,7 @@ def test_phase_population_or_heat_treatment_not_predicted_by_metric_only_solver(
                "neutron_pseudoelastic_2008","ritchie_et_al_2016_avalanche"):
         row=next(r for r in results["source_records"] if r["id"]==id)
         assert not row["full_ct_amm_eq42_experimentally_comparable"]
-        assert not row["paper_3d_twin_or_habit_prediction_validated"]
+        assert not row["experimental_3d_twin_habit_observation_validated"]
 
 
 def test_total_report_counts_are_not_false_shear_shear_successes(results):
