@@ -210,7 +210,10 @@ def _eq42_vector_breakdown(row: Any, M: np.ndarray) -> dict[str, Any]:
         raise ValueError("Zero CT twin shear cannot be certified")
     m=m/np.sqrt(float(m@inv@m))
     p=p/np.sqrt(float(p@inv@p))
-    eta=eta/np.sqrt(float(eta@mat@eta))
+    eta_norm=float(eta@mat@eta)
+    if not np.isfinite(eta_norm) or eta_norm<=1.e-28:
+        raise ValueError("Cannot normalize a zero or invalid M/M twin direction")
+    eta=eta/np.sqrt(eta_norm)
     n=inv@p
     factor=2.*float(m@n)
     lhs=factor*d
@@ -235,6 +238,9 @@ def _eq42_vector_breakdown(row: Any, M: np.ndarray) -> dict[str, Any]:
         "transverse_direction_gap":projective_error,
         "direction_angle_deg":angle,
         "epsilon_normalized_by_twin_shear":eps,
+        "twin_shear_magnitude":abs(shear),
+        "longitudinal_relative_gap":longitudinal/abs(shear),
+        "transverse_relative_gap":projective_error/abs(shear),
         "normalization":"Eq.49, parent metric; same physical CT habit and M/M twin",
     }
 
