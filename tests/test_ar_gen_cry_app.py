@@ -27,23 +27,29 @@ def test_streamlit_initial_page_renders_without_exceptions():
 
 def test_gen_navigation_is_protected_before_cry():
     app = AppTest.from_file(str(ENTRY), default_timeout=90).run()
-    app.radio[0].set_value("2 · Gen").run()
+    _radio(app, "Workflow").set_value("2 · Gen").run()
     assert len(app.exception) == 0, [str(e.message) for e in app.exception]
     assert len(app.warning) >= 1
 
 
 def test_ar_navigation_is_protected_before_cry():
     app = AppTest.from_file(str(ENTRY), default_timeout=90).run()
-    app.radio[0].set_value("3 · AR").run()
+    _radio(app, "Workflow").set_value("3 · AR").run()
     assert len(app.exception) == 0, [str(e.message) for e in app.exception]
     assert len(app.warning) >= 1
 
 
 def test_report_does_not_invent_calculations():
     app = AppTest.from_file(str(ENTRY), default_timeout=90).run()
-    app.radio[0].set_value("4 · Report").run()
+    _radio(app, "Workflow").set_value("4 · Report").run()
     assert len(app.exception) == 0, [str(e.message) for e in app.exception]
     assert len(app.warning) >= 1
+
+
+def _radio(app: AppTest, label: str):
+    controls = [item for item in app.radio if item.label == label]
+    assert len(controls) == 1, f"Expected one radio control labeled {label!r}"
+    return controls[0]
 
 
 def _click_labeled(app: AppTest, label: str) -> AppTest:
@@ -81,7 +87,7 @@ def test_archive_examples_and_manual_source_are_interactive():
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
     app = _click_labeled(app, "Run Cry")
     assert app.session_state["cry_result"]["parent_phase"]["a"] == 3.25
-    app.radio[1].set_value("Manual").run()
+    _radio(app, "Input source").set_value("Manual").run()
     assert "cry_result" not in app.session_state
     assert len(app.exception) == 0
 
@@ -90,13 +96,13 @@ def test_guided_correspondence_input_and_synthetic_ebsd_walkthrough():
     app = AppTest.from_file(str(ENTRY), default_timeout=120).run()
     app = _click_labeled(app, "Run Cry")
     app = _click_labeled(app, "Continue to Gen")
-    app.radio[1].set_value("Three direction pairs").run()
+    _radio(app, "Correspondence input").set_value("Three direction pairs").run()
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
     app = _click_labeled(app, "Run Gen")
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
     assert app.session_state["gen_result"]["input_method"] == "Three direction pairs"
     app = _click_labeled(app, "Continue to AR")
-    app.radio[1].set_value("Synthetic demo").run()
+    _radio(app, "EBSD source").set_value("Synthetic demo").run()
     app = _click_labeled(app, "Inspect EBSD")
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
     assert app.session_state["ar_result"]["indexed_points"] == 3
