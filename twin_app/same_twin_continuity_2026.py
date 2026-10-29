@@ -236,6 +236,18 @@ def fixed_twin_am_habits(
     if not am.exact_habit_planes:
         return {"status":"NO_EXACT_CMC_HABIT",
                 "lambda2":lambda2, "twin_trace":trace,"habits":[]}
+    # Independent Zhang/Cayron equivalent CC2 test for the EXACT same
+    # rational parent twin generator, even when a CT-BJ pairing is N/A.
+    from twin_app.same_twin_cofactor_metric_2026 import (
+        cayron_generator_cc2_equivalent,
+    )
+    source_element=(
+        twin.plane_a if twin.kind=="I" else twin.direction_a
+    )
+    cc2_direct=cayron_generator_cc2_equivalent(
+        ma,mm,t.correspondence.C_M_from_A,
+        twin.kind,source_element,
+    )
     valid=[]
     for i,habit in enumerate(am.exact_habit_planes):
         m=np.asarray(habit,float)
@@ -275,5 +287,6 @@ def fixed_twin_am_habits(
         # None of the CT data alone certificates CC1/CC2/CC3 or an
         # experimentally observed M/M boundary.
         "ball_james_cofactor_on_this_twin":"NOT_YET_PHYSICALLY_ASSIGNED",
+        "same_generator_equivalent_CC2_metric":cc2_direct,
         "experimental_feasibility":"UNASSESSED",
     }
