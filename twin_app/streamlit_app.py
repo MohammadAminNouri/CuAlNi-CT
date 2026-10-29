@@ -676,6 +676,9 @@ def main() -> None:
         st.caption("Computed variants and compatible pairs, not observed twins.")
         st.warning("Numerical compatibility is not experimental validation of the entered transformation. Independent specimen-specific phase, correspondence, orientation and interface measurements are required.")
         render_mode_report(catalogue, report)
+        # Separate read-only inventory: correspondence M_i vs distinct stretch U_j.
+        from twin_app.variant_catalogue_ui import render_variant_catalogue
+        render_variant_catalogue(report)
         from twin_app.research_tools_ui import render_research_tools
         render_research_tools(catalogue, report, payload, signature)
 
