@@ -129,6 +129,45 @@ def render_variant_catalogue(report: Any) -> None:
     b.metric("Distinct stretch variants · U", catalogue["distinct_stretch_variants"])
     c.metric("Unmapped correspondence variants", catalogue["unmapped_correspondence_variants"])
     st.caption(catalogue["scope"])
+    # Cayron (Crystals 2022), Sec. 3.3 and Table 2: variants are
+    # simple cosets, whereas operators classifying variant pairs are double
+    # cosets. Never identify these two counts or an arbitrary operator index
+    # with the author's GenOVa O0–O6 labels.
+    group_order = int(report.audit.correspondence_subgroup_order) * (
+        int(catalogue["total_correspondence_variants"])
+    )
+    total_possible_pairs = (
+        catalogue["total_correspondence_variants"]
+        * (catalogue["total_correspondence_variants"]-1) // 2
+    )
+    st.markdown("**2022 Correspondence Theory · complete symmetry census**")
+    st.dataframe(pd.DataFrame([
+        {"Quantity":"Implied parent symmetry-group order |G_A|",
+         "Calculated":group_order,
+         "Equation":"|G_A| = |H_C| × N_M (Lagrange)"},
+        {"Quantity":"Correspondence subgroup order |H_C|",
+         "Calculated":report.audit.correspondence_subgroup_order,
+         "Equation":"Common correspondence symmetries"},
+        {"Quantity":"Correspondence variants N_M",
+         "Calculated":catalogue["total_correspondence_variants"],
+         "Equation":"Left cosets G_A/H_C"},
+        {"Quantity":"Distinct inter-variant operators",
+         "Calculated":report.audit.operator_count,
+         "Equation":"Double cosets H_C\\G_A/H_C"},
+        {"Quantity":"Possible unordered M_i–M_j pairs",
+         "Calculated":total_possible_pairs,
+         "Equation":"N_M(N_M−1)/2 (not all must be exact twins)"},
+        {"Quantity":"Pairs represented in output",
+         "Calculated":catalogue["unique_unordered_correspondence_pairs"],
+         "Equation":"Computed pairs, deduplicated by M_i/M_j"},
+    ]),hide_index=True,width="stretch")
+    st.caption(
+        "For Cayron's published NiTi B2→B19′ case (Crystals 2022, "
+        "Tables 1–2): |G_A|=48, |H_C|=4, 12 correspondence variants "
+        "and 7 operators. These are REFERENCE numbers, not assumed "
+        "to apply to your Cu–Al–Ni phase pair. Published O0–O6 labels "
+        "depend on GenOVa numbering and cannot be mapped by index alone."
+    )
     if catalogue["collapsed_correspondence_variants"]:
         st.info(
             f"{catalogue['collapsed_correspondence_variants']} correspondence variant(s) "
