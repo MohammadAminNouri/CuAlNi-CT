@@ -265,30 +265,44 @@ def supercompatibility_failure_analysis(
         if eq:
             long_gap=eq.get("longitudinal_magnitude_gap")
             transverse=eq.get("transverse_direction_gap")
+            epsilon=eq.get("epsilon_normalized_by_twin_shear")
+            scale=eq.get("twin_shear_magnitude")
+            scale_ok=scale is not None and float(scale)>0
+            threshold=(metric_tolerance*float(scale)
+                       if scale_ok else None)
+            eq_closed=(epsilon is not None and
+                       float(epsilon)<=metric_tolerance)
             notes=[]
-            if long_gap is not None and abs(float(long_gap))>metric_tolerance:
+            if (threshold is not None and long_gap is not None
+                    and abs(float(long_gap))>threshold):
                 notes.append(
                     "IPS/twin shear amplitudes disagree along the twin direction "
-                    f"(signed parent-metric gap {float(long_gap):+.9g})"
+                    f"(signed gap {float(long_gap):+.9g}, "
+                    f"relative gap {float(long_gap)/float(scale):+.9g})"
                 )
-            if transverse is not None and float(transverse)>metric_tolerance:
+            if (threshold is not None and transverse is not None
+                    and float(transverse)>threshold):
                 notes.append(
                     "IPS/twin shear directions are not parallel "
-                    f"(transverse parent-metric gap {float(transverse):.9g})"
+                    f"(transverse gap {float(transverse):.9g}, "
+                    f"relative gap {float(transverse)/float(scale):.9g})"
                 )
-            if not notes:
+            if not notes and eq_closed:
                 notes.append(
-                    "Eq.42 direction and amplitude close within the "
-                    "declared diagnostic tolerance for this CT habit/twin; "
-                    "the cofactor and cross-theory requirements remain separate"
+                    "Eq.42 closes within the dimensionless epsilon tolerance "
+                    "for this CT habit/twin, separately from BJ conditions"
+                )
+            if not notes and not eq_closed:
+                notes.append(
+                    "Eq.42 is not certified: dimensionless epsilon is "
+                    "unavailable or exceeds tolerance. Do not use raw "
+                    "shear-component units as a pass criterion."
                 )
             rows.append(_condition(
                 f"Cayron Eq.42 causes · CT row {pair.get('ct_row_id')}",
-                "NUMERICALLY_CLOSED" if not (
-                    long_gap is not None and abs(float(long_gap))>metric_tolerance
-                ) and not (
-                    transverse is not None and float(transverse)>metric_tolerance
-                ) else "SHEAR_SHEAR_NOT_CLOSED",
+                "NUMERICALLY_CLOSED" if eq_closed else
+                "SHEAR_SHEAR_NOT_CLOSED" if epsilon is not None else
+                "NOT_EVALUABLE",
                 {
                     "coupling_2_m_dot_n":eq.get("coupling_2_m_dot_n"),
                     "longitudinal_magnitude_gap":long_gap,
