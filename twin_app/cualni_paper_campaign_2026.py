@@ -200,13 +200,53 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
                 raise AssertionError("PTMC candidate is not exactly A/M compatible")
         fractions[t.kind]=[float(x) for x in roots]
 
-    # Each of 12 unordered S2 pairs admits Type I and Type II modes.
-    # Each yields two laminate fractions and two habit normals:
-    # 12 × 2 × 2 × 2 = 96 distinct enumerated solution *records*
-    # (source counts symmetry-equivalent physical microstructures separately).
-    total_source_habits=len(noncompound)*2*2*2
-    if total_source_habits!=source["twinned_habit_solution_count"]:
-        raise AssertionError("Hane–Shield 1999 expected habit solution census wrong")
+    # Independently certify EVERY S2 pair and laminate root using an
+    # orthogonal direct-SVD bracketing procedure. This is separate from
+    # the exact binary64 polynomial code used for the representative source
+    # fraction above. Each admissible average has two rank-one habits.
+    from scipy.optimize import brentq
+    per_pair=[]
+    all_habits=0
+    for pair in noncompound:
+        i,j=(k-1 for k in pair["U_pair"])
+        twin_axis=next(
+            e for e in axes
+            if np.linalg.norm(
+                Us[j]-(2*np.outer(e,e)-np.eye(3))@
+                Us[i]@(2*np.outer(e,e)-np.eye(3))
+            )<1e-10
+        )
+        for mode in mallard_law_twins(Us[i],Us[j],twin_axis):
+            def g(frac):
+                return middle_singular_value(
+                    Us[j]+frac*np.outer(mode.a,mode.n))-1.
+            grid=np.linspace(0.,1.,81)
+            roots=[]
+            for x,y in zip(grid[:-1],grid[1:]):
+                gx,gy=g(float(x)),g(float(y))
+                if gx*gy<0:
+                    z=float(brentq(g,float(x),float(y),xtol=2.e-14))
+                    if not any(abs(z-v)<1.e-8 for v in roots):
+                        roots.append(z)
+            roots.sort()
+            if len(roots)!=2:
+                raise AssertionError(
+                    f"Missing PTMC roots for U pair {i+1}/{j+1} Type {mode.kind}"
+                )
+            for fraction in roots:
+                F=Us[j]+fraction*np.outer(mode.a,mode.n)
+                hab=analytical_rank_one_connections(F,np.eye(3),tol=1.e-8)
+                if len(hab)!=2 or any(z.residual>1.e-7 for z in hab):
+                    raise AssertionError(
+                        "Rank-one habit solutions disappeared in full 2H census"
+                    )
+                all_habits+=len(hab)
+            per_pair.append({
+                "pair":(i+1,j+1),"twin_type":mode.kind,
+                "PTMC_fractions":roots,"exact_habit_branches":4,
+            })
+    if all_habits!=source["twinned_habit_solution_count"]:
+        raise AssertionError("Hane–Shield 1999 full 96-habit prediction not reproduced")
     # S1 compound pairs have no twinned A/M habit according to source.
     comp=mallard_law_twins(Us[0],Us[1],axes[1])
     compound_roots={
@@ -222,7 +262,9 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
         "compound_unordered_pairs":len(compound),
         "type_I_II_unordered_pairs":len(noncompound),
         "pair_results":pair_records,
-        "source_predicted_habit_solution_records":total_source_habits,
+        "computed_twinned_habit_solution_records":all_habits,
+        "all_type_I_II_twin_pair_ptmc_results":per_pair,
+        "source_predicted_habit_solution_records":source["twinned_habit_solution_count"],
         "representative_PTMC_type_I_II_fractions":fractions,
         "compound_family_PTMC_roots":compound_roots,
         "scope":(
