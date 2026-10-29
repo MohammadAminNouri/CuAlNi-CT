@@ -60,6 +60,10 @@ def test_continuation_uses_real_lambda2_root_and_specific_matched_branch():
     )
     assert len(result["samples"])==5
     assert result["best_fully_matched_sample_id"]==2
+    assert result["ct_only_exploratory_target"] is not None
+    assert result["ct_only_exploratory_target"]["sample_id"]==2
+    assert result["ct_only_exploratory_target"][
+        "same_physical_twin_across_states_verified"] is False
     assert result["branch_identity_across_states_verified"] is False
     assert result["reduction_against_baseline_if_comparable"] is None
     assert result["proposed_direction"].startswith("UNCHANGED")
@@ -208,3 +212,19 @@ def test_beta_ui_uses_angle_units_and_discloses_unverified_branch_continuity():
     assert 'secondary.endswith("_offset_deg")' in ui
     assert 'Angle variation for {secondary}' in ui
     assert 'candidate_comparison_scope' in ui
+
+
+def test_unmatched_ct_only_fallback_proposes_bounded_magnitude_not_false_SC():
+    p=_ready_project()
+    axis=independent_product_lattice_parameters(p,TRANSFORMATION)[0]
+    result=continue_supercompatibility_design(
+        p, TRANSFORMATION, primary_parameter="uniform_scale",
+        secondary_parameter=axis,steps=3,
+        evaluator=_fake_evaluator(complete=False),
+    )
+    assert result["best_fully_matched_sample_id"] is None
+    candidate=result["ct_only_exploratory_target"]
+    assert candidate is not None
+    assert candidate["cofactor_and_CT_on_same_pair_verified"] is False
+    assert abs(candidate["secondary_parameter_delta"])<=.02+1e-12
+    assert "EXPLORATORY" in candidate["status"]
