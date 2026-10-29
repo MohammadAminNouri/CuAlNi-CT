@@ -196,7 +196,10 @@ def shear_shear_equation_42_audit(
         raise ValueError("Nonfinite shear direction")
     if not np.isfinite(twin_shear_magnitude) or abs(twin_shear_magnitude)<=1e-14:
         raise ValueError("Twin shear must be finite and nonzero")
-    eta=eta/np.sqrt(eta@M@eta)
+    norm2=float(eta@M@eta)
+    if not np.isfinite(norm2) or norm2 <= 1e-28:
+        raise ValueError("Invalid zero-length twin shear direction")
+    eta=eta/np.sqrt(norm2)
     factor=2.*float(m@n)
     left=factor*d
     right=float(twin_shear_magnitude)*eta
