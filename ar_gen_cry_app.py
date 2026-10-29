@@ -20,6 +20,10 @@ import pandas as pd
 import streamlit as st
 
 from cualni_cryst.legacy_suite_bridge import Phase
+from cualni_cryst.ar_gen_cry_examples import (
+    EXAMPLES, NI_TI_REFERENCE_PAIRS, provenance, parse_cif_phase,
+    correspondence_from_pairs, invert_correspondence,
+)
 from cualni_cryst.ar_gen_cry_pipeline import (
     ar_parent_fit, ar_stage, cry_stage, gen_stage, report_json,
 )
@@ -30,6 +34,13 @@ POINT_GROUPS = ("m-3m", "mmm", "4/mmm", "6/mmm", "2/m", "222", "2", "-1", "1")
 st.set_page_config(page_title="AR · Gen · Cry", page_icon="🔬", layout="wide",
                    initial_sidebar_state="expanded")
 
+DEMO_ANG = (
+    b"# GRID: SqrGrid\n# XSTEP: 1\n# YSTEP: 1\n"
+    b"0 0 0 0 0 100 0.99 1 0 0\n"
+    b"0 0 0 1 0 100 0.99 1 0 0\n"
+    b"0 0 0 0 1 100 0.99 1 0 0\n"
+)
+
 if "ar_gen_cry_step" not in st.session_state:
     st.session_state["ar_gen_cry_step"] = STEPS[0]
 
@@ -38,6 +49,16 @@ def go(step: str) -> None:
     if step not in STEPS:
         raise ValueError("Unknown workflow step")
     st.session_state["ar_gen_cry_step"] = step
+
+
+def clear_from_cry() -> None:
+    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
+        st.session_state.pop(key, None)
+
+
+def clear_from_gen() -> None:
+    for key in ("gen_result", "ar_fit_result"):
+        st.session_state.pop(key, None)
 
 
 def parse_triplet(text: str, label: str) -> tuple[float, float, float]:
@@ -50,30 +71,37 @@ def parse_triplet(text: str, label: str) -> tuple[float, float, float]:
     return values
 
 
-def phase_form(prefix: str, base: Phase) -> Phase:
+def phase_form(prefix: str, base: Phase, *, editable: bool = True, scope: str = "custom") -> Phase:
+    if not editable:
+        st.markdown(f"**{prefix}: {base.name}**")
+        st.caption(
+            f"{base.point_group}  ·  a {base.a:g}  ·  b {base.b:g}  ·  c {base.c:g} Å"
+            f"  ·  α {base.alpha:g}°  β {base.beta:g}°  γ {base.gamma:g}°"
+        )
+        return base
     st.markdown(f"#### {prefix}")
-    name = st.text_input(f"{prefix} label", value=base.name, key=f"{prefix}_name")
+    name = st.text_input(f"{prefix} label", value=base.name, key=f"{scope}_{prefix}_name")
     group = st.selectbox(f"{prefix} symmetry", POINT_GROUPS,
                          index=POINT_GROUPS.index(base.point_group),
-                         key=f"{prefix}_point_group")
+                         key=f"{scope}_{prefix}_point_group")
     a, b, c = st.columns(3)
     values = (
         a.number_input(f"{prefix} a (Å)", min_value=0.001, value=float(base.a),
-                       format="%.5f", key=f"{prefix}_a"),
+                       format="%.5f", key=f"{scope}_{prefix}_a"),
         b.number_input(f"{prefix} b (Å)", min_value=0.001, value=float(base.b),
-                       format="%.5f", key=f"{prefix}_b"),
+                       format="%.5f", key=f"{scope}_{prefix}_b"),
         c.number_input(f"{prefix} c (Å)", min_value=0.001, value=float(base.c),
-                       format="%.5f", key=f"{prefix}_c"),
+                       format="%.5f", key=f"{scope}_{prefix}_c"),
     )
     with st.expander(f"{prefix} cell angles", expanded=False):
         x, y, z = st.columns(3)
         angles = (
             x.number_input("α (°)", min_value=0.001, max_value=179.999,
-                           value=float(base.alpha), key=f"{prefix}_alpha"),
+                           value=float(base.alpha), key=f"{scope}_{prefix}_alpha"),
             y.number_input("β (°)", min_value=0.001, max_value=179.999,
-                           value=float(base.beta), key=f"{prefix}_beta"),
+                           value=float(base.beta), key=f"{scope}_{prefix}_beta"),
             z.number_input("γ (°)", min_value=0.001, max_value=179.999,
-                           value=float(base.gamma), key=f"{prefix}_gamma"),
+                           value=float(base.gamma), key=f"{scope}_{prefix}_gamma"),
         )
     return Phase(name, group, *values, *angles)
 
@@ -88,9 +116,10 @@ def summary_status() -> None:
 
 
 st.title("AR · Gen · Cry")
-st.caption("A separate, connected crystallography workbench — no twin-app navigation.")
+st.caption("Crystal geometry → variants and operators → EBSD. Four steps, one workspace.")
 st.sidebar.radio("Workflow", STEPS, key="ar_gen_cry_step")
 summary_status()
+st.sidebar.progress(sum(k in st.session_state for k in ("cry_result", "gen_result", "ar_result")) / 3)
 step = st.session_state["ar_gen_cry_step"]
 cry = st.session_state.get("cry_result")
 gen = st.session_state.get("gen_result")
