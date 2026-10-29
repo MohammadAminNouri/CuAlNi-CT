@@ -191,6 +191,14 @@ elif step == STEPS[2]:
     uploaded = st.file_uploader("EBSD map (.ctf or .ang), maximum 8 MiB",
                                 type=["ctf", "ang"], key="ar_upload")
     if uploaded is not None:
+        current_sha = hashlib.sha256(uploaded.getvalue()).hexdigest()
+        previous_sha = st.session_state.get("ar_sha256")
+        if previous_sha is not None and current_sha != previous_sha:
+            for stale_key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
+                st.session_state.pop(stale_key, None)
+            ar = None
+            fit = None
+            st.warning("EBSD upload changed. Old AR results were cleared; inspect the new file.")
         st.caption(f"Selected: {uploaded.name} ({uploaded.size:,} bytes)")
         if st.button("Inspect EBSD", type="primary", use_container_width=True):
             try:
