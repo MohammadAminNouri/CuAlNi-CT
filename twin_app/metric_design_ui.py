@@ -75,6 +75,10 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
             original, transformation_id, signature,
             length_percent/100.0, angle_window,
         )
+        _render_same_twin_supercompatibility_inverse(
+            original, transformation_id, signature,
+            length_percent/100.0, angle_window,
+        )
         key=(signature,length_percent,angle_window)
         if st.button(
             "Find λ₂=1 lattice targets",
@@ -934,4 +938,245 @@ def _render_full_paper_equation_audit(
             file_name="cayron_2022_2026_full_cmc_smc_audit.json",
             mime="application/json",
             key="tf_full_paper_cmcsms_download",
+        )
+
+
+def _render_same_twin_supercompatibility_inverse(
+    original, transformation_id: str, signature: str,
+    length_bound: float, angle_bound: float,
+) -> None:
+    """Isolated, source-provenance-preserving inverse design for fixed CT twin."""
+    from twin_app.same_twin_continuity_2026 import enumerate_twin_anchors
+    from twin_app.same_twin_inverse_design_2026 import (
+        optimize_one_tracked_twin, verify_candidate_same_twin_cofactor,
+    )
+    with st.expander(
+        "Inverse supercompatibility · one continuously tracked physical twin",
+        expanded=False,
+    ):
+        st.markdown(
+            "**Cayron 2022 identity:** a fixed rational parent mirror or "
+            "180° axis defines the generic Type-I or Type-II twin. "
+            "Its identity is NEVER an arbitrary operator/twin array index. "
+            "The app checks how its plane, direction and shear evolve."
+        )
+        st.markdown(
+            "**Cayron 2026 inverse design:** enforce λ₂=1 analytically, "
+            "track one specific CMC habit, minimize Eq. 42 "
+            "ε = ‖2(mᵀn)d−sη‖/|s|, and independently check whether "
+            "CC1–CC3 agree on the same physical CT/BJ twin relation."
+        )
+        st.warning(
+            "The solver is bounded and local, not exhaustive. "
+            "It proposes a HYPOTHETICAL crystal cell, not a measured alloy "
+            "or chemical recipe. A completed CT-only calculation is NOT "
+            "a full Ball–James/cofactor supercompatibility certificate."
+        )
+        if st.button(
+            "Enumerate physically identifiable CT twin generators",
+            key="tf_same_twin_enumerate",
+        ):
+            try:
+                with st.spinner("Enumerating exact parent symmetry generators and CT twins…"):
+                    anchors=enumerate_twin_anchors(original, transformation_id)
+                st.session_state["tf_same_twin_anchors"]=(signature,anchors)
+            except Exception as exc:
+                st.error(f"CT twin enumeration failed: {type(exc).__name__}: {exc}")
+        inventory=st.session_state.get("tf_same_twin_anchors")
+        if not inventory or inventory[0]!=signature:
+            st.caption("Enumerate exact CT twin generators to choose the physical branch.")
+            return
+        anchors=inventory[1]
+        st.metric("Trackable exact CT construction branches",len(anchors))
+        st.caption(
+            "A compound physical twin can appear through both Type-I and "
+            "Type-II generators; the two construction routes remain separate "
+            "for continuity. Weak-plane candidates are not declared exact twins."
+        )
+        if not anchors:
+            st.info("No nonzero-shear Type-I/II CT generators for these inputs.")
+            return
+        idx=st.selectbox(
+            "Choose a frozen parent symmetry generator / construction",
+            range(len(anchors)),
+            format_func=lambda i: (
+                f"{anchors[i].construction_route} · "
+                f"{anchors[i].branch_id} · s={anchors[i].initial_shear:.7g}"
+            ),
+            key="tf_same_twin_selected",
+        )
+        chosen=anchors[idx]
+        st.code(chosen.generator_key,language="text")
+        st.caption(
+            "This exact rational generator, the parent/product symmetries and "
+            "the correspondence are frozen. Geometry discontinuity or "
+            "loss of this twin makes the proposed path inadmissible."
+        )
+        a,b=st.columns(2)
+        with a:
+            habit=st.selectbox(
+                "CMC A/M habit to follow",
+                (0,1),
+                format_func=lambda x:f"Habit {x+1} (from λ₂-corrected anchor)",
+                key="tf_same_twin_habit",
+            )
+        with b:
+            budget=st.slider(
+                "Maximum attempted optimization evaluations",
+                24,180,72,12,
+                key="tf_same_twin_budget",
+            )
+        steps=st.select_slider(
+            "Intermediate continuity checks along the complete cell change",
+            options=(5,7,9,11),value=7,
+            key="tf_same_twin_steps",
+        )
+        uniform_bound=min(.35,max(.05,length_bound*1.6))
+        key=(signature,chosen.branch_id,habit,length_bound,
+             angle_bound,uniform_bound,int(budget),int(steps))
+        if st.button(
+            "Find exact parameter changes for this same twin's Eq. 42",
+            key="tf_same_twin_inverse_run",
+        ):
+            try:
+                with st.spinner(
+                    "Solving exact λ₂ constraint, same-twin Eq.42, "
+                    "habit continuity and individual parameter counterfactuals…"
+                ):
+                    outcome=optimize_one_tracked_twin(
+                        original,transformation_id,
+                        branch_id=chosen.branch_id,habit_index=int(habit),
+                        relative_length_bound=length_bound,
+                        angle_bound_deg=angle_bound,
+                        max_uniform_scale_offset=uniform_bound,
+                        max_evaluations=int(budget),
+                        continuity_steps=int(steps),
+                    )
+                st.session_state["tf_same_twin_inverse_result"]=(key,outcome)
+            except Exception as exc:
+                st.error(f"Same-twin optimizer failed: {type(exc).__name__}: {exc}")
+        saved=st.session_state.get("tf_same_twin_inverse_result")
+        if not saved or saved[0]!=key:
+            return
+        result=saved[1]
+        st.markdown(f"**Result:** {result['status'].replace('_',' ')}")
+        st.caption(
+            f"Unique physical twin generator: {result['branch_id']}. "
+            f"States evaluated: {result.get('states_evaluated','N/A')}. "
+            "No global-optimum or experimental-attainability guarantee."
+        )
+        candidate=result.get("candidate")
+        if candidate is None:
+            st.warning(
+                result.get("reason",
+                    "No admissible continuous same-twin/habit inverse candidate "
+                    "was resolved in the selected bounds."
+                )
+            )
+            st.json(result.get("rejected_paths",[]))
+            return
+        d1,d2,d3=st.columns(3)
+        d1.metric("Original Eq.42 ε",f"{candidate['baseline_epsilon']:.7g}")
+        d2.metric("Proposed Eq.42 ε",f"{candidate['candidate_epsilon']:.7g}")
+        d3.metric("Reduction in ε",f"{candidate['epsilon_reduction_absolute']:+.7g}")
+        st.dataframe(pd.DataFrame([
+            {
+                "Lattice parameter":name,
+                "Original":candidate["baseline_cell"][name],
+                "Proposed":value,
+                "Physical change":(
+                    f"{candidate['length_change_percent'][name]:+.7g}%"
+                    if name in candidate["length_change_percent"]
+                    else f"{candidate['angle_change_deg'][name]:+.7g}°"
+                ),
+            }
+            for name,value in candidate["proposed_cell"].items()
+        ]),hide_index=True,width="stretch")
+        st.markdown("**Which lattice change matters for this tracked twin?**")
+        st.dataframe(pd.DataFrame([
+            {
+                "Independent axis":x["parameter"],
+                "Proposed scale/angle":x["proposed_value"],
+                "Normalized change":x["normalized_displacement"],
+                "ε if this factor were not changed":x["epsilon_without_this_change"],
+                "Conditional decrease from changing it":x[
+                    "conditional_epsilon_reduction_due_to_change"
+                ],
+                "Attribution available?":x["removal_status"],
+            }
+            for x in candidate["factor_by_factor_counterfactuals"]
+        ]),hide_index=True,width="stretch")
+        st.caption(
+            "Counterfactuals keep the other independent parameters fixed and "
+            "retune the λ₂=1 uniform scale. Contributions are nonadditive; "
+            "a positive value means that factor helped reduce ε, not that "
+            "it independently causes supercompatibility in a real alloy."
+        )
+        st.markdown("**Why Eq.42 still fails or closes**")
+        eq=candidate["eq42_vector_decomposition"]
+        st.dataframe(pd.DataFrame([
+            {"Constraint":"λ₂−1 (exact A/M metric)",
+             "Value":candidate["lambda2_residual"]},
+            {"Constraint":"Eq.42 normalized ε",
+             "Value":candidate["candidate_epsilon"]},
+            {"Constraint":"Signed shear amplitude difference",
+             "Value":eq["longitudinal_magnitude_gap"]},
+            {"Constraint":"Shear direction transverse gap",
+             "Value":eq["transverse_direction_gap"]},
+            {"Constraint":"Signed direction angle (°)",
+             "Value":eq["direction_angle_deg"]},
+        ]),hide_index=True,width="stretch")
+        st.markdown("**Same-twin and same-habit continuity across the entire change**")
+        st.dataframe(pd.DataFrame(candidate["continuation_path"]),
+                     hide_index=True,width="stretch")
+        st.caption(
+            "The recorded path uses one exact generator and continuity of "
+            "the twin plane, shear direction, shear magnitude and CMC habit. "
+            "It cannot establish external mechanical, chemical or EBSD validity."
+        )
+        if st.button(
+            "Verify THIS fixed CT generator and habit against BJ CC1–CC3",
+            key="tf_same_twin_bj_verify",
+        ):
+            try:
+                with st.spinner("Recomputing CT/BJ physical assignments at the proposed cell…"):
+                    bj=verify_candidate_same_twin_cofactor(
+                        original,transformation_id,result,
+                        length_bound=length_bound,
+                        angle_bound_deg=angle_bound,
+                        uniform_scale_bound=uniform_bound,
+                    )
+                st.session_state["tf_same_twin_bj_outcome"]=(key,bj)
+            except Exception as exc:
+                st.error(f"Same-pair cofactor verification failed: {type(exc).__name__}: {exc}")
+        bj_cache=st.session_state.get("tf_same_twin_bj_outcome")
+        verification=None
+        if bj_cache and bj_cache[0]==key:
+            verification=bj_cache[1]
+            st.markdown("**Same-physical-pair Ball–James verification**")
+            st.write(verification["status"])
+            st.json(verification)
+            if not verification["same_pair_full_supercompatibility_verified"]:
+                st.warning(
+                    "No combined certificate has been established. A BJ "
+                    "cofactor pass on any *other* twin must not be combined "
+                    "with this CT branch. Partial physical assignments "
+                    "are UNRESOLVED, not automatically false."
+                )
+        st.download_button(
+            "Download fixed-twin optimization and scientific evidence (JSON)",
+            data=json.dumps({
+                "method":"Cayron 2022 symmetry identity + 2026 Eq42 inverse",
+                "source_dois":[
+                    "10.3390/cryst12020130",
+                    "10.1016/j.actamat.2026.122399"
+                ],
+                "exact_input_signature":signature,
+                "local_CT_inverse":result,
+                "independent_same_pair_BJ_audit":verification,
+                "experimental_feasibility":"NOT_ASSESSED",
+            },indent=2,default=str),
+            file_name="same_twin_full_supercompatibility_inverse_audit.json",
+            mime="application/json",
+            key="tf_same_twin_export",
         )
