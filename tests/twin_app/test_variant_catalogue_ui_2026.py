@@ -70,9 +70,10 @@ def test_variant_panel_is_after_original_twins_and_before_theory_comparison():
     root=Path(__file__).resolve().parents[2]
     streamlit=(root/"twin_app"/"streamlit_app.py").read_text()
     ast.parse(streamlit)
-    assert streamlit.index("render_mode_report(catalogue, report)") < (
-        streamlit.index("render_variant_catalogue(report)") <
-        streamlit.index("render_theory_comparison(payload")
+    assert (
+        streamlit.index("render_mode_report(catalogue, report)")
+        < streamlit.index("render_variant_catalogue(report)")
+        < streamlit.index("render_theory_comparison(payload")
     )
     panel=(root/"twin_app"/"variant_catalogue_ui.py").read_text()
     ast.parse(panel)
