@@ -1026,6 +1026,17 @@ def _render_same_twin_supercompatibility_inverse(
                 24,180,72,12,
                 key="tf_same_twin_budget",
             )
+        cc2_weight=st.slider(
+            "Relative weight of same-twin CC2-equivalent squared-norm gap",
+            min_value=0.0,max_value=2.0,value=.25,step=.05,
+            key="tf_same_twin_cc2_weight",
+        )
+        st.caption(
+            "Cayron/Zhang: Type I uses ‖U⁻¹e‖=1; Type II uses ‖Ue‖=1. "
+            "This is an independent metric-equivalent CC2 criterion. "
+            "A full Ball–James CC3 test still requires a geometrically "
+            "comparable M/M twin after the inverse search."
+        )
         steps=st.select_slider(
             "Intermediate continuity checks along the complete cell change",
             options=(5,7,9,11),value=7,
@@ -1033,7 +1044,7 @@ def _render_same_twin_supercompatibility_inverse(
         )
         uniform_bound=min(.35,max(.05,length_bound*1.6))
         key=(signature,chosen.branch_id,habit,length_bound,
-             angle_bound,uniform_bound,int(budget),int(steps))
+             angle_bound,uniform_bound,int(budget),int(steps),float(cc2_weight))
         if st.button(
             "Find exact parameter changes for this same twin's Eq. 42",
             key="tf_same_twin_inverse_run",
@@ -1050,6 +1061,7 @@ def _render_same_twin_supercompatibility_inverse(
                         angle_bound_deg=angle_bound,
                         max_uniform_scale_offset=uniform_bound,
                         max_evaluations=int(budget),
+                        cc2_equivalent_weight=float(cc2_weight),
                         continuity_steps=int(steps),
                     )
                 st.session_state["tf_same_twin_inverse_result"]=(key,outcome)
@@ -1099,6 +1111,9 @@ def _render_same_twin_supercompatibility_inverse(
                 "Proposed scale/angle":x["proposed_value"],
                 "Normalized change":x["normalized_displacement"],
                 "ε if this factor were not changed":x["epsilon_without_this_change"],
+                "CC2 gap if factor removed":x[
+                    "CC2_equivalent_gap_without_this_change"
+                ],
                 "Conditional decrease from changing it":x[
                     "conditional_epsilon_reduction_due_to_change"
                 ],
@@ -1119,6 +1134,12 @@ def _render_same_twin_supercompatibility_inverse(
              "Value":candidate["lambda2_residual"]},
             {"Constraint":"Eq.42 normalized ε",
              "Value":candidate["candidate_epsilon"]},
+            {"Constraint":"Same-generator CC2-equivalent squared-norm minus one",
+             "Value":candidate[
+                "candidate_same_generator_CC2_equivalent"
+             ]["squared_norm_minus_one"]},
+            {"Constraint":"CC2-equivalent metric equality reached?",
+             "Value":candidate["numeric_same_generator_CC2_equivalent_pass"]},
             {"Constraint":"Signed shear amplitude difference",
              "Value":eq["longitudinal_magnitude_gap"]},
             {"Constraint":"Shear direction transverse gap",
