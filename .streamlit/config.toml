@@ -1,9 +1,11 @@
+# Restrained, high-contrast light theme for the standalone AR · Gen · Cry app.
+# This file is committed only on the integration branch; twin-feature unchanged.
 [theme]
-base = "dark"
-primaryColor = "#6EA8FE"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#161B22"
-textColor = "#F0F3F6"
+base = "light"
+primaryColor = "#315FCB"
+backgroundColor = "#FAFCFF"
+secondaryBackgroundColor = "#ECF3FC"
+textColor = "#172339"
 font = "sans serif"
 
 [server]
