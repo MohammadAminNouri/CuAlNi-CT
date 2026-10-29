@@ -19,8 +19,8 @@ from cualni_cryst.legacy_suite_bridge import (
     Phase, crystal_geometry, inspect_ebsd, variant_groupoid, reconstruct_ebsd_parent
 )
 
-st.set_page_config(page_title="Crystals · GenOVa · ARPGE", layout="wide")
-st.title("Crystals · GenOVa · ARPGE")
+st.set_page_config(page_title="AR · Gen · Cry", layout="wide")
+st.title("AR · Gen · Cry")
 st.caption("Modern Python 3 workbench built on CuAlNi-CT's validated core.")
 st.warning("Lattice correspondence C is not an experimentally measured orientation relationship (OR). "
            "Crystallographic variant counts cannot by themselves reconstruct EBSD parent grains.")
@@ -48,7 +48,7 @@ with left:
 with right:
     product = input_phase("Product", ("Illustrative orthorhombic", "mmm", 4.3, 5.3, 4.5, 90, 90, 90))
 
-with st.expander("01 · Crystals: lattice and reciprocal-space geometry", expanded=True):
+with st.expander("01 · Cry: lattice and reciprocal-space geometry", expanded=True):
     direction = st.text_input("Direct [uvw]", "1 0 0")
     plane = st.text_input("Reciprocal plane (hkl)", "1 0 0")
     if st.button("Calculate metric geometry"):
@@ -60,7 +60,7 @@ with st.expander("01 · Crystals: lattice and reciprocal-space geometry", expand
         except (ValueError, ArithmeticError) as exc:
             st.error(str(exc))
 
-with st.expander("02 · GenOVa: correspondence variants and operator groupoid", expanded=True):
+with st.expander("02 · Gen: correspondence variants and operator groupoid", expanded=True):
     st.info("The identity matrix is a software demonstration, not a Cu–Al–Ni crystallographic assignment.")
     c_text = st.text_area("Exact C_(M←A) (3 rows)", "1 0 0\n0 1 0\n0 0 1", height=100)
     if st.button("Calculate exact groupoid"):
@@ -75,7 +75,7 @@ with st.expander("02 · GenOVa: correspondence variants and operator groupoid", 
         except (ValueError, ArithmeticError, AssertionError) as exc:
             st.error(str(exc))
 
-with st.expander("03 · ARPGE: EBSD inspection and reconstruction handoff", expanded=True):
+with st.expander("03 · AR: EBSD inspection and reconstruction handoff", expanded=True):
     file = st.file_uploader("Oxford CTF or EDAX ANG EBSD data", type=["ctf", "ang"])
     if file is not None:
         with tempfile.TemporaryDirectory() as folder:
