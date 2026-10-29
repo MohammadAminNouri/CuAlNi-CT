@@ -19,7 +19,9 @@ from cualni_cryst.supercompatibility_atlas import (
     independent_product_lattice_parameters,
     symmetry_preserving_product_grid,
 )
-from twin_app.metric_design_targets import metric_stretches
+from twin_app.metric_design_targets import (
+    metric_stretches, _mark_product_design_hypothesis,
+)
 
 
 def state_at_joint_target(
@@ -40,6 +42,7 @@ def state_at_joint_target(
     state = symmetry_preserving_product_grid(
         project, transformation_id, axes, max_states=1,
     )[0][1]
+    state = _mark_product_design_hypothesis(state, transformation_id)
     state.validate().assert_passed()
     return state
 
