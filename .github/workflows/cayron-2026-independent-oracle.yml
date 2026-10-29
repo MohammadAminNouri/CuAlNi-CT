@@ -40,6 +40,10 @@ jobs:
         run: |
           python -m pytest -q --tb=short \
             tests/test_cayron_2026_independent_paper_reproduction_v2.py \
+            tests/twin_app/test_cayron_paper_methodology_2026.py \
+            tests/test_ct_permanent_benchmarks.py \
+            tests/test_supercompatibility_atlas.py \
+            tests/twin_app/test_variant_catalogue_ui_2026.py \
             tests/test_cayron_2026_full_supercompatibility.py \
             tests/test_cayron_2026_o2_type_i_source_audit.py \
             tests/twin_app/test_cayron_2026_reference_2026.py \
