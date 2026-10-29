@@ -51,6 +51,9 @@ def test_joint_candidate_recovers_proven_metric_root_and_preserves_inputs():
     )
     assert (changed.transformation(TRANSFORMATION).correspondence.C_M_from_A ==
             transformation.correspondence.C_M_from_A)
+    from cualni_cryst.provenance import DataStatus
+    assert (changed.phase(transformation.product_phase_id).provenance.status
+            is DataStatus.HYPOTHETICAL_TEST)
 
 
 def test_joint_neutral_point_is_not_mistaken_for_root():
