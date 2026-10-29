@@ -67,3 +67,44 @@ This is a target in crystal metric space, not a prescription for how
 alloy composition, annealing, defect density or processing changes
 individual cell parameters. Chemical/thermodynamic feasibility and
 measured lattice uncertainty require separate experiments or data.
+
+## Conditional two-parameter A/M/M continuation (implemented)
+
+The interactive **Design toward full A/M/M shear/shear compatibility**
+control follows the paper's *sequence*, rather than assuming CC1 alone
+proves supercompatibility:
+
+1. Hold the entered correspondence, parent metric and phase symmetries fixed.
+2. Select one independent product-cell parameter to target lambda2=1.
+3. Vary a **different** allowed product-cell parameter over 3, 5 or 7
+   explicit grid states. At each state retarget the first parameter by
+   generalized-metric root solving, preserving lambda2=1 at the
+   configured numerical tolerance.
+4. For each candidate independently run the existing CT A/M exact
+   CMC/SMC and M/M + A/M/M shear/shear evaluation, Ball--James M/M
+   rank-one geometry and **cofactor CC1, CC2, CC3**. Do not equate
+   a small shear/shear residual with CC2 or CC3.
+5. Match CT and Ball--James physical twin branches. Display one
+   *matched pair's* shear/shear epsilon and cofactor residuals, never
+   a false combined score made from minima of unrelated twin branches.
+   A pair whose required observable matching is partial is explicitly
+   excluded from recommendations.
+6. Rank only those **sampled**, fully matched, evaluable candidates
+   by the established Cayron shear/shear epsilon, and report whether
+   the second parameter should increase, decrease, stay unchanged,
+   or whether no defensible suggestion exists.
+7. Preserve actual a, b, c, beta, the retuned primary parameter,
+   lambda2 residuals, all sampled states, all missing/evaluation statuses,
+   matching completeness and source DOI in a JSON export.
+
+No branch can be promoted to physical twin evidence merely because its
+operator/twin integer IDs appear alike at several lattice states.
+The optimizer does **not** prove monotonicity, global completeness,
+experimental attainability, or an exact epsilon=0 root. It is a numerical
+lattice-metric *hypothesis generator*. The measured correspondence,
+preferred twin mode, physical composition->metric relationship and EBSD
+variant populations remain independent questions.
+
+Do not apply NiTi's B2->B19' **C1 b=sqrt(2)** source branch to the
+orthorhombic Cu-Al-Ni 2H or modified monoclinic 18R input without
+rederiving it for that structure and its exact correspondence.

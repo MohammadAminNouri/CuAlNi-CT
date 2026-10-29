@@ -51,4 +51,5 @@ jobs:
             tests/twin_app/test_correspondence_ui_theme_and_seed_2026.py \
             tests/twin_app/test_tree_correspondence_2026.py \
             tests/twin_app/test_correspondence_cayron_ui.py \
-            tests/twin_app/test_metric_design_targets_2026.py
+            tests/twin_app/test_metric_design_targets_2026.py \
+            tests/twin_app/test_metric_design_continuation_2026.py

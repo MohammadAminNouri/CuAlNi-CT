@@ -177,6 +177,134 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
         )
         param,candidate=candidate_options[selected_idx]
         candidate_key=(key,param,float(candidate["parameter_value"]))
+        # Second-stage Cayron design: stay on the lambda2=1 CMC target
+        # while varying a second crystal parameter; check the SAME
+        # physically paired CT shear/shear and BJ cofactor branch.
+        other_axes=[axis for axis in independent if axis!=param]
+        if other_axes and st.checkbox(
+            "Design toward full A/M/M shear/shear compatibility",
+            key="tf_metric_design_continuation_open",value=False,
+        ):
+            st.caption(
+                "Maintain λ₂≈1 by retuning the selected first parameter, "
+                "then vary a second independent product-cell parameter. "
+                "Each state is independently tested for exact CT A/M habit, "
+                "M/M twin, Cayron Eq. 43 shear/shear ε, and BJ CC1–CC3 "
+                "on physically matched twin relations. This is a bounded "
+                "sampled search, not a proof that a solution exists."
+            )
+            secondary=st.selectbox(
+                "Second independent lattice parameter",
+                other_axes,key="tf_metric_design_secondary",
+            )
+            nstates=st.select_slider(
+                "Number of full CT/BJ evaluations",
+                options=(3,5,7),value=3,
+                key="tf_metric_design_full_states",
+            )
+            second_bound=st.slider(
+                "Second parameter length range (±%)",
+                min_value=0.5,max_value=10.,value=2.,step=.5,
+                key="tf_metric_design_secondary_bound",
+            )
+            continuation_key=(
+                signature,param,secondary,int(nstates),
+                float(second_bound),length_percent,angle_window,
+            )
+            if st.button(
+                "Suggest lattice changes for Cayron shear/shear",
+                key="tf_metric_design_continue_run",
+            ):
+                try:
+                    from twin_app.metric_design_continuation import (
+                        continue_supercompatibility_design,
+                    )
+                    with st.status(
+                        "Re-solving CT and Ball–James for each constrained cell",
+                        expanded=True,
+                    ) as status:
+                        full_design=continue_supercompatibility_design(
+                            original,transformation_id,
+                            primary_parameter=param,
+                            secondary_parameter=secondary,
+                            secondary_relative_bound=float(second_bound)/100.,
+                            angle_bound_deg=angle_window,
+                            primary_relative_bound=length_percent/100.,
+                            primary_angle_bound_deg=angle_window,
+                            steps=int(nstates),
+                        )
+                        status.update(
+                            label="Metric continuation finished",
+                            state="complete",expanded=False,
+                        )
+                    st.session_state["tf_metric_design_continuation"]=(
+                        continuation_key,full_design,
+                    )
+                except Exception as exc:
+                    st.error(
+                        "Conditional A/M/M evaluation was not completed: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+            cont=st.session_state.get("tf_metric_design_continuation")
+            if cont and cont[0]==continuation_key:
+                data=cont[1]
+                st.markdown("**Suggested direction from the sampled, matched branches**")
+                st.write(data["proposed_direction"])
+                st.caption(data["scientific_limit"])
+                displays=[]
+                for row in data["samples"]:
+                    pair=row.get("paired_CT_BJ_branch") or {}
+                    displays.append({
+                        "Δ second parameter":row["secondary_delta"],
+                        "Target first parameter":row.get("primary_value"),
+                        "a":row.get("a"),"b":row.get("b"),
+                        "c":row.get("c"),"β":row.get("beta_deg"),
+                        "|λ₂−1|":row.get("lambda2_residual"),
+                        "Exact CT A/M":row.get("exact_CT_AM"),
+                        "CT shear/shear ε":pair.get("ct_shear_shear_epsilon"),
+                        "CC1 |λ₂−1|":pair.get("CC1_abs_lambda2_minus_one"),
+                        "CC2 |value|":pair.get("CC2_abs"),
+                        "CC3 margin":pair.get("CC3_margin"),
+                        "Matched branch":(
+                            f"{pair['operator_index']} / {pair['twin_index']}"
+                            if pair else "unavailable"
+                        ),
+                        "Match complete":row.get("matching_is_complete",False),
+                        "State":row["status"],
+                    })
+                st.dataframe(
+                    pd.DataFrame(displays),hide_index=True,width="stretch",
+                )
+                fig=go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=[r["secondary_delta"] for r in displays],
+                    y=[r["CT shear/shear ε"] for r in displays],
+                    mode="markers",name="Matched CT ε",
+                    customdata=[r["Matched branch"] for r in displays],
+                    hovertemplate="Δ parameter: %{x:.6g}<extra>%{customdata}</extra>",
+                ))
+                fig.update_layout(
+                    height=270,margin=dict(l=25,r=15,t=18,b=38),
+                    xaxis_title="Change in second parameter (relative or degrees)",
+                    yaxis_title="Cayron shear/shear ε",
+                )
+                st.plotly_chart(fig,width="stretch")
+                st.caption(
+                    "Points may represent different twin branches. "
+                    "They are deliberately NOT connected by a line, "
+                    "and no interpolated ε=0 solution is asserted. "
+                    "Missing points mean that the exact CMC habit or "
+                    "a complete matched CT/BJ relation was unavailable."
+                )
+                st.download_button(
+                    "Export complete sampled A/M/M design (.json)",
+                    data=json.dumps(data,indent=2,default=str),
+                    file_name="cayron_2026_conditional_shear_shear_design.json",
+                    mime="application/json",
+                    key="tf_metric_design_continuation_export",
+                )
+
+
         if st.button(
             "Verify CT shear/shear and BJ cofactor conditions",
             key="tf_metric_design_verify",
