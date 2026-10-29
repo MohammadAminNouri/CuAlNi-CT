@@ -33,8 +33,17 @@ def _matched_branch_summary(state) -> dict | None:
     ]
     if not available:
         return None
+    # A lower residual on a partial match must never mask a valid,
+    # completely matched relation. Preserve partial evidence ONLY when
+    # the current state has no full relation available.
+    fully_matched = [
+        x for x in available
+        if x.match_completeness == "full"
+        and not x.missing_required_components
+    ]
     selected = min(
-        available, key=lambda x: float(x.ct_supercompatibility_residual)
+        fully_matched or available,
+        key=lambda x: float(x.ct_supercompatibility_residual),
     )
     return {
         "operator_index": selected.ct_operator_index,
@@ -180,7 +189,7 @@ def continue_supercompatibility_design(
                     and not pair["unmatched_required_components"]
                 ),
             })
-        except (ValueError,ArithmeticError,np.linalg.LinAlgError) as exc:
+        except (AssertionError,ValueError,ArithmeticError,np.linalg.LinAlgError) as exc:
             row.update({"status":"not_evaluable","error":f"{type(exc).__name__}: {exc}"})
         samples.append(row)
 
