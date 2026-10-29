@@ -55,6 +55,7 @@ class AtlasPairResult:
     missing_required_components: tuple[str, ...]
     classification: AtlasClass
     match_geometry_within_tolerance: bool | None = None
+    ct_eq42_vector_diagnostics: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -73,6 +74,7 @@ class AtlasPairResult:
             "twin_shear_relative": self.twin_shear_relative,
             "match_completeness": self.match_completeness,
             "match_geometry_within_tolerance": self.match_geometry_within_tolerance,
+            "ct_eq42_vector_diagnostics": self.ct_eq42_vector_diagnostics,
             "missing_required_components": list(self.missing_required_components),
             "classification": self.classification.value,
         }
@@ -191,6 +193,52 @@ def _classification(ct_value: bool, cofactor_value: bool) -> AtlasClass:
     return AtlasClass.NEITHER
 
 
+def _eq42_vector_breakdown(row: Any, M: np.ndarray) -> dict[str, Any]:
+    """Paper Eq.42 direct/reciprocal cross-check independent of CT residual code.
+
+    The residual is decomposed into a longitudinal signed shear amplitude
+    error and a transverse direction error. Both must vanish for Eq.42.
+    """
+    mat=np.asarray(M,dtype=float)
+    inv=np.linalg.inv(mat)
+    m=np.asarray(row.habit_plane_parent_crystal,dtype=float)
+    p=np.asarray(row.twin_plane_parent_crystal,dtype=float)
+    d=np.asarray(row.shape_vector_parent_crystal,dtype=float)
+    eta=np.asarray(row.twin_direction_parent_crystal,dtype=float)
+    shear=float(row.shear_magnitude)
+    if abs(shear)<1e-14:
+        raise ValueError("Zero CT twin shear cannot be certified")
+    m=m/np.sqrt(float(m@inv@m))
+    p=p/np.sqrt(float(p@inv@p))
+    eta=eta/np.sqrt(float(eta@mat@eta))
+    n=inv@p
+    factor=2.*float(m@n)
+    lhs=factor*d
+    rhs=shear*eta
+    err=lhs-rhs
+    longitudinal=float(lhs@mat@eta)-shear
+    transverse=lhs-float(lhs@mat@eta)*eta
+    projective_error=float(np.sqrt(max(0.,transverse@mat@transverse)))
+    eps=float(np.sqrt(max(0.,err@mat@err)))/abs(shear)
+    ln=float(np.sqrt(max(0.,lhs@mat@lhs)))
+    rn=float(np.sqrt(max(0.,rhs@mat@rhs)))
+    cosine=None if ln*rn<1e-14 else float(np.clip(
+        (lhs@mat@rhs)/(ln*rn),-1.,1.
+    ))
+    angle=None if cosine is None else float(np.degrees(np.arccos(cosine)))
+    return {
+        "coupling_2_m_dot_n":factor,
+        "lhs_2_mn_d":lhs.tolist(),
+        "rhs_twin_s_eta":rhs.tolist(),
+        "difference_vector":err.tolist(),
+        "longitudinal_magnitude_gap":longitudinal,
+        "transverse_direction_gap":projective_error,
+        "direction_angle_deg":angle,
+        "epsilon_normalized_by_twin_shear":eps,
+        "normalization":"Eq.49, parent metric; same physical CT habit and M/M twin",
+    }
+
+
 def _matched_pair_results(
     project: Any,
     transformation_id: str,
@@ -224,6 +272,8 @@ def _matched_pair_results(
         if row.prediction_kind is PredictionKind.CT_SUPERCOMPATIBILITY
     ]
     output: list[AtlasPairResult] = []
+    transformation=project.transformation(transformation_id)
+    MA=project.phase(transformation.parent_phase_id).lattice.metric()
     for match in matches:
         ct_row = by_id[match.left_row_id]
         bj_row = by_id[match.right_row_id]
@@ -253,6 +303,14 @@ def _matched_pair_results(
         )
         ct_ok = ct_residual is not None and ct_residual <= tolerance
         bj_ok = bool(bj_row.metadata.get("cofactor_all_satisfied", False))
+        eq42=_eq42_vector_breakdown(best, MA) if best is not None else None
+        if eq42 is not None and ct_residual is not None:
+            checked=float(eq42["epsilon_normalized_by_twin_shear"])
+            if not np.isclose(checked, ct_residual, rtol=3e-7, atol=3e-9):
+                raise AssertionError(
+                    "Cayron Eq.42 vector decomposition disagrees with "
+                    f"independent CT scalar epsilon ({checked} vs {ct_residual})"
+                )
         cc1 = bj_row.residuals.get("cc1_lambda2_minus_one")
         cc2 = bj_row.residuals.get("cc2")
         cc3 = bj_row.residuals.get("cc3_margin")
@@ -277,6 +335,7 @@ def _matched_pair_results(
                 twin_shear_relative=match.residuals.shear_relative,
                 match_completeness=match.completeness.value,
                 match_geometry_within_tolerance=match.all_required_components_within_tolerance,
+                ct_eq42_vector_diagnostics=eq42,
                 missing_required_components=match.missing_required_components,
                 classification=(
                     _classification(bool(ct_ok), bj_ok)
