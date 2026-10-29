@@ -71,3 +71,35 @@ def test_complete_standalone_cry_to_gen_to_ar_to_report_workflow():
     app = _click_labeled(app, "Continue to Report")
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
     assert any("Report" in title.value for title in app.subheader)
+
+
+def test_archive_examples_and_manual_source_are_interactive():
+    app = AppTest.from_file(str(ENTRY), default_timeout=120).run()
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert any("NiTi" in choice for choice in app.selectbox[0].options)
+    app.selectbox[0].set_value("AuTi · B2 → B19").run()
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    app = _click_labeled(app, "Run Cry")
+    assert app.session_state["cry_result"]["parent_phase"]["a"] == 3.25
+    app.radio[1].set_value("Manual").run()
+    assert "cry_result" not in app.session_state
+    assert len(app.exception) == 0
+
+
+def test_guided_correspondence_input_and_synthetic_ebsd_walkthrough():
+    app = AppTest.from_file(str(ENTRY), default_timeout=120).run()
+    app = _click_labeled(app, "Run Cry")
+    app = _click_labeled(app, "Continue to Gen")
+    app.radio[1].set_value("Three direction pairs").run()
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    app = _click_labeled(app, "Run Gen")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert app.session_state["gen_result"]["input_method"] == "Three direction pairs"
+    app = _click_labeled(app, "Continue to AR")
+    app.radio[1].set_value("Synthetic demo").run()
+    app = _click_labeled(app, "Inspect EBSD")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert app.session_state["ar_result"]["indexed_points"] == 3
+    assert app.session_state["ar_result"]["input_kind"] == "synthetic_software_demo"
+    app = _click_labeled(app, "Continue to Report")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
