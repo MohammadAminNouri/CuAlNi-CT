@@ -1,0 +1,23 @@
+{
+  "stage": "syntax only, not runtime or scientific parity",
+  "modules": [
+    {
+      "path": "arpge/EBSD/ARPGE.py",
+      "original_sha256": "93892600f30f2ea2ce817018d5c97ac57a9e50fe9db26594a753e30505d3b077",
+      "syntax_status": "compiled",
+      "python3_sha256": "10be09fd159105504e59369762c05a09e7a893e1642381bc2f0cc689cae41f30"
+    },
+    {
+      "path": "arpge/Crystallography/CC_Crystals.py",
+      "original_sha256": "7c8b28e1d49e2493012e646865c1e787fca0dff1d9b169c89f0b5f8036e0d829",
+      "syntax_status": "compiled",
+      "python3_sha256": "94d970820001b5be23afd75b0256a52a6f26713224c8795e236dfea4f3a4502f"
+    },
+    {
+      "path": "arpge/Crystallography/CC_GenOVa.py",
+      "original_sha256": "9f738fb3451eeb09aafec64753565d0be8731f31ef69784d4f4e77944792c139",
+      "syntax_status": "compiled",
+      "python3_sha256": "5f03df63ca75536de2ca3a0d17f8557d4b5c52149d4e3d41ff83461838b40f43"
+    }
+  ]
+}
