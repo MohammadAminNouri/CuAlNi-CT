@@ -348,6 +348,11 @@ def optimize_one_tracked_twin(
         "cc2_equivalent_objective_weight":cc2_equivalent_weight,
         "epsilon_reduction_absolute":initial_eps-final["epsilon"],
         "numeric_eq42_closed":bool(final["epsilon"]<=2e-8),
+        "numeric_same_generator_CC2_equivalent_pass":bool(
+            independent["same_generator_equivalent_CC2_metric"][
+                "absolute_squared_norm_gap"
+            ]<=2e-8
+        ),
         "selected_habit_parent_reciprocal":final["habit_parent_reciprocal"],
         "eq42_vector_decomposition":final["eq42"],
         "same_parent_symmetry_generator":selected.generator_key,
@@ -397,7 +402,10 @@ def optimize_one_tracked_twin(
     target["factor_by_factor_counterfactuals"]=attribution
     return {
         "status":(
-            "CT_EQ42_NUMERICALLY_CLOSED_REQUIRES_BJ_AND_EXPERIMENT"
+            "CT_EQ42_AND_CC2_METRIC_NUMERICALLY_CLOSED_REQUIRES_BJ_CC3"
+            if target["numeric_eq42_closed"]
+            and target["numeric_same_generator_CC2_equivalent_pass"]
+            else "CT_EQ42_CC2_CONTRADICTION_REQUIRES_REVIEW"
             if target["numeric_eq42_closed"]
             else "BEST_BOUNDED_CONTINUOUS_SAME_TWIN_CT_CANDIDATE"
         ),
@@ -478,16 +486,32 @@ def verify_candidate_same_twin_cofactor(
             "all_BJ_cofactor_pass_count":audit.cofactor_compatible_branch_count,
             "same_pair_full_supercompatibility_verified":False,
         }
-    rows=[p for p in audit.pair_results if (
-        p.ct_generator_key==generator
-        and p.ct_best_habit_index==exact_rows[0]
-    )]
+    # The atlas stores ONLY the lowest-epsilon habit for each CT twin,
+    # which is not necessarily our selected habit. Its physically matched
+    # M/M twin assignment is independent of which valid A/M habit we follow.
+    # Therefore use the frozen generator here; independently verify the
+    # selected habit's Eq42 and CC2-equivalent conditions from our own result.
+    rows=[p for p in audit.pair_results if p.ct_generator_key==generator]
     eligible=[p for p in rows if (
         p.match_completeness=="full"
         and not p.missing_required_components
         and p.match_geometry_within_tolerance is True
     )]
-    same_pair=[p for p in eligible if p.ct_supercompatible and p.cofactor_compatible]
+    selected_eq42_closed=bool(
+        candidate["candidate_epsilon"]<=2e-8
+        and candidate["numeric_eq42_closed"]
+    )
+    selected_cc2_pass=bool(
+        candidate["numeric_same_generator_CC2_equivalent_pass"]
+        and candidate["candidate_same_generator_CC2_equivalent"][
+            "absolute_squared_norm_gap"
+        ]<=2e-8
+    )
+    same_pair=[
+        p for p in eligible
+        if audit.ct_am_exact_compatible and selected_eq42_closed
+        and selected_cc2_pass and p.cofactor_compatible
+    ]
     return {
         "status":(
             "CT_BJ_SAME_PAIR_NUMERICALLY_SATISFIED"
@@ -497,6 +521,8 @@ def verify_candidate_same_twin_cofactor(
         ),
         "matched_generator":generator,
         "matched_CMC_habit_index":exact_rows[0],
+        "selected_habit_Eq42_closed":selected_eq42_closed,
+        "same_generator_CC2_equivalent_pass":selected_cc2_pass,
         "CT_AM_exact":audit.ct_am_exact_compatible,
         "CT_any_branch_pass":audit.ct_supercompatible,
         "BJ_any_branch_pass":audit.cofactor_compatible,
