@@ -202,11 +202,18 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
                 options=(3,5,7),value=3,
                 key="tf_metric_design_full_states",
             )
-            second_bound=st.slider(
-                "Second parameter length range (±%)",
-                min_value=0.5,max_value=10.,value=2.,step=.5,
-                key="tf_metric_design_secondary_bound",
-            )
+            if secondary.endswith("_offset_deg"):
+                second_bound=2.0  # Not applied to angle controls by the solver.
+                st.caption(
+                    f"Angle variation for {secondary}: ±{angle_window:.3g} degrees "
+                    "(controlled by the angle-window slider above)."
+                )
+            else:
+                second_bound=st.slider(
+                    "Second parameter length range (±%)",
+                    min_value=0.5,max_value=10.,value=2.,step=.5,
+                    key="tf_metric_design_secondary_bound",
+                )
             continuation_key=(
                 signature,param,secondary,int(nstates),
                 float(second_bound),length_percent,angle_window,
@@ -251,6 +258,10 @@ def render_lattice_design_advisor(project_payload, transformation_id: str,
                 st.markdown("**Suggested direction from the sampled, matched branches**")
                 st.write(data["proposed_direction"])
                 st.caption(data["scientific_limit"])
+                st.warning(
+                    data.get("candidate_comparison_scope",
+                             "Cross-state twin identity has not been validated.")
+                )
                 displays=[]
                 for row in data["samples"]:
                     pair=row.get("paired_CT_BJ_branch") or {}
