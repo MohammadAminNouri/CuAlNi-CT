@@ -326,6 +326,37 @@ def optimize_one_tracked_twin(
         "ball_james_cofactor_on_same_physical_twin":"NOT_VERIFIED",
         "experimental_composition_or_processing":"NOT_MODELLED",
     }
+    # One-factor removal tests quantify why the coupled proposal helped.
+    # Nonadditive interactions mean these numbers are conditional diagnostics,
+    # not additive causal or measured material effects.
+    attribution=[]
+    xw=np.asarray(winner["x"],float)
+    for k,name in enumerate(axes):
+        without=xw.copy()
+        without[k]=0.
+        other=check(without)
+        attribution.append({
+            "parameter":name,
+            "proposed_value":float(unpack(xw)[name]),
+            "baseline_value":float(base[k]),
+            "normalized_displacement":float(xw[k]),
+            "epsilon_with_all_changes":float(winner["epsilon"]),
+            "epsilon_without_this_change":(
+                float(other["epsilon"]) if other["status"]=="VALID_ONE_BRANCH"
+                else None
+            ),
+            "conditional_epsilon_reduction_due_to_change":(
+                float(other["epsilon"]-winner["epsilon"])
+                if other["status"]=="VALID_ONE_BRANCH" else None
+            ),
+            "removal_status":other["status"],
+            "interpretation":(
+                "Finite counterfactual along the exact lambda2=1 manifold; "
+                "all other free axes held constant and uniform scale retuned. "
+                "Contributions can interact and must not be summed."
+            ),
+        })
+    target["factor_by_factor_counterfactuals"]=attribution
     return {
         "status":(
             "CT_EQ42_NUMERICALLY_CLOSED_REQUIRES_BJ_AND_EXPERIMENT"
