@@ -102,3 +102,76 @@ def test_readonly_full_methodology_panel_has_paper_specific_outputs():
     for q in ("CMC_matrix","SMC_matrix","cmc_inertia","habit_planes",
               "source_doi","full_AMM_supercompatibility_certified"):
         assert q in module
+
+
+def test_cayron_eq42_shear_vector_decomposition_reproduces_table3_epsilon():
+    from twin_app.paper_methodology_2022_2026 import (
+        shear_shear_equation_42_audit,
+    )
+    from cualni_cryst.correspondence import Correspondence
+    from cualni_cryst.ct import (
+        habit_planes_from_cmc, ips_shear_from_habit_plane,
+        ct_supercompatibility_residual,
+    )
+    from cualni_cryst.twinning_ct import type_i_from_parent_reflection
+    import sympy as sp
+
+    MA=np.eye(3)
+    MM=metric(2.898/3.01,math.sqrt(2.),4.646/3.01,97.78)
+    Cobj=Correspondence(sp.Matrix([
+        [0,0,1],[sp.Rational(1,2),sp.Rational(1,2),0],
+        [-sp.Rational(1,2),sp.Rational(1,2),0],
+    ]))
+    habits=habit_planes_from_cmc(MA,MM,Cobj,tol=1e-9)
+    positive=next(p for p in habits if (np.asarray(p,float)/float(p[0]))[2]>0.)
+    d=ips_shear_from_habit_plane(positive,MA,MM,Cobj)
+    twin=type_i_from_parent_reflection(
+        sp.diag(1,1,-1),MA,MM,Cobj,
+    )
+    independent=shear_shear_equation_42_audit(
+        MA,positive,d,twin.plane_a,twin.direction_a,twin.shear,
+    )
+    epsilon=ct_supercompatibility_residual(
+        positive,d,twin.plane_a,twin.direction_a,twin.shear,MA,
+    )
+    assert independent["epsilon_normalized_by_twin_shear"]==pytest.approx(
+        epsilon,abs=2e-11,
+    )
+    assert independent["epsilon_normalized_by_twin_shear"]==pytest.approx(
+        .215,abs=7.5e-4,
+    )
+    assert independent["direction_angle_deg"] is not None
+    assert independent["longitudinal_magnitude_gap"] is not None
+    assert independent["transverse_direction_gap"]>=0.
+    assert not independent["direction_and_amplitude_both_satisfied"]
+
+
+def test_cayron_o2_equation_derived_type_i_closes_eq42_not_just_lambda2():
+    from twin_app.paper_methodology_2022_2026 import (
+        shear_shear_equation_42_audit,
+    )
+    from cualni_cryst.correspondence import Correspondence
+    from cualni_cryst.ct import habit_planes_from_cmc,ips_shear_from_habit_plane
+    from cualni_cryst.twinning_ct import type_i_from_parent_reflection
+    import sympy as sp
+
+    Cobj=Correspondence(sp.Matrix([
+        [0,0,1],[sp.Rational(1,2),sp.Rational(1,2),0],
+        [-sp.Rational(1,2),sp.Rational(1,2),0],
+    ]))
+    for beta in (92.,98.,104.):
+        MA=np.eye(3)
+        MM=metric(1/math.sin(math.radians(beta)),math.sqrt(2.),
+                  math.sqrt(2.),beta)
+        habits=habit_planes_from_cmc(MA,MM,Cobj,tol=2e-8)
+        # CMC double plane contains the source-required (001)_A habit.
+        p=min(habits,key=lambda v:np.linalg.norm(
+            np.cross(np.asarray(v,float),np.array([0.,0.,1.]))
+        ))
+        d=ips_shear_from_habit_plane(p,MA,MM,Cobj)
+        twin=type_i_from_parent_reflection(sp.diag(1,1,-1),MA,MM,Cobj)
+        details=shear_shear_equation_42_audit(
+            MA,p,d,twin.plane_a,twin.direction_a,twin.shear,tolerance=2e-7,
+        )
+        assert details["epsilon_normalized_by_twin_shear"]<2e-7
+        assert details["direction_and_amplitude_both_satisfied"]
