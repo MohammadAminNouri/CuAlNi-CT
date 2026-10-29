@@ -54,6 +54,7 @@ class AtlasPairResult:
     match_completeness: str
     missing_required_components: tuple[str, ...]
     classification: AtlasClass
+    match_geometry_within_tolerance: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -71,6 +72,7 @@ class AtlasPairResult:
             "twin_plane_angle_deg": self.twin_plane_angle_deg,
             "twin_shear_relative": self.twin_shear_relative,
             "match_completeness": self.match_completeness,
+            "match_geometry_within_tolerance": self.match_geometry_within_tolerance,
             "missing_required_components": list(self.missing_required_components),
             "classification": self.classification.value,
         }
@@ -260,6 +262,7 @@ def _matched_pair_results(
                 twin_plane_angle_deg=match.residuals.twin_plane_angle_deg,
                 twin_shear_relative=match.residuals.shear_relative,
                 match_completeness=match.completeness.value,
+                match_geometry_within_tolerance=match.all_required_components_within_tolerance,
                 missing_required_components=match.missing_required_components,
                 classification=_classification(bool(ct_ok), bj_ok),
             )
