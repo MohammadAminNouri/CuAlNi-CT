@@ -213,6 +213,9 @@ def optimize_one_tracked_twin(
         if record["status"]!="VALID_ONE_BRANCH":
             return 100.+float(np.sum(np.asarray(x,float)**2))
         return record["epsilon"]**2+objective_regularization*float(np.dot(x,x))
+    # The exact λ₂-corrected original cell is a rigorous feasible fallback.
+    # Evaluate it explicitly: Powell does not promise to sample its start.
+    check(zeros)
     starts=[zeros]
     if len(axes):
         # Physically different deterministic perturbations, never a random
