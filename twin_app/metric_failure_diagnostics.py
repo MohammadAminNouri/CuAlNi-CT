@@ -272,7 +272,10 @@ def supercompatibility_failure_analysis(
             "CC1, CC2, CC3 and Eq.43 must be assessed on this one "
             "specific pair; global minimum residuals are not interchangeable.",
         ))
-    confirmed = any(
+    # A/M CMC compatibility is a prerequisite for a full A/M/M verdict.
+    # A seemingly passing twin row, if produced by a stale/partial report,
+    # cannot override absent or failed CT A/M compatibility.
+    confirmed = (am is True) and any(
         r["status"] == "PASS" and r["condition"].startswith("Matched branch ")
         for r in rows
     )
