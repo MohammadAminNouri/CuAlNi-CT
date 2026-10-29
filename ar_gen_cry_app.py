@@ -127,45 +127,105 @@ ar = st.session_state.get("ar_result")
 fit = st.session_state.get("ar_fit_result")
 
 if step == STEPS[0]:
-    st.subheader("1. Cry · Define the two crystals")
-    st.write("Enter measured lattice parameters and point-group symmetry. "
-             "All dimensions are in ångströms; all angles are in degrees.")
-    st.info("Initial values are synthetic demonstration cells, NOT validated Cu–Al–Ni 2H or 18R data.")
-    if cry:
-        saved_p = Phase(**cry["parent_phase"])
-        saved_m = Phase(**cry["product_phase"])
+    st.markdown(":blue[**01 / CRY**]")
+    st.subheader("Crystal setup")
+    st.caption("Define parent and product cells. Lengths in Å, angles in degrees.")
+    mode = st.radio(
+        "Input source", ("Archive example", "Manual", "CIF files"),
+        horizontal=True, key="cry_input_mode", on_change=clear_from_cry,
+    )
+
+    archive_reference = None
+    if mode == "Archive example":
+        name = st.selectbox(
+            "Choose a material", tuple(EXAMPLES),
+            key="cry_example", on_change=clear_from_cry,
+        )
+        example = EXAMPLES[name]
+        st.caption(example.description + " · Original 2021 phase records")
+        edit = st.checkbox(
+            "Edit example parameters", key="cry_edit_example", on_change=clear_from_cry,
+        )
+        saved_p, saved_m = example.parent, example.product
+        archive_reference = provenance(name, edited=edit)
+        scope = "archive_" + str(list(EXAMPLES).index(name))
+    elif mode == "CIF files":
+        st.caption("Upload two CIFs. Cell parameters are read from each file; select point groups yourself.")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            file_p = st.file_uploader(
+                "Parent CIF", type=["cif"], key="cry_parent_cif", on_change=clear_from_cry,
+            )
+            group_p = st.selectbox(
+                "Parent point group", POINT_GROUPS, key="cry_parent_cif_group", on_change=clear_from_cry,
+            )
+        with col_b:
+            file_m = st.file_uploader(
+                "Product CIF", type=["cif"], key="cry_product_cif", on_change=clear_from_cry,
+            )
+            group_m = st.selectbox(
+                "Product point group", POINT_GROUPS, key="cry_product_cif_group", on_change=clear_from_cry,
+            )
+        if file_p is None or file_m is None:
+            st.info("Add both CIF files to continue.")
+            st.stop()
+        try:
+            saved_p = parse_cif_phase(file_p.getvalue(), Path(file_p.name).stem, group_p)
+            saved_m = parse_cif_phase(file_m.getvalue(), Path(file_m.name).stem, group_m)
+        except (ValueError, TypeError) as exc:
+            st.error(f"CIF input rejected: {exc}")
+            st.stop()
+        archive_reference = {
+            "kind": "uploaded_cif",
+            "parent_sha256": hashlib.sha256(file_p.getvalue()).hexdigest(),
+            "product_sha256": hashlib.sha256(file_m.getvalue()).hexdigest(),
+            "point_group_note": "user-selected, not automatically inferred",
+        }
+        edit = False
+        scope = "cif_readonly"
     else:
-        saved_p = Phase("Illustrative parent", "m-3m", 5.8, 5.8, 5.8)
-        saved_m = Phase("Illustrative product", "mmm", 4.3, 5.3, 4.5)
+        saved_p = Phase("Parent", "m-3m", 3, 3, 3)
+        saved_m = Phase("Product", "2/m", 2.9, 4.1, 4.6, 90, 97, 90)
+        edit = True
+        scope = "manual"
+
     with st.form("cry_form", clear_on_submit=False):
         left, right = st.columns(2, gap="large")
         with left:
-            p = phase_form("Parent", saved_p)
+            p = phase_form("Parent", saved_p, editable=edit, scope=scope)
         with right:
-            m = phase_form("Product", saved_m)
-        u = st.text_input("Direction [uvw]", value="1 0 0")
-        h = st.text_input("Plane (hkl)", value="1 0 0")
+            m = phase_form("Product", saved_m, editable=edit, scope=scope)
+        with st.expander("Geometry probe · optional", expanded=False):
+            u = st.text_input("Direction [uvw]", value="1 0 0")
+            h = st.text_input("Plane (hkl)", value="1 0 0")
         run = st.form_submit_button("Run Cry", type="primary", use_container_width=True)
     if run:
         try:
             result = cry_stage(p, m, parse_triplet(u, "Direction"), parse_triplet(h, "Plane"))
         except (ValueError, ArithmeticError, AssertionError, TypeError) as exc:
-            st.error(f"Cry could not validate the crystal model: {exc}")
+            st.error(f"Crystal model rejected: {exc}")
         else:
+            clear_from_cry()
+            result["input_source"] = archive_reference or {
+                "kind": "manual",
+                "note": "Cell parameters and symmetry are user-supplied",
+            }
             st.session_state["cry_result"] = result
-            for key in ("gen_result", "ar_result", "ar_fit_result", "ar_bytes",
-                        "ar_sha256"):
-                st.session_state.pop(key, None)
             cry, gen, ar, fit = result, None, None, None
-            st.success("Both crystal models passed metric/symmetry validation.")
+            st.success("Cell metrics and point-group compatibility checked.")
     if cry:
         a, b = st.columns(2)
         a.metric("Parent d-spacing (Å)", f"{cry['parent']['d_spacing_angstrom']:.5g}")
         b.metric("Product d-spacing (Å)", f"{cry['product']['d_spacing_angstrom']:.5g}")
-        with st.expander("Inspect both metrics", expanded=False):
-            st.json({"parent": cry["parent"], "product": cry["product"]})
-        st.button("Continue to Gen", on_click=go, args=(STEPS[1],),
-                  type="primary", use_container_width=True)
+        with st.expander("Metrics and provenance"):
+            st.json({
+                "parent": cry["parent"], "product": cry["product"],
+                "input_source": cry.get("input_source", {}),
+            })
+        st.button(
+            "Continue to Gen", on_click=go, args=(STEPS[1],),
+            type="primary", use_container_width=True,
+        )
 
 elif step == STEPS[1]:
     st.subheader("2. Gen · Calculate variants and operators")
