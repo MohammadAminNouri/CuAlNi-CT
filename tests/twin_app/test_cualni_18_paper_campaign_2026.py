@@ -186,7 +186,9 @@ def test_campaign_is_additive_to_existing_twin_ui_and_safety_guard():
     root=Path(__file__).resolve().parents[2]
     src=(root/"twin_app"/"cualni_paper_campaign_2026.py").read_text()
     ast.parse(src)
-    assert "source-verified correspondence" in src
+    # Check the explicit source-grounding contract, not arbitrary wording
+    # of a human-readable scientific warning.
+    assert campaign_registry()["do_not_autofill_correspondence_or_orientation"] is True
     assert "mallard_law_twins" in src
     assert "ptmc_volume_fractions" in src
 
