@@ -60,6 +60,8 @@ def test_continuation_uses_real_lambda2_root_and_specific_matched_branch():
     )
     assert len(result["samples"])==5
     assert result["best_fully_matched_sample_id"]==2
+    assert result["branch_identity_across_states_verified"] is False
+    assert result["reduction_against_baseline_if_comparable"] is None
     assert result["proposed_direction"].startswith("UNCHANGED")
     assert all(row["lambda2_residual"]<2e-8 for row in result["samples"])
     assert all(row["paired_CT_BJ_branch"]["cofactor_satisfied_for_this_pair"]
@@ -193,3 +195,14 @@ def test_observable_completeness_not_equal_to_geometric_agreement():
     assert result["match_completeness"]=="full"
     assert result["match_geometry_within_tolerance"] is False
     assert result["both_satisfied_for_this_matched_pair"] is False
+
+
+def test_beta_ui_uses_angle_units_and_discloses_unverified_branch_continuity():
+    import ast
+    from pathlib import Path
+    ui=(Path(__file__).resolve().parents[2] /
+        "twin_app" / "metric_design_ui.py").read_text()
+    ast.parse(ui)
+    assert 'secondary.endswith("_offset_deg")' in ui
+    assert 'Angle variation for {secondary}' in ui
+    assert 'candidate_comparison_scope' in ui
