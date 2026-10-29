@@ -1,0 +1,419 @@
+{
+  "schema": "cualni_paper_evidence_campaign_v1",
+  "source_note": "18 distinct Cu-Al-Ni studies; paper-specific observations, independently testable numeric/structural invariants, and strict refusal of underidentified full Cayron twin-supercompatibility comparisons",
+  "as_of": "2026-10-29",
+  "source_driven_not_material_default": true,
+  "do_not_pool_cells_across_studies": true,
+  "do_not_autofill_correspondence_or_orientation": true,
+  "method": "Every paper is a separate evidence gate. Source-explicit quantities are checked against independent physical/metric calculations where sufficient; otherwise the executable gate asserts NOT_IDENTIFIABLE_FOR_FULL_EQ42. Passing a gate means correct handling of what the paper supports, not full empirical validation.",
+  "papers": [
+    {
+      "id": "hane_shield_1999",
+      "doi": "10.1098/rspa.1999.0482",
+      "year": 1999,
+      "title": "Hane and Shield, Microstructure in a copper-aluminium-nickel shape-memory alloy",
+      "url": "https://www.researchgate.net/publication/261143393_Microstructure_in_a_copper-aluminium-nickel_shape-memory_alloy",
+      "source_access": "PRIMARY_FULLTEXT",
+      "validation_level": "quantitative_theory",
+      "observables": {
+        "parent_cubic_A": 5.836,
+        "product_cell_A": [
+          4.382,
+          5.356,
+          4.222
+        ],
+        "product_crystal": "orthorhombic_2H",
+        "stretches_reported": [
+          1.0619,
+          0.9178,
+          1.023
+        ],
+        "single_variant_AM_habit_exists": false,
+        "stretch_variant_count": 6,
+        "variant_pair_count": 30,
+        "compound_shear": 0.0747,
+        "type_I_II_shear": 0.261,
+        "twinned_habit_solution_count": 96
+      },
+      "limitation": "Source gives cubic-to-orthorhombic stretch construction and predicted twin/habit values, but not a validated phase-specific app ProjectState C in this entry.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "otsuka_nakamura_shimizu_1974",
+      "doi": "10.2320/matertrans1960.15.200",
+      "year": 1974,
+      "title": "Otsuka, Nakamura and Shimizu, Electron Microscopy Study of Stress-induced Acicular beta1-prime Martensite in Cu-Al-Ni Alloy",
+      "url": "https://cir.nii.ac.jp/crid/1390282680095878656",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "quantitative_product_metric_partial",
+      "observables": {
+        "phase": "18R_beta1_prime",
+        "product_cell_A": [
+          4.382,
+          5.356,
+          38
+        ],
+        "beta_deg": null,
+        "stress_induced": true,
+        "parent_habit_family": "(-1,-5,5)_beta1_approximate"
+      },
+      "limitation": "No published monoclinic beta angle or same-specimen correspondence in accessible record. Never inject 90 degrees.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "ritter_yang_pope_laird_1979",
+      "doi": "10.1007/BF02658387",
+      "year": 1979,
+      "title": "Ritter, Yang, Pope and Laird, The dislocation and martensite substructures of a fatigued polycrystalline pseudoelastic Cu-Al-Ni alloy",
+      "url": "https://doi.org/10.1007/BF02658387",
+      "source_access": "PRIMARY_ABSTRACT_REPUBLISHED",
+      "validation_level": "quantitative_product_metric",
+      "observables": {
+        "phase": "2H_gamma",
+        "product_cell_A": [
+          4.41,
+          5.31,
+          4.222
+        ],
+        "2H_orthorhombic": true,
+        "other_18R_cell_A": [
+          4.382,
+          5.356,
+          38
+        ],
+        "stress_temperature_sensitivity": true
+      },
+      "limitation": "The 2H orthorhombic cell is complete; the parent metric and C are not specimen-matched in accessible abstract.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "chen_gui_wang_2000",
+      "doi": "10.1016/S0968-4328(99)00060-8",
+      "year": 2000,
+      "title": "Chen et al., Orientation relationships of martensite variants determined by electron backscatter diffraction",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/10568227/",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_ebsd_geometry",
+      "observables": {
+        "phase": "2H_gamma1_prime",
+        "parent_basal_family": "{110}",
+        "product_axis": "[010]_2H",
+        "parent_axis_family": "<001>",
+        "AC_BD_twin_plane_family": "{121}_2H",
+        "AD_BC_twin_plane_family": "{101}_2H"
+      },
+      "limitation": "Without indexed three-dimensional specimen orientations and fixed correspondence the twin families cannot be naively compared in a different cell setting.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "sari_aksoy_2006",
+      "doi": "10.1016/j.jallcom.2005.09.049",
+      "year": 2006,
+      "title": "Sari and Aksoy, Electron microscopy study of 2H and 18R martensites in Cu-11.92Al-3.78Ni",
+      "url": "https://www.sciencedirect.com/science/article/pii/S0925838805015008",
+      "source_access": "PRIMARY_ARTICLE_EXCERPT",
+      "validation_level": "qualitative_phase_setting",
+      "observables": {
+        "both_2H_and_M18R": true,
+        "M18R_monoclinic": true,
+        "M18R_beta_near_90_deg": true,
+        "heat_treatment_dependence": true
+      },
+      "limitation": "M18R beta described as near 90, not stated exactly equal to 90. No exact numeric paired C.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "landa_sedlak_2007",
+      "doi": "10.1016/j.msea.2006.02.472",
+      "year": 2007,
+      "title": "Landa et al., Temperature dependence of elastic properties of cubic and orthorhombic phases in Cu-Al-Ni",
+      "url": "https://doi.org/10.1016/j.msea.2006.02.472",
+      "source_access": "PRIMARY_ABSTRACT_AND_EXISTING_REPO_CELL",
+      "validation_level": "quantitative_registered_cell_secondary",
+      "observables": {
+        "phase": "2H_orthorhombic",
+        "parent_cubic_A": 5.835,
+        "product_cell_A": [
+          4.389,
+          5.342,
+          4.224
+        ],
+        "same_specimen_elastic_study": true
+      },
+      "limitation": "Cell numbers were previously registered in project's literature catalogue; not independently re-extracted from original full paper in this campaign. Keep separate from original-paper acceptance.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "no_caillard_sanjuan_2009",
+      "doi": "10.1016/j.actamat.2008.10.017",
+      "year": 2009,
+      "title": "No, Caillard and San Juan, A TEM study of martensite habit planes and orientation relationships in Cu-Al-Ni",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S1359645408007660",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_habit_or",
+      "observables": {
+        "observed_habit_or_count": 9,
+        "TEM_delta_g_method": true,
+        "unique_OR_from_2D_edge_matching": false
+      },
+      "limitation": "Nine investigated interphases claimed, but the accessible abstract omits per-interface 3D orientation matrices and uncertainties.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "ge_vronka_2022",
+      "doi": "10.1016/j.actamat.2021.117598",
+      "year": 2022,
+      "title": "Ge et al., Deformation twinning with different twin-boundary mobility in 2H martensite in Cu-Ni-Al",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S1359645421009769",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_twin_class",
+      "observables": {
+        "phase": "2H",
+        "twin_categories": [
+          "Type I",
+          "Type II",
+          "compound"
+        ],
+        "XRD_and_HRTEM": true,
+        "single_crystal": true
+      },
+      "limitation": "Demonstrates existence of three twin modes; no full paired crystal orientations and 3D normals in accessible abstract.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "zhang_xu_zhao_2023_microstructure",
+      "doi": "10.1016/j.jmst.2022.12.037",
+      "year": 2023,
+      "title": "Zhang et al., Process-microstructure-properties of CuAlNi shape memory alloys fabricated by LPBF",
+      "url": "https://www.sciencedirect.com/science/article/pii/S1005030223001305",
+      "source_access": "PRIMARY_ABSTRACT_WITH_FULLTEXT_EXCERPT",
+      "validation_level": "quantitative_product_metric_source_excerpt",
+      "observables": {
+        "phases": [
+          "2H",
+          "18R"
+        ],
+        "2H_product_cell_A": [
+          4.42,
+          5.273,
+          4.222
+        ],
+        "2H_beta_deg_reported": 89.43,
+        "18R_product_cell_A": null,
+        "pseudotwin_18R_2H": true
+      },
+      "limitation": "Reported 2H beta 89.43 in accessible text; do not force perfect orthorhombic geometry or merge pseudo-twins with an exact M/M twin. Check full source table before precision claim.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "perez_cerrato_2022_lpbf",
+      "doi": "10.3390/ma15186284",
+      "year": 2022,
+      "title": "Perez-Cerrato et al., Designing for Shape Memory in AM of Cu-Al-Ni by LPBF",
+      "url": "https://www.mdpi.com/1996-1944/15/18/6284",
+      "source_access": "PRIMARY_FULLTEXT_QUOTED_REFERENCE_VALUES",
+      "validation_level": "borrowed_reference_metrics",
+      "observables": {
+        "phase": "L21_beta3_to_M18R_or_2H",
+        "M18R_reference_cell_A": [
+          13.8017,
+          5.2856,
+          4.3987
+        ],
+        "M18R_beta_deg": 113.6,
+        "2H_reference_cell_A": [
+          5.3424,
+          4.2244,
+          4.3896
+        ],
+        "source_borrowed_from_refs": [
+          47,
+          48
+        ]
+      },
+      "limitation": "Both cells are indexed reference values from other cited papers; do not count as independent new specimen measurements or construct a paired parent/product experiment.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "zhang_2023_deformation",
+      "doi": "10.1016/j.jmst.2023.05.032",
+      "year": 2023,
+      "title": "Zhang et al., Deformation mechanism of Cu-Al-Ni by LPBF: tension-compression asymmetry",
+      "url": "https://www.sciencedirect.com/science/article/pii/S1005030223005285",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_mechanical_selection",
+      "observables": {
+        "variant_reorientation_under_loading": true,
+        "tension_compression_asymmetry": true
+      },
+      "limitation": "Strain-dependent selection needs applied stress and sample grain orientation; cannot be predicted from standalone metric compatibility.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "zarubova_shape_recovery_2008",
+      "doi": "10.1080/01411590801891616",
+      "year": 2008,
+      "title": "Shape recovery mechanism observed in single crystals of Cu-Al-Ni shape memory alloy",
+      "url": "https://www.tandfonline.com/doi/full/10.1080/01411590801891616",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_interface_topology",
+      "observables": {
+        "X_and_lambda_interfaces": true,
+        "intersecting_two_AM_habit_planes": true,
+        "nonclassical_boundaries_reported": true
+      },
+      "limitation": "Two intersecting habits are not one single-variant habit and no unique 3D tensor or metric is given in accessible abstract.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "zarubova_stress_transformation_2009",
+      "doi": "10.1051/esomat/200902036",
+      "year": 2009,
+      "title": "Zarubova et al., In situ TEM stress-induced transformations in Cu-Al-Ni",
+      "url": "https://doi.org/10.1051/esomat/200902036",
+      "source_access": "EXISTING_REGISTERED_ABSTRACT",
+      "validation_level": "qualitative_phase_route",
+      "observables": {
+        "phase_2H_and_18R": true,
+        "load_temperature_dependence": true
+      },
+      "limitation": "No specimen-unique 3D plane normals, correspondence and uncertainty in registered accessible summary.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "neutron_pseudoelastic_2008",
+      "doi": "10.1080/10238160802442710",
+      "year": 2008,
+      "title": "Crystallographic characterization of pseudoelastic phase transformation in Cu-13.1Al-4Ni single crystal using neutron diffraction",
+      "url": "https://www.tandfonline.com/doi/full/10.1080/10238160802442710",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_variant_selection_neutron",
+      "observables": {
+        "phase": "18R",
+        "temperature_C": [
+          175,
+          200
+        ],
+        "stress_biased_variant_growth": true
+      },
+      "limitation": "Neutron variant intensities are stress and temperature dependent; numeric population cannot be predicted without loading and diffraction intensities.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "ritchie_et_al_2016_avalanche",
+      "doi": "10.1103/PhysRevB.94.024102",
+      "year": 2016,
+      "title": "Avalanche criticalities and elastic and calorimetric anomalies in cubic Cu-Al-Ni to 2H/18R",
+      "url": "https://journals.aps.org/prb/abstract/10.1103/PhysRevB.94.024102",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "quantitative_thermal_not_crystal",
+      "observables": {
+        "phase_mixture": [
+          "2H",
+          "18R"
+        ],
+        "cooling_transition_K_approx": 242,
+        "heating_18R_to_beta_K_approx": 255,
+        "heating_2H_to_beta_K_approx": 280,
+        "enthalpy_J_per_mol": 328,
+        "enthalpy_uncertainty_J_per_mol": 10
+      },
+      "limitation": "Temperature/enthalpy cannot be calibrated by a purely geometric lattice and twin solver.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "thin_film_2023_martensite",
+      "doi": "10.3390/nano13182605",
+      "year": 2023,
+      "title": "Thermal Stability of Cu-Al-Ni Shape Memory Alloy Thin Films Obtained by Nanometer Multilayer Deposition",
+      "url": "https://www.mdpi.com/2079-4991/13/18/2605",
+      "source_access": "PRIMARY_FULLTEXT_WITH_BORROWED_METRIC",
+      "validation_level": "borrowed_reference_metrics",
+      "observables": {
+        "phase": "M18R_beta3_prime",
+        "M18R_reference_cell_A": [
+          13.8017,
+          5.2856,
+          4.3987
+        ],
+        "M18R_beta_deg": 113.6,
+        "TEM_twin_related_variants": true
+      },
+      "limitation": "TEM indexed the phase; lattice constants quoted with a reference, not a new measured 3D parent/twin match.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "two_way_1999_singlecrystals",
+      "doi": "10.1016/S0921-5093(99)00438-4",
+      "year": 1999,
+      "title": "Two way shape memory effect in Cu-Al-Ni single crystals",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S0921509399004384",
+      "source_access": "PRIMARY_ABSTRACT",
+      "validation_level": "qualitative_thermomechanical",
+      "observables": {
+        "phases": [
+          "2H",
+          "18R"
+        ],
+        "aging_470_K_changes_phase_selection": true,
+        "stress_training_changes_selection": true
+      },
+      "limitation": "Composition alone or lattice parameter alone cannot predict kinetic variant fractions, training, or temperature-dependent population.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    },
+    {
+      "id": "sedlak_elasticity_2005",
+      "doi": "10.1016/j.actamat.2005.04.013",
+      "year": 2005,
+      "title": "Sedlak et al., Elastic Constants of Bcc Austenite and 2H Orthorhombic Martensite in CuAlNi",
+      "url": "https://doi.org/10.1016/j.actamat.2005.04.013",
+      "source_access": "BIBLIOGRAPHY_VERIFIED",
+      "validation_level": "qualitative_elastic_not_lattice",
+      "observables": {
+        "phases": [
+          "cubic",
+          "2H_orthorhombic"
+        ],
+        "measured_elastic_constants": true
+      },
+      "limitation": "Full stiffness tensors, measurement temperatures, uncertainties missing from accessible record; CT solver does not predict elastic constants.",
+      "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
+      "eligible_for_unqualified_full_Cayron_Eq42_or_BJ_CC123_validation": false,
+      "required_action": "Obtain exact source-defined C and matched parent/product metrics, twin/habit 3D frames, uncertainty and specimen identity before Eq42/CC123 acceptance."
+    }
+  ]
+}
