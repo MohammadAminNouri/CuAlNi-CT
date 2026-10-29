@@ -96,6 +96,7 @@ def optimize_one_tracked_twin(
     angle_bound_deg: float=4.,
     max_uniform_scale_offset: float=.16,
     max_evaluations: int=90,
+    cc2_equivalent_weight: float=.25,
     objective_regularization: float=1e-5,
     continuity_steps: int=7,
 ) -> dict:
@@ -116,6 +117,8 @@ def optimize_one_tracked_twin(
         raise ValueError("Evaluation budget must lie between 12 and 1000")
     if continuity_steps not in (5,7,9,11):
         raise ValueError("Use 5, 7, 9 or 11 intermediate branch checks")
+    if not 0<=cc2_equivalent_weight<=2 or not isfinite(cc2_equivalent_weight):
+        raise ValueError("CC2-equivalent squared-norm weight must lie in [0,2]")
     if not 0<=objective_regularization<=.01 or not isfinite(objective_regularization):
         raise ValueError("Invalid minimum-change regularization")
     anchors=enumerate_twin_anchors(original,transformation_id)
@@ -194,11 +197,16 @@ def optimize_one_tracked_twin(
                 if abs(a-b)<1e-4:
                     raise ValueError("Two possible CMC habit branches have ambiguous identity")
             epsilon=float(best["epsilon"])
+            cc2=solved["same_generator_equivalent_CC2_metric"]
+            cc2_gap=float(cc2["squared_norm_minus_one"])
+            if not isfinite(cc2_gap):
+                raise ArithmeticError("Nonfinite same-generator CC2-equivalent gap")
             if not isfinite(epsilon):
                 raise ArithmeticError("Nonfinite Eq.42 epsilon")
             record={
                 "x":[float(v) for v in x],"status":"VALID_ONE_BRANCH",
-                "epsilon":epsilon,"cell":cell,
+                "epsilon":epsilon,"cc2_equivalent_gap":cc2_gap,
+                "cc2_equivalent":cc2,"cell":cell,
                 "twin":solved["twin_trace"],
                 "habit":best,
                 "physical_cell":project,
@@ -212,7 +220,11 @@ def optimize_one_tracked_twin(
         record=check(x)
         if record["status"]!="VALID_ONE_BRANCH":
             return 100.+float(np.sum(np.asarray(x,float)**2))
-        return record["epsilon"]**2+objective_regularization*float(np.dot(x,x))
+        return (
+            record["epsilon"]**2
+            +cc2_equivalent_weight*record["cc2_equivalent_gap"]**2
+            +objective_regularization*float(np.dot(x,x))
+        )
     # The exact λ₂-corrected original cell is a rigorous feasible fallback.
     # Evaluate it explicitly: Powell does not promise to sample its start.
     check(zeros)
@@ -249,7 +261,9 @@ def optimize_one_tracked_twin(
             "reason":"No sampled admissible state preserved the selected twin and habit",
         }
     valid.sort(key=lambda r:(
-        r["epsilon"]**2+objective_regularization*np.dot(r["x"],r["x"]),
+        r["epsilon"]**2
+        +cc2_equivalent_weight*r["cc2_equivalent_gap"]**2
+        +objective_regularization*np.dot(r["x"],r["x"]),
         np.linalg.norm(r["x"])))
     # If a candidate's same-twin continuity fails on the path, try the
     # next valid numerical candidate rather than claiming a false solution.
@@ -325,6 +339,13 @@ def optimize_one_tracked_twin(
         "lambda2_residual":winner["cell"]["lambda2_residual"],
         "baseline_epsilon":initial_eps,
         "candidate_epsilon":final["epsilon"],
+        "baseline_same_generator_CC2_equivalent":baseline[
+            "same_generator_equivalent_CC2_metric"
+        ],
+        "candidate_same_generator_CC2_equivalent":independent[
+            "same_generator_equivalent_CC2_metric"
+        ],
+        "cc2_equivalent_objective_weight":cc2_equivalent_weight,
         "epsilon_reduction_absolute":initial_eps-final["epsilon"],
         "numeric_eq42_closed":bool(final["epsilon"]<=2e-8),
         "selected_habit_parent_reciprocal":final["habit_parent_reciprocal"],
@@ -351,12 +372,19 @@ def optimize_one_tracked_twin(
             "baseline_value":float(base[k]),
             "normalized_displacement":float(xw[k]),
             "epsilon_with_all_changes":float(winner["epsilon"]),
+            "CC2_equivalent_gap_with_all_changes":float(
+                winner["cc2_equivalent_gap"]
+            ),
             "epsilon_without_this_change":(
                 float(other["epsilon"]) if other["status"]=="VALID_ONE_BRANCH"
                 else None
             ),
             "conditional_epsilon_reduction_due_to_change":(
                 float(other["epsilon"]-winner["epsilon"])
+                if other["status"]=="VALID_ONE_BRANCH" else None
+            ),
+            "CC2_equivalent_gap_without_this_change":(
+                float(other["cc2_equivalent_gap"])
                 if other["status"]=="VALID_ONE_BRANCH" else None
             ),
             "removal_status":other["status"],
@@ -384,6 +412,10 @@ def optimize_one_tracked_twin(
         "cofactor_same_pair_certified":False,
         "scope":(
             "Exact lambda2 is eliminated analytically at each lattice cell. "
+            "Eq.42 epsilon and Cayron/Zhang same-generator CC2-equivalent "
+            "squared-norm residual are optimized with an explicit numeric "
+            "weight; CC3 and full BJ rank-one cofactor verification remain "
+            "separate. "
             "The fixed rational CT generator, Type-I/II route, habit branch, "
             "and actual crystallographic plane/shear continuity are validated "
             "along a multi-step path. This is a bounded local CT Eq42 "
