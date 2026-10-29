@@ -150,3 +150,25 @@ def test_fully_matched_branch_not_masked_by_smaller_partial_residual():
     assert result["ct_shear_shear_epsilon"]==pytest.approx(.015)
     assert result["match_completeness"]=="full"
     assert not result["both_satisfied_for_this_matched_pair"]
+
+
+def test_complete_same_pair_supercompatibility_outweighs_smaller_failed_epsilon():
+    failed=Record(
+        ct_operator_index=1,ct_twin_index=0,ct_best_habit_index=0,
+        ct_supercompatibility_residual=1e-9,
+        cofactor_cc1_abs=2e-3,cofactor_cc2_abs=2e-3,
+        cofactor_cc3_margin=-1.,cofactor_compatible=False,
+        ct_supercompatible=True,match_completeness="full",
+        missing_required_components=(),
+    )
+    passed=Record(
+        ct_operator_index=2,ct_twin_index=1,ct_best_habit_index=1,
+        ct_supercompatibility_residual=2e-8,
+        cofactor_cc1_abs=1e-11,cofactor_cc2_abs=1e-11,
+        cofactor_cc3_margin=1.,cofactor_compatible=True,
+        ct_supercompatible=True,match_completeness="full",
+        missing_required_components=(),
+    )
+    selected=_matched_branch_summary(Record(pair_results=(failed,passed)))
+    assert selected["operator_index"]==2
+    assert selected["both_satisfied_for_this_matched_pair"]
