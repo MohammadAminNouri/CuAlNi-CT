@@ -33,7 +33,58 @@
         "variant_pair_count": 30,
         "compound_shear": 0.0747,
         "type_I_II_shear": 0.261,
-        "twinned_habit_solution_count": 96
+        "twinned_habit_solution_count": 96,
+        "type_I_habit_normals_parent_cubic_unit": [
+          [
+            0.749,
+            0.635,
+            0.191
+          ],
+          [
+            0.715,
+            0.65,
+            0.258
+          ]
+        ],
+        "type_II_habit_normals_parent_cubic_unit": [
+          [
+            0.728,
+            0.635,
+            0.261
+          ],
+          [
+            0.73,
+            0.668,
+            0.143
+          ]
+        ],
+        "type_I_shape_strain_directions_unit": [
+          [
+            0.685,
+            0.684,
+            0.249
+          ],
+          [
+            0.78,
+            0.601,
+            0.178
+          ]
+        ],
+        "type_II_shape_strain_directions_unit": [
+          [
+            0.702,
+            0.701,
+            0.131
+          ],
+          [
+            0.758,
+            0.6,
+            0.254
+          ]
+        ],
+        "type_I_shape_strain_magnitude": 0.0959,
+        "type_II_shape_strain_magnitude": 0.0932,
+        "habit_vector_cubic_symmetry_note": "Source vectors are parent cubic Cartesian and may differ by cubic signed-permutation variant labels; compare projective symmetry-invariant sorted absolute directions, not componentwise arbitrary gauge."
       },
       "limitation": "Source gives cubic-to-orthorhombic stretch construction and predicted twin/habit values, but not a validated phase-specific app ProjectState C in this entry.",
       "same_specimen_complete_parent_metric_and_product_metric_and_C": false,
