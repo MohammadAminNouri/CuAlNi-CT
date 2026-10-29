@@ -228,43 +228,83 @@ if step == STEPS[0]:
         )
 
 elif step == STEPS[1]:
-    st.subheader("2. Gen · Calculate variants and operators")
+    st.markdown(":violet[**02 / GEN**]")
+    st.subheader("Variants and operators")
     if not cry:
         st.warning("Run Cry first. Gen needs the validated parent/product cell and symmetry.")
         st.button("Go to Cry", on_click=go, args=(STEPS[0],))
         st.stop()
-    st.caption(f"{cry['parent_phase']['name']} → {cry['product_phase']['name']}")
-    st.write("Enter the exact 3 × 3 lattice correspondence **C (M ← A)**. "
-             "Integers and fractions are accepted.")
-    st.warning("C is NOT an experimental orientation relationship. "
-               "The identity default is an illustrative input, not a Cu–Al–Ni assignment.")
+    st.caption(f"{cry['parent_phase']['name']}  →  {cry['product_phase']['name']}")
+    input_mode = st.radio(
+        "Correspondence input", ("3×3 matrix", "Three direction pairs"),
+        horizontal=True, key="gen_input_mode", on_change=clear_from_gen,
+    )
+    if cry.get("input_source", {}).get("example") == "NiTi · B2 → B19′":
+        with st.expander("NiTi archive · reference entries"):
+            st.caption("Two paired entries were found in the NiTi transition file. "
+                       "Their coordinate conventions need verification, and they do not "
+                       "determine a unique 3D correspondence. They are not applied automatically.")
+            for first, second in NI_TI_REFERENCE_PAIRS:
+                st.code(f"{list(first)}  |  {list(second)}", language=None)
     with st.form("gen_form"):
-        c_text = st.text_area("Correspondence matrix (one row per line)",
-                              value="1 0 0\n0 1 0\n0 0 1", height=120)
-        run = st.form_submit_button("Run Gen", type="primary",
-                                    use_container_width=True)
+        if input_mode == "3×3 matrix":
+            st.caption("C maps direct directions from parent A into product M. Exact fractions are accepted.")
+            c_text = st.text_area(
+                "C (M ← A), one row per line",
+                value="1 0 0\n0 1 0\n0 0 1", height=110,
+            )
+            reverse = st.checkbox("Matrix entered as A ← M · invert before calculation")
+        else:
+            st.caption("Enter three corresponding, linearly independent direction pairs. "
+                       "Each line is one [u v w] vector in the specified crystal basis.")
+            col1, col2 = st.columns(2)
+            with col1:
+                parent_rows = st.text_area(
+                    "Parent directions", "1 0 0\n0 1 0\n0 0 1", height=110
+                )
+            with col2:
+                product_rows = st.text_area(
+                    "Product directions", "1 0 0\n0 1 0\n0 0 1", height=110
+                )
+            reverse = False
+        st.caption("The default identity mapping is a software demonstration, not a NiTi OR.")
+        run = st.form_submit_button("Run Gen", type="primary", use_container_width=True)
     if run:
         try:
-            result = gen_stage(cry, c_text)
-        except (ValueError, ArithmeticError, AssertionError, TypeError) as exc:
-            st.error(f"Gen calculation stopped: {exc}")
+            matrix = (
+                invert_correspondence(c_text) if reverse
+                else c_text
+            ) if input_mode == "3×3 matrix" else correspondence_from_pairs(
+                parent_rows, product_rows
+            )
+            result = gen_stage(cry, matrix)
+        except (ValueError, ArithmeticError, AssertionError, TypeError, ZeroDivisionError) as exc:
+            st.error(f"Correspondence input rejected: {exc}")
         else:
+            clear_from_gen()
+            result["input_method"] = input_mode
+            result["resolved_matrix_M_from_A"] = matrix
+            result["demo_only"] = (
+                matrix.strip().replace(" ", "") == "100\n010\n001"
+            )
             st.session_state["gen_result"] = result
-            st.session_state.pop("ar_result", None)
-            st.session_state.pop("ar_fit_result", None)
-            gen, ar, fit = result, None, None
-            st.success("Exact cosets and operator consistency checks passed.")
+            gen, fit = result, None
+            st.success("Cosets, operators and consistency checks passed.")
     if gen:
-        x, y, z = st.columns(3)
-        x.metric("Variants", gen["variants"])
-        y.metric("Operator classes", gen["operator_classes"])
-        z.metric("Subgroup order", gen["subgroup_order"])
-        with st.expander("Operator adjacency table"):
+        a, b, c = st.columns(3)
+        a.metric("Variants", gen["variants"])
+        b.metric("Operators", gen["operator_classes"])
+        c.metric("Subgroup |H|", gen["subgroup_order"])
+        if gen.get("demo_only"):
+            st.caption("Illustrative identity correspondence. Do not interpret as an experimental OR.")
+        with st.expander("Exact correspondence and operator table"):
+            st.code(gen.get("resolved_matrix_M_from_A", ""), language=None)
             st.dataframe(pd.DataFrame(gen["adjacency"]), use_container_width=True)
-        with st.expander("Exact C and audit"):
-            st.json({k: v for k, v in gen.items() if k != "adjacency"})
-        st.button("Continue to AR", on_click=go, args=(STEPS[2],),
-                  type="primary", use_container_width=True)
+            st.json({k: v for k, v in gen.items() if k not in ("adjacency", "cry_snapshot")})
+        st.button(
+            "Continue to AR", on_click=go, args=(STEPS[2],),
+            type="primary", use_container_width=True,
+        )
 
 elif step == STEPS[2]:
     st.subheader("3. AR · Inspect EBSD data")
