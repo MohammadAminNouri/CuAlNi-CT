@@ -419,7 +419,23 @@ def evaluate_supercompatibility_state(
             tolerance=tolerance,
         )
         ct_super: bool | None = bool(ct_satisfied_rows)
-        classification = _classification(bool(ct_super), bool(cofactor_satisfied_rows))
+        # Aggregate CT and BJ successes can involve DIFFERENT twin branches.
+        # The headline MUST never say BOTH unless a complete, geometrically
+        # agreeing SAME PHYSICAL PAIR passes both conditions.
+        comparable = [
+            pair for pair in pair_results
+            if pair.classification is not AtlasClass.NOT_EVALUABLE
+        ]
+        if not comparable:
+            classification = AtlasClass.NOT_EVALUABLE
+        elif any(p.classification is AtlasClass.BOTH for p in comparable):
+            classification = AtlasClass.BOTH
+        elif any(p.classification is AtlasClass.CT_ONLY for p in comparable):
+            classification = AtlasClass.CT_ONLY
+        elif any(p.classification is AtlasClass.COFACTOR_ONLY for p in comparable):
+            classification = AtlasClass.COFACTOR_ONLY
+        else:
+            classification = AtlasClass.NEITHER
     else:
         pair_results = ()
         ct_super = None
