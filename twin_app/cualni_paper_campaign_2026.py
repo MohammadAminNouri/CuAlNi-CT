@@ -176,6 +176,7 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
         (2*np.outer(e,e)-np.eye(3)))<1e-10)
     twin_modes=mallard_law_twins(Us[i],Us[j],axis)
     fractions={}
+    habit_geometry_comparison={}
     for t in twin_modes:
         roots=ptmc_volume_fractions(Us[j],t.a,t.n,tol=1.e-8)
         if len(roots)!=2:
@@ -187,6 +188,7 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
                 f"Hane–Shield Table 1 PTMC volume fraction {t.kind} "
                 f"{smaller} disagrees with {wanted}"
             )
+        selected_habits=None
         for fraction in roots:
             Fbar=Us[j]+fraction*np.outer(t.a,t.n)
             branches=analytical_rank_one_connections(
@@ -198,7 +200,66 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
                 )
             if abs(middle_singular_value(Fbar)-1.)>1.e-8:
                 raise AssertionError("PTMC candidate is not exactly A/M compatible")
+            if selected_habits is None:
+                selected_habits=branches
         fractions[t.kind]=[float(x) for x in roots]
+        kind_name="type_I" if t.kind=="I" else "type_II"
+        source_normals=source[kind_name+"_habit_normals_parent_cubic_unit"]
+        source_strain=source[kind_name+"_shape_strain_directions_unit"]
+        predicted=[]
+        for branch in selected_habits:
+            pn=np.asarray(branch.n,float)
+            ss=np.asarray(branch.a,float)
+            magnitude=float(np.linalg.norm(pn)*np.linalg.norm(ss))
+            expected=float(source[kind_name+"_shape_strain_magnitude"])
+            if abs(magnitude-expected)>.0002:
+                raise AssertionError(
+                    f"Source {kind_name} shape-strain magnitude incorrect "
+                    f"({magnitude} vs {expected})"
+                )
+            predicted.append({
+                "habit_parent_unit":(pn/np.linalg.norm(pn)).tolist(),
+                "shape_direction_parent_unit":(ss/np.linalg.norm(ss)).tolist(),
+                "shape_strain_magnitude":magnitude,
+            })
+        # Parent cubic symmetry maps the equivalent variant representatives
+        # through signed permutations. Compare the complete paired
+        # (habit normal, shape direction), not one paper habit paired with
+        # an unrelated shape vector.
+        actual_signatures=[
+            (np.sort(np.abs(row["habit_parent_unit"])),
+             np.sort(np.abs(row["shape_direction_parent_unit"])))
+            for row in predicted
+        ]
+        expected_signatures=[
+            (np.sort(np.abs(np.asarray(m,float))),
+             np.sort(np.abs(np.asarray(v,float))))
+            for m,v in zip(source_normals,source_strain)
+        ]
+        candidates=[]
+        for permutation in ((0,1),(1,0)):
+            errors=[]
+            for index,reference in enumerate(expected_signatures):
+                measured=actual_signatures[permutation[index]]
+                errors.append(max(
+                    float(np.max(np.abs(measured[0]-reference[0]))),
+                    float(np.max(np.abs(measured[1]-reference[1]))),
+                ))
+            candidates.append((max(errors),permutation))
+        best_error,best_order=min(candidates,key=lambda x:x[0])
+        if best_error>.003:
+            raise AssertionError(
+                "Hane–Shield 1999 Table 1 habit/shape vectors disagree "
+                f"after cubic symmetry comparison: max component={best_error}"
+            )
+        habit_geometry_comparison[t.kind]={
+            "source_habit_normals":source_normals,
+            "source_shape_directions":source_strain,
+            "calculated_habit_shape_pairs":predicted,
+            "source_shape_magnitude":source[kind_name+"_shape_strain_magnitude"],
+            "max_abs_sorted_component_error":best_error,
+            "cubic_variant_permutation_used":best_order,
+        }
 
     # Independently certify EVERY S2 pair and laminate root using an
     # orthogonal direct-SVD bracketing procedure. This is separate from
@@ -266,6 +327,7 @@ def _hane_shield_full_twin_ptmc_benchmark(stretches: tuple[float,float,float], s
         "all_type_I_II_twin_pair_ptmc_results":per_pair,
         "source_predicted_habit_solution_records":source["twinned_habit_solution_count"],
         "representative_PTMC_type_I_II_fractions":fractions,
+        "independent_published_habit_shape_comparison":habit_geometry_comparison,
         "compound_family_PTMC_roots":compound_roots,
         "scope":(
             "BJ Mallard twin shears, PTMC volume fractions, and the "
