@@ -44,3 +44,30 @@ def test_report_does_not_invent_calculations():
     app.radio[0].set_value("4 · Report").run()
     assert len(app.exception) == 0, [str(e.message) for e in app.exception]
     assert len(app.warning) >= 1
+
+
+def _click_labeled(app: AppTest, label: str) -> AppTest:
+    candidates = [button for button in app.button if button.label == label]
+    assert len(candidates) == 1, f"Expected one {label!r} button"
+    return candidates[0].click().run()
+
+
+def test_complete_standalone_cry_to_gen_to_ar_to_report_workflow():
+    """Real UI interactions must preserve each stage without another app."""
+    app = AppTest.from_file(str(ENTRY), default_timeout=120).run()
+    assert len(app.exception) == 0
+    app = _click_labeled(app, "Run Cry")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert any(metric.label == "Parent d-spacing (Å)" for metric in app.metric)
+
+    app = _click_labeled(app, "Continue to Gen")
+    assert len(app.exception) == 0
+    app = _click_labeled(app, "Run Gen")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert any(metric.label == "Variants" for metric in app.metric)
+
+    app = _click_labeled(app, "Continue to AR")
+    assert len(app.exception) == 0
+    app = _click_labeled(app, "Continue to Report")
+    assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+    assert any("Report" in title.value for title in app.subheader)
