@@ -1,0 +1,47 @@
+name: Cayron 2026 independent paper oracle
+
+on:
+  push:
+    branches:
+      - feature/twin-family-tree-app-v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cayron-2026-oracle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  paper-oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/src
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Reproduce paper numbers with no application imports
+        run: |
+          python -m pip install --prefer-binary numpy
+          python validation/independent/reproduce_cayron2026_paper_values_v2.py
+      - name: Install independent comparison environment
+        run: |
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Check source-independent outputs against CT backend
+        run: |
+          python -m pytest -q --tb=short \
+            tests/test_cayron_2026_independent_paper_reproduction_v2.py \
+            tests/test_cayron_2026_full_supercompatibility.py \
+            tests/test_cayron_2026_o2_type_i_source_audit.py \
+            tests/twin_app/test_cayron_2026_reference_2026.py \
+            tests/twin_app/test_metric_failure_diagnostics_2026.py \
+            tests/twin_app/test_metric_design_continuation_2026.py
