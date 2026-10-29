@@ -531,6 +531,12 @@ class TheoryComparisonAdapter:
                         metadata={
                             "operator_index": operator_index,
                             "twin_index": twin_index,
+                            "ct_generator_key": (
+                                twin.kind + ":" + ",".join(
+                                    str(sp.simplify(v))
+                                    for v in twin.parent_symmetry
+                                )
+                            ),
                             "twin_kind": twin.kind,
                             "twin_classification": twin.classification,
                             "twin_representations": twin.representations,
@@ -656,6 +662,12 @@ class TheoryComparisonAdapter:
                                 "habit_index": habit_index,
                                 "operator_index": operator_index,
                                 "twin_index": twin_index,
+                                "ct_generator_key": (
+                                    twin.kind + ":" + ",".join(
+                                        str(sp.simplify(v))
+                                        for v in twin.parent_symmetry
+                                    )
+                                ),
                                 "twin_kind": twin.kind,
                                 "twin_classification": twin.classification,
                                 "twin_representations": twin.representations,
