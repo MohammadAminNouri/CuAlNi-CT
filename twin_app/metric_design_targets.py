@@ -57,6 +57,33 @@ def metric_stretches(project: Any, transformation_id: str) -> tuple[float, float
     return tuple(float(np.sqrt(v)) for v in eigenvalues)
 
 
+def _mark_product_design_hypothesis(project, transformation_id):
+    """Reclassify proposed product metrics, never as observed lattice data."""
+    from dataclasses import replace
+    from cualni_cryst.provenance import DataStatus
+
+    transform = project.transformation(transformation_id)
+    product = project.phase(transform.product_phase_id)
+    hypothesis = replace(
+        product.provenance,
+        status=DataStatus.HYPOTHETICAL_TEST,
+        source_key="",
+        uncertainty="",
+        notes=(
+            "Numerically proposed product-cell metrics, not measured values. "
+            "Original source data and uncertainty require separate reference."
+        ),
+    )
+    proposed = replace(product, provenance=hypothesis)
+    return replace(
+        project,
+        phases=tuple(
+            proposed if phase.phase_id == product.phase_id else phase
+            for phase in project.phases
+        ),
+    )
+
+
 def state_at_parameter(project, transformation_id, parameter: str, value: float):
     if not isfinite(value):
         raise ValueError("The parameter must be finite")
@@ -74,6 +101,7 @@ def state_at_parameter(project, transformation_id, parameter: str, value: float)
         state = symmetry_preserving_product_grid(
             project, transformation_id, {parameter: [value]}, max_states=1,
         )[0][1]
+    state = _mark_product_design_hypothesis(state, transformation_id)
     state.validate().assert_passed()
     return state
 
