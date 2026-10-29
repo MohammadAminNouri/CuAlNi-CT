@@ -72,6 +72,10 @@ def test_partial_or_geometrically_disagreeing_pair_cannot_certificate():
     pair["match_geometry_within_tolerance"]=True
     b=supercompatibility_failure_analysis(report)
     assert b["status"]=="SAME_PAIR_NUMERICALLY_SATISFIED"
+    report["ct_am_exact_compatible"]=False
+    assert supercompatibility_failure_analysis(report)["status"]==(
+        "NO_SAME_PAIR_SUPERCOMPATIBILITY_CERTIFICATE"
+    )
 
 
 def test_continuation_reports_actual_cell_delta_and_missing_constraints():
