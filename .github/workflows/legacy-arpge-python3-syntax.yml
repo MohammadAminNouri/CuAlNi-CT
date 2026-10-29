@@ -1,0 +1,58 @@
+name: Port original ARPGE main sources to Python 3 syntax
+
+on:
+  push:
+    branches:
+      - feature/arpge-genova-crystals-python3-integration
+    paths:
+      - scripts/port_committed_arpge_modules.py
+      - .github/workflows/legacy-arpge-python3-syntax.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  python3-syntax-port:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Convert each archived main module without running GUI imports
+        id: convert
+        continue-on-error: true
+        run: |
+          python scripts/port_committed_arpge_modules.py
+      - name: Upload syntax report and converted modules
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arpge-2021-python3-syntax
+          path: third_party/arpge_2021_py3_syntax/
+          if-no-files-found: warn
+      - name: Commit generated Python 3 copies to integration branch
+        if: github.ref_name == 'feature/arpge-genova-crystals-python3-integration'
+        run: |
+          if ! test -f third_party/arpge_2021_py3_syntax/PORT_STATUS.json; then
+            echo "No conversion report; no commit"
+            exit 0
+          fi
+          git add third_party/arpge_2021_py3_syntax
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Generate syntax-only Python 3 copies of 2021 crystallography modules"
+          git push origin HEAD:refs/heads/feature/arpge-genova-crystals-python3-integration
+      - name: Report converter errors
+        if: steps.convert.outcome == 'failure'
+        run: |
+          echo "::warning::One or more modules failed automatic syntax conversion."
+          echo "::warning::See PORT_STATUS.json artifact; do not claim complete Python 3 port."
