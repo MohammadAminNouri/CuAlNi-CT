@@ -225,11 +225,11 @@ def continue_supercompatibility_design(
         advice=f"INCREASE {secondary_parameter} toward {best['secondary_value']:.9g} (sampled target only)"
     else:
         advice=f"DECREASE {secondary_parameter} toward {best['secondary_value']:.9g} (sampled target only)"
-    if best is not None and center in qualified:
-        baseline_residual=center["paired_CT_BJ_branch"]["ct_shear_shear_epsilon"]
-        improved=best["paired_CT_BJ_branch"]["ct_shear_shear_epsilon"]<baseline_residual
-    else:
-        improved=None
+    # Even a full, agreed CT/BJ match is only an assignment WITHIN a
+    # candidate state. Its integer operator/twin labels do not prove that
+    # this is the same continuous physical twin in another candidate.
+    # Consequently no cross-state improvement claim is certified here.
+    improved=None
     return {
         "source_doi":"10.1016/j.actamat.2026.122399",
         "primary_lambda2_constraint":primary_parameter,
@@ -241,6 +241,13 @@ def continue_supercompatibility_design(
         ),
         "proposed_direction":advice,
         "reduction_against_baseline_if_comparable":improved,
+        "branch_identity_across_states_verified":False,
+        "candidate_comparison_scope":(
+            "Ranked states each contain a CT-BJ match within that state. "
+            "No common physical twin has been tracked between sampled states. "
+            "Parameter direction is a bounded candidate hypothesis, not "
+            "a demonstrated continuous improvement for a fixed twin branch."
+        ),
         "scientific_limit":(
             "Each sampled point enforces generalized-metric lambda2=1, "
             "then independently solves CT CMC/SMC M/M shear/shear and "
