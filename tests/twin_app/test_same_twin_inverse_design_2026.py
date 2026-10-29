@@ -85,6 +85,8 @@ def test_lambda2_only_is_never_claimed_as_shear_shear(original,anchors):
     report=fixed_twin_am_habits(corrected,TRANSFORMATION,anchors[0])
     assert report["status"]=="EXACT_CT_AM_HABITS_AND_FIXED_MM_TWIN"
     assert report["ball_james_cofactor_on_this_twin"]=="NOT_YET_PHYSICALLY_ASSIGNED"
+    assert report["same_generator_equivalent_CC2_metric"]["route"] in ("I","II")
+    assert report["same_generator_equivalent_CC2_metric"]["CC3_verified"] is False
     assert report["habits"]
     for branch in report["habits"]:
         assert branch["epsilon"]>=0
@@ -177,6 +179,8 @@ def test_known_exact_lambda2_input_retains_one_fixed_twin_as_a_valid_candidate(
     assert candidate["data_status"]=="HYPOTHETICAL_TEST"
     assert len(candidate["continuation_path"])==5
     assert candidate["factor_by_factor_counterfactuals"]
+    assert candidate["candidate_same_generator_CC2_equivalent"]["absolute_squared_norm_gap"]>=0.
+    assert candidate["candidate_same_generator_CC2_equivalent"]["CC3_verified"] is False
     assert candidate["same_parent_symmetry_generator"]==reference.generator_key
     assert not result["cofactor_same_pair_certified"]
     for row in candidate["continuation_path"]:
