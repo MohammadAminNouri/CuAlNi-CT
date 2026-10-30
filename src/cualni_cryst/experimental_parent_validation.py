@@ -92,9 +92,18 @@ def frozen_or_contact_residuals(
     family,_,_=complete_or_family(frozen_q,parent_proper,daughter_proper)
     if not np.isfinite(p).all() or not np.isfinite(m).all():
         raise ValueError("Indexed parent/daughter rotations must be finite")
-    for t in np.linspace(0,len(p)-1,min(len(p),50),dtype=int):
-        require_so3(p[t],tolerance=2e-7,name="indexed parent rotation")
-        require_so3(m[t],tolerance=2e-7,name="indexed daughter rotation")
+    # Validate EVERY measured orientation. Checking a 50-pixel sample is
+    # insufficient: SciPy's Rotation.from_matrix silently projects invalid
+    # EBSD matrices to SO(3), which can create fabricated OR matches.
+    eye=np.eye(3)
+    for label,stack in (("parent",p),("daughter",m)):
+        orth=np.linalg.norm(
+            stack@np.swapaxes(stack,1,2)-eye,axis=(1,2),
+        )
+        determinant=np.linalg.det(stack)
+        if (np.max(orth)>2e-7 or
+                np.max(np.abs(determinant-1.))>2e-7):
+            raise ValueError(f"Indexed {label} matrices must be proper SO(3)")
     target=Rotation.from_matrix(family).as_quat()
     residual=np.empty(len(p),float)
     for start in range(0,len(p),chunk):
