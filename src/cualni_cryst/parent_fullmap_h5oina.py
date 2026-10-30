@@ -10,6 +10,7 @@ Proper orientation convention is crystal Cartesian -> raw Oxford CS1 sample.
 """
 
 from io import BytesIO
+import hashlib
 import json
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from scipy import ndimage
 from scipy.spatial.transform import Rotation
 
 from .ebsd_h5oina import load_h5oina_sample
+from .lattice import Lattice
 from .orientation_kernel import require_so3
 from .parent_variant_audit import parent_generated_variants
 
@@ -30,6 +32,7 @@ def reconstruct_conditional_parent_h5oina(
     parent_proper_symmetries: tuple[np.ndarray, ...],
     daughter_proper_symmetries: tuple[np.ndarray, ...],
     *,
+    expected_daughter_lattice: Lattice,
     max_mad_deg: float = 1.5,
     max_fit_deg: float = 3.0,
     min_variant_patch_pixels: int = 50,
@@ -51,6 +54,19 @@ def reconstruct_conditional_parent_h5oina(
     _, scan = load_h5oina_sample(filename, data, maximum_sample=256)
     if len(scan["phase_geometry"]) != 1:
         raise ValueError("Full-map reconstruction requires one indexed daughter phase")
+    if not isinstance(expected_daughter_lattice, Lattice):
+        raise ValueError("Expected indexed daughter Lattice is required")
+    phase_record = scan["phase_geometry"][0]
+    measured_cell = np.asarray(phase_record["abc_angstrom"] + phase_record["angles_deg"], dtype=float)
+    declared_cell = np.asarray([
+        expected_daughter_lattice.a, expected_daughter_lattice.b, expected_daughter_lattice.c,
+        expected_daughter_lattice.alpha_deg, expected_daughter_lattice.beta_deg,
+        expected_daughter_lattice.gamma_deg,
+    ], dtype=float)
+    if (not np.isfinite(declared_cell).all()
+            or np.any(np.abs(measured_cell[:3] - declared_cell[:3]) > 0.02)
+            or np.any(np.abs(measured_cell[3:] - declared_cell[3:]) > 0.2)):
+        raise ValueError("Supplied daughter lattice does not match the indexed H5OINA phase; use its actual reduced 18R setting")
     Q = require_so3(np.asarray(q_parent_from_daughter,float),
                     tolerance=2e-8, name="parent<-18R Q")
     gA = require_so3(np.asarray(parent_crystal_to_raw_sample,float),
@@ -134,6 +150,9 @@ def reconstruct_conditional_parent_h5oina(
     report={
         "schema":"cualni.h5oina-parent-conditional/1.0",
         "source_filename":Path(filename).name,
+        "source_h5oina_sha256":hashlib.sha256(data).hexdigest(),
+        "indexed_daughter_cell":measured_cell.tolist(),
+        "declared_daughter_cell":declared_cell.tolist(),
         "n_x":n_x,"n_y":n_y,"n_pixels":n,
         "n_indexed":int(scan["indexed_points"]),
         "n_quality":int(np.count_nonzero(indexed_quality)),
@@ -157,6 +176,7 @@ def reconstruct_conditional_parent_h5oina(
     output_buffer=BytesIO()
     with h5py.File(output_buffer,"w") as out:
         out.attrs["report_json"]=json.dumps(report,allow_nan=False)
+        out.attrs["source_h5oina_sha256"]=report["source_h5oina_sha256"]
         out.attrs["status"]="unanchored conditional beta parent; NOT physical OR proof"
         inputs=out.create_group("inputs")
         inputs.create_dataset("Q_parent_from_18R",data=Q)
