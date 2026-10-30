@@ -719,7 +719,8 @@ else:
     st.info("Uncalculated stages appear as null in the report. "
             "Experimental ORs are never generated from C alone.")
     try:
-        payload = report_json(cry, gen, ar, fit)
+        payload = report_json(cry, gen, ar, fit,
+                              st.session_state.get("parent_interop_report"))
     except (ValueError, TypeError) as exc:
         st.error(f"Cannot export results: {exc}")
     else:
