@@ -108,3 +108,27 @@ def test_fully_declared_evidence_still_requires_external_scientific_verification
     )
     assert result["declared_prerequisites_present"]
     assert result["physical_parent_or_certified"] is False
+
+
+def test_rational_one_third_subcell_metric_is_supported_but_not_certified():
+    conventional = Lattice(3, 3, 9, 90, 90, 90)
+    reduced = Lattice(3, 3, 3, 90, 90, 90)
+    P = [["1", "0", "0"], ["0", "1", "0"], ["0", "0", "1/3"]]
+    audit = audit_direct_basis(conventional, reduced, P)
+    assert audit.volume_ratio_new_over_old == pytest.approx(1/3)
+    assert audit.absolute_volume_factor is None
+    assert audit.integral_basis is False
+    assert audit.metric_relative_residual < 1e-12
+    assert "unverified" in audit.status.lower()
+
+
+def test_relaxed_literature_metric_screen_does_not_turn_into_proof():
+    conventional = Lattice(3, 3, 9, 90, 90, 90)
+    measured = Lattice(3.01, 3.00, 3.0, 90, 90, 90)
+    P = [["1", "0", "0"], ["0", "1", "0"], ["0", "0", "1/3"]]
+    with pytest.raises(ValueError, match="metric equality"):
+        audit_direct_basis(conventional, measured, P)
+    guess = audit_direct_basis(conventional, measured, P, relative_tolerance=0.03)
+    assert 0 < guess.metric_relative_residual < 0.03
+    assert guess.integral_basis is False
+    assert "unverified" in guess.status.lower()
