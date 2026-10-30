@@ -13,6 +13,8 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
+from .ebsd_h5oina import load_h5oina_sample
+
 from .legacy_suite_bridge import (
     Phase, crystal_geometry, inspect_ebsd, reconstruct_ebsd_parent, variant_groupoid,
 )
@@ -65,6 +67,16 @@ def ar_stage(filename: str, data: bytes) -> dict:
     """Strict text EBSD upload; never deserialize executable legacy formats."""
     if not isinstance(data, bytes) or not data:
         raise ValueError("Upload a nonempty EBSD file")
+    if Path(filename).suffix.lower() == ".h5oina":
+        _, summary = load_h5oina_sample(filename, data, maximum_sample=12000)
+        return {
+            "stage": "AR",
+            "filename": Path(filename).name,
+            "file_size_bytes": len(data),
+            **summary,
+            "provenance": "Oxford H5OINA; phase-cell metadata and raw radians; sample surface frame uncorrected",
+        }
+
     if len(data) > MAX_EBSD_BYTES:
         raise ValueError("EBSD file exceeds the 8 MiB interactive safety limit")
     suffix = Path(filename).suffix.lower()
@@ -88,7 +100,7 @@ def ar_stage(filename: str, data: bytes) -> dict:
 def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
                   verified_or_json: str, *, max_points: int = 12) -> dict:
     """Exploratory fit ONLY after explicit experimental OR data are supplied."""
-    ar_stage(filename, data)
+    audit = ar_stage(filename, data)
     if not cry or cry.get("stage") != "Cry":
         raise ValueError("Cry phase models are required")
     try:
@@ -103,14 +115,36 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
     # Validation of SO(3), symmetry and the actual parent fit is performed by
     # VariantOR and reconstruct_parent in the existing scientific backend.
     suffix = Path(filename).suffix.lower()
-    with TemporaryDirectory() as tmp:
-        path = Path(tmp) / ("ebsd" + suffix)
-        path.write_bytes(data)
-        ebsd, _ = inspect_ebsd(path)
+    if suffix == ".h5oina":
+        ebsd, _ = load_h5oina_sample(filename, data, maximum_sample=12000)
+        geometry = [item for item in audit["phase_geometry"]
+                    if item["phase_id"] == int(product_phase_id)]
+        if len(geometry) != 1:
+            raise ValueError("Selected martensite phase is absent in H5OINA")
+        cell = Phase(**cry["product_phase"])
+        measured = np.array(geometry[0]["abc_angstrom"] + geometry[0]["angles_deg"], float)
+        declared = np.array([cell.a, cell.b, cell.c, cell.alpha, cell.beta, cell.gamma], float)
+        # Metadata cell is authoritative for this indexed EBSD basis.
+        if not np.allclose(measured[:3], declared[:3], atol=0.02, rtol=0) or not np.allclose(
+            measured[3:], declared[3:], atol=0.2, rtol=0
+        ):
+            raise ValueError(
+                "Cry product cell does not match the indexed H5OINA phase. "
+                "Use exactly the 18R reduced cell setting stored in the file."
+            )
         fit = reconstruct_ebsd_parent(
-            ebsd, Phase(**cry["parent_phase"]), Phase(**cry["product_phase"]),
+            ebsd, Phase(**cry["parent_phase"]), cell,
             product_phase_id, array, maximum_points=max_points,
         )
+    else:
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / ("ebsd" + suffix)
+            path.write_bytes(data)
+            ebsd, _ = inspect_ebsd(path)
+            fit = reconstruct_ebsd_parent(
+                ebsd, Phase(**cry["parent_phase"]), Phase(**cry["product_phase"]),
+                product_phase_id, array, maximum_points=max_points,
+            )
     return {"stage": "AR parent fit", "experimental_or_user_supplied": True, **fit}
 
 
