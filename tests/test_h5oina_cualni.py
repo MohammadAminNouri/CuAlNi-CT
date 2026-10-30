@@ -130,3 +130,37 @@ def test_improper_frame_rotation_fails_closed():
             "test.h5oina", fixture_h5oina(),
             sample_frame_correction=np.diag([1.0, 1.0, -1.0])
         )
+
+
+def test_parent_fit_records_both_explicit_frame_and_anchor_evidence():
+    import json
+    from scipy.spatial.transform import Rotation
+    pa = Phase("Parent", "m-3m", 5.8, 5.8, 5.8)
+    ma = Phase("Synthetic reduced", "2/m", 10.0, 5.0, 4.0, 90, 108, 90)
+    cry = cry_stage(pa, ma, (1, 0, 0), (1, 0, 0))
+    explicit_frame = Rotation.from_euler("y", 180, degrees=True).as_matrix()
+    fit = ar_parent_fit(
+        "test.h5oina", fixture_h5oina(), cry, 1,
+        json.dumps([np.eye(3).tolist()]), max_points=3,
+        parent_anchor_orientation_json=json.dumps(explicit_frame.tolist()),
+        indexed_18r_basis_verified=True, specimen_frame_verified=True,
+        specimen_frame_correction_json=json.dumps(explicit_frame.tolist()),
+    )
+    assert fit["explicit_frame_correction_matrix"] == pytest.approx(explicit_frame.tolist())
+    assert fit["parent_anchor_residual_deg"] < 1e-4
+    assert fit["evidence_gate"]["declared_prerequisites_present"] is True
+    assert fit["experimental_certification"] is False
+    assert fit["full_parent_generated_variant_assignment"]["accepted_fraction"] == 1
+
+
+def test_parent_fit_invalid_explicit_frame_fails():
+    import json
+    pa = Phase("Parent", "m-3m", 5.8, 5.8, 5.8)
+    ma = Phase("Synthetic reduced", "2/m", 10.0, 5.0, 4.0, 90, 108, 90)
+    cry = cry_stage(pa, ma, (1, 0, 0), (1, 0, 0))
+    with pytest.raises(ValueError, match="proper|SO3|correction"):
+        ar_parent_fit(
+            "test.h5oina", fixture_h5oina(), cry, 1,
+            json.dumps([np.eye(3).tolist()]), max_points=3,
+            specimen_frame_correction_json=json.dumps([[1,0,0],[0,1,0],[0,0,-1]]),
+        )
