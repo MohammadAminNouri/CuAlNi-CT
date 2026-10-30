@@ -109,3 +109,17 @@ def test_guided_correspondence_input_and_synthetic_ebsd_walkthrough():
     assert app.session_state["ar_result"]["input_kind"] == "synthetic_software_demo"
     app = _click_labeled(app, "Continue to Report")
     assert len(app.exception) == 0, [str(x.message) for x in app.exception]
+
+
+def test_streamlit_actual_niti_literature_benchmark_control():
+    """UI must execute actual NiTi benchmark, not just render an inert link."""
+    app=AppTest.from_file(str(ENTRY),default_timeout=180).run()
+    app=_click_labeled(app,"Run Cry")
+    app=_click_labeled(app,"Continue to Gen")
+    app=_click_labeled(app,"Continue to AR")
+    app=_click_labeled(app,"Run independent NiTi benchmarks")
+    assert len(app.exception)==0,[str(e.message) for e in app.exception]
+    benchmark=app.session_state["niti_benchmark_report"]
+    assert benchmark["niti_OR_AQ_2020"]["daughter_variants"]==12
+    assert benchmark["niti_CT_2026"]["intercorrespondence_operator_classes"]==7
+    assert benchmark["physical_cualni_parent_certified"] is False
