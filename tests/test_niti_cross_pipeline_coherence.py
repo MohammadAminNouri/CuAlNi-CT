@@ -17,7 +17,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 from test_h5oina_cualni import fixture_h5oina
-from cualni_cryst.ar_gen_cry_pipeline import ar_stage, cry_stage, gen_stage
+from cualni_cryst.ar_gen_cry_pipeline import ar_stage, ar_parent_fit, cry_stage, gen_stage
 from cualni_cryst.legacy_suite_bridge import Phase
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.ebsd_h5oina import load_h5oina_sample
@@ -183,3 +183,34 @@ def test_niti_basis_conversion_and_two_independent_parent_axes():
         p,(1,0,0),(0,1,1),gA@d1,gA@d2,
     )
     assert compare_parent_to_anchor(anchored,gA,pops)<1e-5
+
+
+def test_niti_actual_ar_entrypoint_blind_parent_fit_and_independent_anchors():
+    p,m,pops,mops,Q,gA=setup_niti()
+    raw,_=make_synthetic_niti_h5oina()
+    cry=cry_stage(
+        Phase("NiTi B2","m-3m",3.015,3.015,3.015),
+        Phase("NiTi B19-prime","2/m",2.889,4.120,4.622,90,96.8,90),
+        (1,0,0),(0,1,0),
+    )
+    observed_axes={
+        "parent_uvw":[[1,0,0],[0,1,1]],
+        "sample_xyz":[
+            (gA@direction_cartesian(p,(1,0,0))).tolist(),
+            (gA@direction_cartesian(p,(0,1,1))).tolist(),
+        ],
+    }
+    fitted=ar_parent_fit(
+        "synthetic_niti.h5oina",raw,cry,1,json.dumps([Q.tolist()]),
+        max_points=6,
+        parent_anchor_orientation_json=json.dumps(gA.tolist()),
+        parent_direction_pairs_json=json.dumps(observed_axes),
+    )
+    assert fitted["experimental_certification"] is False
+    assert fitted["evidence_gate"]["physical_parent_or_certified"] is False
+    assert fitted["full_parent_generated_variant_assignment"]["accepted_fraction"]==pytest.approx(1)
+    assert fitted["parent_anchor_residual_deg"]<0.01
+    assert fitted["parent_direction_pair_anchor"]["difference_from_parent_orientation_deg"]<1e-4
+    assert compare_parent_to_anchor(
+        np.asarray(fitted["parent_crystal_to_sample_rotation"]),gA,pops,
+    )<0.01
