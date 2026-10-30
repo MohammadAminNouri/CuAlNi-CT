@@ -116,6 +116,7 @@ def test_streamlit_actual_niti_literature_benchmark_control():
     app=AppTest.from_file(str(ENTRY),default_timeout=180).run()
     app=_click_labeled(app,"Run Cry")
     app=_click_labeled(app,"Continue to Gen")
+    app=_click_labeled(app,"Run Gen")
     app=_click_labeled(app,"Continue to AR")
     app=_click_labeled(app,"Run independent NiTi benchmarks")
     assert len(app.exception)==0,[str(e.message) for e in app.exception]
