@@ -169,3 +169,7 @@ Even strict matching is metric-only: a fractional P does not establish
 atomic translation symmetry of a modulated 18R structure. Verify the actual
 indexed EBSD source CIF and conventional structure's atomic sites and
 systematic reflection conditions before trusting any parent reconstruction.
+
+### 30 October 2026: full-map phase-basis and source-hash gate
+
+The full H5OINA parent-map exporter now requires an indexed daughter Lattice and compares all six cell parameters against vendor metadata (0.02 Å and 0.2° absolute tolerances). The Streamlit UI supplies the Cry daughter cell. It also preserves the exact input file SHA-256 and both cells in the output HDF5. This is metadata and provenance validation, not evidence of atomic correspondence or physical OR uniqueness.
