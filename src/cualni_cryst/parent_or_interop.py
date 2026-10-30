@@ -12,7 +12,7 @@ from itertools import permutations, product
 from typing import Sequence
 
 import numpy as np
-from scipy.special import ndtr
+from scipy.special import erfc
 from scipy.spatial.transform import Rotation
 
 from .orientation_kernel import require_so3
@@ -58,7 +58,13 @@ def frozen_or_boundary_audit(
     """Evaluate measured daughter/daughter operators against Q.T S_parent Q.
 
     For each parent operation, compare all proper left/right daughter
-    equivalents, and report a cumulative-Gaussian MTEX-style weight.
+    equivalents, and report MTEX's source-defined edge probability.
+
+    MTEX calcVariantGraph.m uses 0.5*erfc(2*(misfit-threshold)/tolerance),
+    which is NOT scipy.ndtr((threshold-misfit)/tolerance). The input
+    tolerance is a transition-width parameter, not a Gaussian standard
+    deviation. This calculates a boundary-only diagnostic; MTEX also uses
+    variant-node weights and neighbour statistics.
     This is NOT calcVariantGraph, which has variant nodes and MCL clustering.
 
     Parameters
@@ -71,7 +77,8 @@ def frozen_or_boundary_audit(
     ori = np.asarray(daughter_orientation_pairs, float)
     if ori.ndim != 4 or ori.shape[1:] != (2,3,3) or not 1 <= len(ori) <= 20000:
         raise ValueError("Expected 1..20000 daughter orientation pairs (N,2,3,3)")
-    if not 0 < threshold_deg <= 30 or not 0 < transition_width_deg <= 20:
+    if (not np.isfinite(threshold_deg) or not np.isfinite(transition_width_deg)
+            or not 0 < threshold_deg <= 30 or not 0 < transition_width_deg <= 20):
         raise ValueError("Invalid graph probability threshold/tolerance")
     for idx, matrix in enumerate(ori.reshape(-1,3,3)):
         require_so3(matrix, tolerance=2e-8, name=f"indexed daughter orientation {idx}")
@@ -94,7 +101,7 @@ def frozen_or_boundary_audit(
     dots = np.max(np.abs(np.einsum("nsi,pi->nsp",observed,theoretical,optimize=True)),
                   axis=(1,2))
     residual = np.rad2deg(2*np.arccos(np.clip(dots,0,1)))
-    weights = ndtr((threshold_deg-residual)/transition_width_deg)
+    weights = 0.5 * erfc(2.0 * (residual - threshold_deg) / transition_width_deg)
     return {
         "n_boundary_pairs":len(ori),
         "median_operator_misfit_deg":float(np.median(residual)),
@@ -104,6 +111,8 @@ def frozen_or_boundary_audit(
         "mtex_style_probability":weights.tolist(),
         "mtex_style_threshold_deg":float(threshold_deg),
         "mtex_style_transition_width_deg":float(transition_width_deg),
+        "mtex_probability_formula": "0.5*erfc(2*(misfit_deg-threshold_deg)/tolerance_deg)",
+        "mtex_probability_scope": "unweighted pair-only probability; not MTEX graph or boundary-length weighting",
         "parent_symmetry_operations":len(p),
         "daughter_symmetry_operations":len(m),
         "scientific_status":"MTEX-inspired edge-probability diagnostic, not MTEX MCL variant clustering or physically validated OR",
