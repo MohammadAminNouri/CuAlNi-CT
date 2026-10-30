@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+"""SO3/reference frame, exact basis, and independent anchor regression tests."""
+
+import numpy as np
+import pytest
+from scipy.spatial.transform import Rotation
+
+from cualni_cryst.lattice import Lattice
+from cualni_cryst.ebsd_map import EBSDPhase
+from cualni_cryst.parent_or_evidence import (
+    audit_direct_basis, rebase_orientation_relationship,
+    lattice_direction_to_cart, direction_anchor_residual,
+    parent_orientation_from_two_directions, compare_parent_to_anchor,
+    audit_anchor_status,
+)
+
+
+def test_nontrivial_reindexing_preserves_metric_and_physical_or():
+    old = Lattice(3.0, 4.0, 5.0, 90, 90, 90)
+    # B_new = B_old @ P: swap a/b with sign flip to keep det(P)>0
+    P = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    new = Lattice(4, 3, 5, 90, 90, 90)
+    old_parent = Lattice(6, 6, 6, 90, 90, 90)
+    new_parent = Lattice(6, 6, 6, 90, 90, 90)
+    p = audit_direct_basis(old_parent, new_parent, np.eye(3, dtype=int))
+    m = audit_direct_basis(old, new, P)
+    assert m.absolute_volume_factor == 1
+    assert m.metric_relative_residual < 1e-12
+    R_old = Rotation.from_euler("xyz", [12, 20, -18], degrees=True).as_matrix()
+    R_new = rebase_orientation_relationship(R_old, p, m)
+    for u_new in ((1, 0, 0), (0, 1, 0), (1, 1, 2)):
+        d = lattice_direction_to_cart(new, u_new)
+        old_d = lattice_direction_to_cart(old, P @ np.asarray(u_new))
+        assert np.allclose(R_new @ d, R_old @ old_d, atol=1e-12)
+
+
+@pytest.mark.parametrize("P", [
+    [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+    [[1, 0, 0], [0, 1, 0], [0, 0, -1]],
+    [[1.001, 0, 0], [0, 1, 0], [0, 0, 1]],
+])
+def test_illegal_basis_rejected(P):
+    a = Lattice(3, 3, 3, 90, 90, 90)
+    with pytest.raises(ValueError):
+        audit_direct_basis(a, a, P)
+
+
+def test_wrong_metric_basis_is_rejected_even_with_integer_P():
+    old = Lattice(3, 4, 5, 90, 90, 90)
+    new = Lattice(3, 4.2, 5, 90, 90, 90)
+    with pytest.raises(ValueError, match="metric equality"):
+        audit_direct_basis(old, new, np.eye(3, dtype=int))
+
+
+def test_parent_orientation_two_independent_directions_recovers_known_parent():
+    cubic = Lattice(5.8, 5.8, 5.8, 90, 90, 90)
+    g = Rotation.from_euler("zyx", [18, -22, 13], degrees=True).as_matrix()
+    d1, d2 = (1, 0, 0), (0, 1, 1)
+    a = g @ lattice_direction_to_cart(cubic, d1)
+    b = g @ lattice_direction_to_cart(cubic, d2)
+    recovered = parent_orientation_from_two_directions(cubic, d1, d2, a, b)
+    assert Rotation.from_matrix(recovered.T @ g).magnitude() < 1e-9
+    phase = EBSDPhase.from_point_group(1, "beta", cubic, "m-3m")
+    assert compare_parent_to_anchor(recovered, g, phase.proper_symmetry_cartesian) < 1e-5
+    assert direction_anchor_residual(
+        recovered, phase.proper_symmetry_cartesian, cubic, d1, a
+    ) < 1e-5
+
+
+def test_one_direction_does_not_establish_absolute_parent_orientation():
+    result = audit_anchor_status(
+        measured_parent_orientation=False, independent_direction_count=1,
+        indexed_parent_phase_present=False, verified_change_of_basis=True,
+        scan_frame_verified=True,
+    )
+    assert result["physical_parent_or_certified"] is False
+    assert result["blocking_requirements"]
+
+
+def test_independent_parent_anchor_is_still_insufficient_without_basis_and_frame():
+    result = audit_anchor_status(
+        measured_parent_orientation=True, independent_direction_count=0,
+        indexed_parent_phase_present=True, verified_change_of_basis=False,
+        scan_frame_verified=False,
+    )
+    assert not result["physical_parent_or_certified"]
+    assert len(result["blocking_requirements"]) == 2
+
+
+def test_noncollinear_pair_internal_angle_must_match():
+    cubic = Lattice(3, 3, 3, 90, 90, 90)
+    with pytest.raises(ValueError, match="angle inconsistent"):
+        parent_orientation_from_two_directions(
+            cubic, (1, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)
+        )
+    with pytest.raises(ValueError, match="collinear"):
+        parent_orientation_from_two_directions(
+            cubic, (1, 0, 0), (1, 0, 0), (1, 0, 0), (0, 1, 0)
+        )
