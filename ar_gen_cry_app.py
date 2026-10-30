@@ -44,6 +44,7 @@ from cualni_cryst.arpge_trd_exact import (
     legacy_llc_from_twin_chains, exact_sigma3_chain,
 )
 from cualni_cryst.arpge_genova_or import audit_archived_or_groupoids
+from cualni_cryst.experimental_parent_validation import frozen_or_boundary_audit
 from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
 from cualni_cryst.niti_benchmark_runner import evaluate_niti_benchmarks
 from cualni_cryst.parent_replay_exchange import (
@@ -1151,6 +1152,88 @@ elif step == STEPS[2]:
                         file_name="arpge_parent_hex_candidate_RESEARCH_ONLY.ang",
                         mime="text/plain",
                     )
+        with st.expander("Frozen OR vs actually indexed retained parent · evidence gate"):
+            st.warning(
+                "This check requires BOTH a retained/reverted indexed parent "
+                "phase and a product phase in the SAME EBSD map. It verifies "
+                "local measured OR evidence only, not reconstructed prior-parent "
+                "grain topology. Do not optimize Q against these measured parents."
+            )
+            parent_label=st.number_input(
+                "Measured retained parent phase ID",min_value=1,
+                value=2,step=1,key="arpge_frozen_parent_phase_id",
+            )
+            daughter_label=st.number_input(
+                "Measured daughter phase ID",min_value=1,
+                value=1,step=1,key="arpge_frozen_child_phase_id",
+            )
+            raw_q=st.text_area(
+                "PRE-FROZEN Cartesian Q (parent ← daughter), 3×3 JSON",
+                key="arpge_frozen_q_json",
+                placeholder="[[...],[...],[...]]",
+            )
+            radius=st.number_input(
+                "Cross-phase immediate-neighbour distance (same units as EBSD XY)",
+                min_value=0.001,max_value=10.,value=0.101,step=0.01,
+            )
+            if st.button("Test frozen OR on retained-phase boundary contacts"):
+                try:
+                    if not raw_q.strip():
+                        raise ValueError("Supply a PRE-FROZEN OR, not a fit to this map")
+                    if int(parent_label)==int(daughter_label):
+                        raise ValueError("Distinct indexed parent/daughter phases required")
+                    Q=np.asarray(json.loads(raw_q),float)
+                    source_bytes=st.session_state["ar_bytes"]
+                    if ar["source_format"]=="h5oina":
+                        mapdata,_=load_h5oina_spatial_grid(
+                            ar["filename"],source_bytes,
+                        )
+                    else:
+                        with TemporaryDirectory() as folder:
+                            file=Path(folder)/("measured"+Path(ar["filename"]).suffix.lower())
+                            file.write_bytes(source_bytes)
+                            mapdata,_=inspect_ebsd(file)
+                    parent_model=Phase(**cry["parent_phase"])
+                    child_model=Phase(**cry["product_phase"])
+                    gp=tuple(EBSDPhase.from_point_group(
+                        1,parent_model.name,parent_model.lattice(),
+                        parent_model.point_group,
+                    ).proper_symmetry_cartesian)
+                    gm=tuple(EBSDPhase.from_point_group(
+                        2,child_model.name,child_model.lattice(),
+                        child_model.point_group,
+                    ).proper_symmetry_cartesian)
+                    result=frozen_or_boundary_audit(
+                        orientations=mapdata.orientations,
+                        phase_ids=mapdata.phase_id,
+                        xy=np.column_stack((mapdata.x,mapdata.y)),
+                        parent_phase_id=int(parent_label),
+                        daughter_phase_id=int(daughter_label),
+                        neighbor_distance=float(radius),
+                        frozen_q=Q,parent_proper=gp,daughter_proper=gm,
+                        negative_q=Q.T,
+                        maximum_sample=5000,seed=20261030,
+                    )
+                    result["source_sha256"]=st.session_state["ar_sha256"]
+                    result["crystal_phase_metadata_independently_verified"]=False
+                    result["candidate_or_fit_from_measured_parent"]=False
+                    st.session_state["arpge_frozen_or_evidence"]=result
+                except (ValueError,TypeError,KeyError,ArithmeticError,IndexError) as exc:
+                    st.error(f"Frozen OR evidence rejected: {exc}")
+                else:
+                    st.info(
+                        "Local interphase OR residual computed. This cannot "
+                        "certify common original parent grain identity."
+                    )
+            if st.session_state.get("arpge_frozen_or_evidence"):
+                st.json(st.session_state["arpge_frozen_or_evidence"])
+                st.download_button(
+                    "Download retained-parent OR evidence JSON",
+                    json.dumps(st.session_state["arpge_frozen_or_evidence"],indent=2),
+                    file_name="real_parent_interface_NOT_GRAIN_VALIDATED.json",
+                    mime="application/json",
+                )
+
         with st.expander("Inspect original 2021 ARPGE / GenOVa archive safely"):
             st.caption(
                 "Parse the 57 .trans records and 61 .cryst metric prefixes "
