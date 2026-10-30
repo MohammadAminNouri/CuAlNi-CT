@@ -49,7 +49,7 @@ def _rational_basis(P: object) -> tuple[np.ndarray, bool]:
         fractions = []
         for raw in rows.reshape(-1):
             val = Fraction(str(raw)).limit_denominator(12)
-            numeric = float(raw)
+            numeric = float(Fraction(str(raw)))
             if (not np.isfinite(numeric) or abs(float(val)-numeric) > 1e-9
                     or abs(numeric) > 100):
                 raise ValueError("Basis entries must be small exact rational numbers")
