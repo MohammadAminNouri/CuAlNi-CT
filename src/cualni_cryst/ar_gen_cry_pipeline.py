@@ -214,7 +214,8 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
 
 
 def report_json(cry: dict | None, gen: dict | None,
-                ar: dict | None, fit: dict | None = None) -> str:
+                ar: dict | None, fit: dict | None = None,
+                parent_interop: dict | None = None) -> str:
     """Export only the explicitly calculated stages. Never create missing results."""
     if not cry:
         raise ValueError("Run Cry before exporting a report")
@@ -226,5 +227,6 @@ def report_json(cry: dict | None, gen: dict | None,
         "gen": gen,
         "ar": ar,
         "ar_parent_fit": fit,
+        "parent_daughter_roundtrip": parent_interop,
     }
     return json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n"
