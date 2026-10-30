@@ -1,0 +1,202 @@
+name: AR Gen Cry independent app acceptance
+
+on:
+  push:
+    branches:
+      - feature/arpge-genova-crystals-python3-integration
+    paths:
+      - ar_gen_cry_app.py
+      - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/ebsd_h5oina.py
+      - src/cualni_cryst/ebsd_reconstruction.py
+      - src/cualni_cryst/parent_consensus_complete.py
+      - src/cualni_cryst/parent_or_interop.py
+      - src/cualni_cryst/parent_replay_exchange.py
+      - src/cualni_cryst/parent_fullmap_h5oina.py
+      - src/cualni_cryst/parent_grain_table_replay.py
+      - src/cualni_cryst/niti_literature_or.py
+      - src/cualni_cryst/niti_benchmark_runner.py
+      - src/cualni_cryst/parent_variant_audit.py
+      - src/cualni_cryst/arpge_spatial.py
+      - src/cualni_cryst/arpge_analytics.py
+      - src/cualni_cryst/arpge_archive.py
+      - src/cualni_cryst/arpge_workflows.py
+      - src/cualni_cryst/arpge_diffraction3d.py
+      - src/cualni_cryst/arpge_hex_ang.py
+      - src/cualni_cryst/arpge_trd_exact.py
+      - src/cualni_cryst/arpge_genova_or.py
+      - src/cualni_cryst/experimental_parent_validation.py
+      - src/cualni_cryst/parent_or_evidence.py
+      - src/cualni_cryst/ar_gen_cry_examples.py
+      - src/cualni_cryst/legacy_suite_bridge.py
+      - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_h5oina_cualni.py
+      - tests/test_parent_18r_product_symmetry.py
+      - tests/test_parent_variant_audit.py
+      - tests/test_arpge_spatial.py
+      - tests/test_arpge_analytics.py
+      - tests/test_arpge_archive.py
+      - tests/test_arpge_workflows.py
+      - tests/test_arpge_diffraction3d.py
+      - tests/test_arpge_hex_ang.py
+      - tests/test_arpge_trd_exact.py
+      - tests/test_arpge_genova_or.py
+      - tests/test_experimental_parent_validation.py
+      - tests/test_parent_consensus_complete.py
+      - tests/test_parent_or_interop.py
+      - tests/test_parent_replay_exchange.py
+      - tests/test_parent_fullmap_h5oina.py
+      - tests/test_parent_grain_table_replay.py
+      - tests/test_niti_literature_or.py
+      - tests/test_niti_benchmark_runner.py
+      - tests/test_niti_cross_pipeline_coherence.py
+      - tests/test_parent_or_evidence.py
+      - tests/test_ar_gen_cry_examples.py
+      - tests/test_ar_gen_cry_app.py
+      - tests/test_legacy_suite_bridge.py
+      - .github/workflows/ar-gen-cry-standalone.yml
+  pull_request:
+    branches:
+      - feature/twin-family-tree-app-v1
+    paths:
+      - ar_gen_cry_app.py
+      - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/ebsd_h5oina.py
+      - src/cualni_cryst/ebsd_reconstruction.py
+      - src/cualni_cryst/parent_consensus_complete.py
+      - src/cualni_cryst/parent_or_interop.py
+      - src/cualni_cryst/parent_replay_exchange.py
+      - src/cualni_cryst/parent_fullmap_h5oina.py
+      - src/cualni_cryst/parent_grain_table_replay.py
+      - src/cualni_cryst/niti_literature_or.py
+      - src/cualni_cryst/niti_benchmark_runner.py
+      - src/cualni_cryst/parent_variant_audit.py
+      - src/cualni_cryst/arpge_spatial.py
+      - src/cualni_cryst/arpge_analytics.py
+      - src/cualni_cryst/arpge_archive.py
+      - src/cualni_cryst/arpge_workflows.py
+      - src/cualni_cryst/arpge_diffraction3d.py
+      - src/cualni_cryst/arpge_hex_ang.py
+      - src/cualni_cryst/arpge_trd_exact.py
+      - src/cualni_cryst/arpge_genova_or.py
+      - src/cualni_cryst/experimental_parent_validation.py
+      - src/cualni_cryst/parent_or_evidence.py
+      - src/cualni_cryst/ar_gen_cry_examples.py
+      - src/cualni_cryst/legacy_suite_bridge.py
+      - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_h5oina_cualni.py
+      - tests/test_parent_18r_product_symmetry.py
+      - tests/test_parent_variant_audit.py
+      - tests/test_arpge_spatial.py
+      - tests/test_arpge_analytics.py
+      - tests/test_arpge_archive.py
+      - tests/test_arpge_workflows.py
+      - tests/test_arpge_diffraction3d.py
+      - tests/test_arpge_hex_ang.py
+      - tests/test_arpge_trd_exact.py
+      - tests/test_arpge_genova_or.py
+      - tests/test_experimental_parent_validation.py
+      - tests/test_parent_consensus_complete.py
+      - tests/test_parent_or_interop.py
+      - tests/test_parent_replay_exchange.py
+      - tests/test_parent_fullmap_h5oina.py
+      - tests/test_parent_grain_table_replay.py
+      - tests/test_niti_literature_or.py
+      - tests/test_niti_benchmark_runner.py
+      - tests/test_niti_cross_pipeline_coherence.py
+      - tests/test_parent_or_evidence.py
+      - tests/test_ar_gen_cry_examples.py
+      - tests/test_ar_gen_cry_app.py
+      - tests/test_legacy_suite_bridge.py
+      - .github/workflows/ar-gen-cry-standalone.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ar-gen-cry-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standalone-app:
+    name: Scientific and UI gates / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+      PYTHONPATH: "src"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install science and Streamlit requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --prefer-binary -e ".[app,dev]"
+          python -m pip check
+      - name: Compile new standalone code only
+        run: |
+          python -m py_compile ar_gen_cry_app.py src/cualni_cryst/ar_gen_cry_pipeline.py src/cualni_cryst/ar_gen_cry_examples.py src/cualni_cryst/ebsd_h5oina.py src/cualni_cryst/parent_or_evidence.py src/cualni_cryst/parent_variant_audit.py
+          python -m py_compile src/cualni_cryst/legacy_suite_bridge.py src/cualni_cryst/parent_or_interop.py src/cualni_cryst/parent_consensus_complete.py src/cualni_cryst/parent_replay_exchange.py src/cualni_cryst/parent_fullmap_h5oina.py src/cualni_cryst/parent_grain_table_replay.py src/cualni_cryst/arpge_spatial.py src/cualni_cryst/arpge_analytics.py src/cualni_cryst/arpge_archive.py src/cualni_cryst/arpge_workflows.py src/cualni_cryst/niti_literature_or.py
+          python -m py_compile src/cualni_cryst/arpge_diffraction3d.py src/cualni_cryst/arpge_hex_ang.py src/cualni_cryst/arpge_trd_exact.py src/cualni_cryst/arpge_genova_or.py src/cualni_cryst/experimental_parent_validation.py
+      - name: Cry/Gen/AR hard tests and Streamlit AppTest
+        run: |
+          python -m pytest -q --tb=short --maxfail=1 \
+            tests/test_ar_gen_cry_pipeline.py \
+            tests/test_h5oina_cualni.py \
+            tests/test_parent_18r_product_symmetry.py \
+            tests/test_parent_or_evidence.py \
+            tests/test_parent_variant_audit.py \
+            tests/test_arpge_spatial.py \
+            tests/test_arpge_analytics.py \
+            tests/test_arpge_archive.py \
+            tests/test_arpge_workflows.py \
+            tests/test_arpge_diffraction3d.py \
+            tests/test_arpge_hex_ang.py \
+            tests/test_arpge_trd_exact.py \
+            tests/test_arpge_genova_or.py \
+            tests/test_experimental_parent_validation.py \
+            tests/test_parent_consensus_complete.py \
+            tests/test_parent_or_interop.py \
+            tests/test_parent_replay_exchange.py \
+            tests/test_parent_fullmap_h5oina.py \
+            tests/test_parent_grain_table_replay.py \
+            tests/test_niti_literature_or.py \
+            tests/test_niti_benchmark_runner.py \
+            tests/test_niti_cross_pipeline_coherence.py \
+            tests/test_ar_gen_cry_examples.py \
+            tests/test_ar_gen_cry_app.py \
+            tests/test_legacy_suite_bridge.py
+      - name: Real headless Streamlit HTTP health
+        shell: bash
+        run: |
+          set -euo pipefail
+          streamlit run ar_gen_cry_app.py \
+            --server.headless=true --server.address=127.0.0.1 \
+            --server.port=8787 > /tmp/ar-gen-cry-streamlit.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          success=0
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:8787/_stcore/health; then
+              success=1
+              break
+            fi
+            sleep 1
+          done
+          if test "$success" -ne 1; then
+            cat /tmp/ar-gen-cry-streamlit.log
+            exit 1
+          fi
+          kill -0 "$server"

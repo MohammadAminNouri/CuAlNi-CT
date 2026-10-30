@@ -155,9 +155,26 @@ def reconstruct_parent(
             raise ValueError("weights must not all be zero")
     w = w / float(np.sum(w))
 
+    # EBSD indexing stores only one representative of every product
+    # orientation. For a proper product symmetry S, g_M and g_M @ S are
+    # experimentally equivalent. A parent vote must therefore test
+    #     g_A = (g_M @ S) @ R_(A<-M).T
+    # for *every* product symmetry representative. Failing to do so can
+    # reject the correct parent or generate false multipeak parents in
+    # monoclinic 18R EBSD even if the supplied OR is correct.
+    if not product_symmetry:
+        raise ValueError("product_symmetry must contain proper rotations")
+    product_symmetry = tuple(
+        require_so3(S, tolerance=2.0e-8, name="product symmetry")
+        for S in product_symmetry
+    )
     candidates = np.asarray(
         [
-            [_parent_candidate(g, variant) for variant in variants]
+            [
+                _parent_candidate(g @ S, variant)
+                for variant in variants
+                for S in product_symmetry
+            ]
             for g in measured
         ],
         dtype=float,
