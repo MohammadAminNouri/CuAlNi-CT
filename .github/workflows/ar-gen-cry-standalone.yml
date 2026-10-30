@@ -17,6 +17,7 @@ on:
       - src/cualni_cryst/niti_literature_or.py
       - src/cualni_cryst/niti_benchmark_runner.py
       - src/cualni_cryst/parent_variant_audit.py
+      - src/cualni_cryst/arpge_spatial.py
       - src/cualni_cryst/parent_or_evidence.py
       - src/cualni_cryst/ar_gen_cry_examples.py
       - src/cualni_cryst/legacy_suite_bridge.py
@@ -24,6 +25,7 @@ on:
       - tests/test_h5oina_cualni.py
       - tests/test_parent_18r_product_symmetry.py
       - tests/test_parent_variant_audit.py
+      - tests/test_arpge_spatial.py
       - tests/test_parent_consensus_complete.py
       - tests/test_parent_or_interop.py
       - tests/test_parent_replay_exchange.py
@@ -53,6 +55,7 @@ on:
       - src/cualni_cryst/niti_literature_or.py
       - src/cualni_cryst/niti_benchmark_runner.py
       - src/cualni_cryst/parent_variant_audit.py
+      - src/cualni_cryst/arpge_spatial.py
       - src/cualni_cryst/parent_or_evidence.py
       - src/cualni_cryst/ar_gen_cry_examples.py
       - src/cualni_cryst/legacy_suite_bridge.py
@@ -60,6 +63,7 @@ on:
       - tests/test_h5oina_cualni.py
       - tests/test_parent_18r_product_symmetry.py
       - tests/test_parent_variant_audit.py
+      - tests/test_arpge_spatial.py
       - tests/test_parent_consensus_complete.py
       - tests/test_parent_or_interop.py
       - tests/test_parent_replay_exchange.py
@@ -121,6 +125,7 @@ jobs:
             tests/test_parent_18r_product_symmetry.py \
             tests/test_parent_or_evidence.py \
             tests/test_parent_variant_audit.py \
+            tests/test_arpge_spatial.py \
             tests/test_parent_consensus_complete.py \
             tests/test_parent_or_interop.py \
             tests/test_parent_replay_exchange.py \
