@@ -128,3 +128,55 @@ def or_groupoid(
         "max_matched_symmetry_angle_deg":float(np.max(angular[H])),
         "status":"numerically verified proper OR groupoid; original GenOVa saved table numerical parity NOT established",
     }
+
+
+def audit_archived_or_groupoids(inventory:dict,geometry:dict)->dict:
+    """Attempt every 2021 preset's proper-OR groupoid with source metric audit.
+
+    Returns explicit per-case outcomes; missing crystal data, incompatible
+    point groups or inconsistent signed ORs are never silently fabricated.
+    """
+    from collections import Counter
+    from .ebsd_map import EBSDPhase
+    from .lattice import Lattice
+    phase={p["name"]:p for p in inventory["crystal_metrics"]}
+    results=[]
+    for t,g in zip(inventory["transitions"],geometry["results"]):
+        name=t["name"]
+        if g.get("status")!="geometric candidate":
+            results.append({"name":name,"status":"blocked by geometric/phase evidence",
+                            "cause":g.get("status")})
+            continue
+        try:
+            def sym(pid,rec):
+                p=phase[rec]
+                L=Lattice(p["a_angstrom"],p["b_angstrom"],p["c_angstrom"],
+                          p["alpha_deg"],p["beta_deg"],p["gamma_deg"])
+                pg=p.get("point_group_legacy","").strip()
+                if not pg:
+                    raise ValueError("Archive crystal has no point group metadata")
+                return tuple(EBSDPhase.from_point_group(
+                    pid,rec,L,pg,
+                ).proper_symmetry_cartesian)
+            parent=sym(1,t["parent"])
+            daughter=sym(2,t["product"])
+            calc=or_groupoid(np.asarray(g["Q_parent_from_daughter"]),parent,daughter)
+            results.append({
+                "name":name,"status":"theoretical OR groupoid computed",
+                "parent_order":calc["parent_symmetry_order"],
+                "daughter_order":calc["daughter_symmetry_order"],
+                "intersection_order":calc["intersection_order"],
+                "variants":calc["n_variants"],
+                "operator_classes":calc["n_operator_classes"],
+                "burnside_count":calc["burnside_count"],
+                "operator_composition_verified":True,
+                "original_genova_pickle_table_parity":False,
+            })
+        except (ValueError,KeyError,TypeError,ArithmeticError,AssertionError) as exc:
+            results.append({"name":name,"status":"rejected","reason":str(exc)})
+    return {
+        "n_presets":len(results),
+        "status_counts":dict(Counter(r["status"] for r in results)),
+        "results":results,
+        "original_saved_operator_table_parity_verified":False,
+    }
