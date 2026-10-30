@@ -143,3 +143,29 @@ Primary specifications and methods:
 - MTEX reference-frame warnings, https://mtex-toolbox.github.io/EBSDReferenceFrame
 - MTEX parent-grain reconstruction, https://mtex-toolbox.github.io/GrainGraphBasedReconstruction
 - MTEX orientation-relationship fitting, https://mtex-toolbox.github.io/OrientationRelationshipFit
+
+
+### Rational conventional-to-indexed 18R pseudocells
+
+The indexed 18R metric may correspond to a one-third-volume representation
+of a conventional long-period cell. Its direct-basis matrix need not have
+integer coefficients when expressed in conventional supercell coordinates.
+A matrix containing rational values such as `1/3` is now supported.
+
+The audit retains:
+- `P` in the convention `B_indexed ≈ B_conventional @ P`
+- `det(P)`, the signed indexed-to-conventional volume ratio
+- the full metric residual `||Pᵀ G_conventional P - G_indexed||/||G_indexed||`
+- whether P is integral or rational
+- the polar-projected proper Cartesian frame conversion, explicitly tagged
+  as *conditional* when the two metrics are not exactly equal
+
+**Strict mode** (relative metric tolerance 5e-4) is required to permit an
+OR-frame conversion. **Literature screen** (3e-2 tolerance) allows users to
+inspect candidate cells with different compositions or idealized metrics,
+but blocks use of such a match as a physically verified OR.
+
+Even strict matching is metric-only: a fractional P does not establish
+atomic translation symmetry of a modulated 18R structure. Verify the actual
+indexed EBSD source CIF and conventional structure's atomic sites and
+systematic reflection conditions before trusting any parent reconstruction.
