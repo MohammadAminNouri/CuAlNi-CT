@@ -24,6 +24,7 @@ from cualni_cryst.legacy_suite_bridge import Phase
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.ebsd_h5oina import load_h5oina_sample
 from cualni_cryst.parent_fullmap_h5oina import reconstruct_conditional_parent_h5oina
+from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
 from cualni_cryst.parent_replay_exchange import (
     forward_inverse_roundtrip, export_replay_zip,
 )
@@ -63,7 +64,7 @@ def go(step: str) -> None:
 
 
 def clear_from_cry() -> None:
-    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "parent_interop_inputs", "parent_full_h5", "parent_full_report"):
+    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "parent_interop_inputs", "parent_full_h5", "parent_full_report", "parent_boundary_replay"):
         st.session_state.pop(key, None)
 
 
@@ -74,6 +75,11 @@ def clear_parent_fit() -> None:
     st.session_state.pop("parent_interop_inputs", None)
     st.session_state.pop("parent_full_h5", None)
     st.session_state.pop("parent_full_report", None)
+    st.session_state.pop("parent_boundary_replay", None)
+
+
+def clear_boundary_replay() -> None:
+    st.session_state.pop("parent_boundary_replay", None)
 
 
 def clear_from_ar() -> None:
@@ -706,6 +712,67 @@ elif step == STEPS[2]:
                     "structure/CIF and correct sample frame; orientation CSVs "
                     "are reference outputs, not an AZtec-native phase file."
                 )
+                with st.expander("Replay daughter-grain boundaries (MTEX-style edge scores)"):
+                    st.caption(
+                        "Upload the exported grain quaternion CSV and its "
+                        "boundary-pair CSV. Recomputes OR operator residuals "
+                        "and Gaussian edge probabilities using the frozen Q. "
+                        "This is not MTEX Markov clustering."
+                    )
+                    grain_csv=st.file_uploader(
+                        "Daughter grain orientations CSV",type=["csv"],
+                        key="parent_interop_grain_csv",
+                        on_change=clear_boundary_replay,
+                    )
+                    boundary_csv=st.file_uploader(
+                        "Boundary grain pairs CSV",type=["csv"],
+                        key="parent_interop_boundary_csv",
+                        on_change=clear_boundary_replay,
+                    )
+                    if st.button(
+                        "Recalculate boundary operator scores",
+                        disabled=(grain_csv is None or boundary_csv is None),
+                    ):
+                        try:
+                            params=st.session_state["parent_interop_inputs"]
+                            pa=Phase(**cry["parent_phase"])
+                            ma=Phase(**cry["product_phase"])
+                            p_sym=EBSDPhase.from_point_group(
+                                1,pa.name,pa.lattice(),pa.point_group,
+                            ).proper_symmetry_cartesian
+                            m_sym=EBSDPhase.from_point_group(
+                                1,ma.name,ma.lattice(),ma.point_group,
+                            ).proper_symmetry_cartesian
+                            boundary_report=replay_grain_boundary_tables(
+                                grain_csv.getvalue(),boundary_csv.getvalue(),
+                                params["Q"],tuple(p_sym),tuple(m_sym),
+                            )
+                            st.session_state["parent_boundary_replay"]=boundary_report
+                        except (ValueError,TypeError,ArithmeticError,
+                                AssertionError,KeyError) as exc:
+                            st.error(f"Boundary replay rejected: {exc}")
+                        else:
+                            st.success(
+                                "Boundary operator residuals independently "
+                                "recomputed from supplied grain tables."
+                            )
+                    if st.session_state.get("parent_boundary_replay"):
+                        replay=st.session_state["parent_boundary_replay"]
+                        b1,b2=st.columns(2)
+                        b1.metric("Boundary pairs",replay["n_adjacency_edges"])
+                        b2.metric("Median misfit",
+                                  f'{replay["median_operator_misfit_deg"]:.3f}°')
+                        st.caption(
+                            "A good boundary fit is not independent validation "
+                            "of a physical β→18R relationship."
+                        )
+                        st.download_button(
+                            "Download boundary evidence JSON",
+                            json.dumps(replay,indent=2,allow_nan=False),
+                            file_name="parent_boundary_replay.json",
+                            mime="application/json",use_container_width=True,
+                        )
+
                 with st.expander("Native full-resolution parent HDF5", expanded=False):
                     st.caption(
                         "Fixed-Q, fixed-parent per-pixel mapping with MAD and "
