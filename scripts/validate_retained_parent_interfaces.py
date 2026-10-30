@@ -30,7 +30,7 @@ from cualni_cryst.arpge_archive import inspect_arpge_archive,audit_legacy_orient
 from cualni_cryst.ebsd_io import load_ang,load_ctf
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.lattice import Lattice
-from cualni_cryst.experimental_parent_validation import frozen_or_boundary_audit
+from cualni_cryst.experimental_parent_validation import (\n    frozen_or_boundary_audit,group_disjoint_source_or_selection,\n)
 
 SOURCE_SHA256="7b1df4abf1ceac278e64d4cf2ab6dda4e5ab8efab3c80fbed4707be9b789e873"
 
@@ -121,6 +121,34 @@ def run(archive_path:Path,output_path:Path)->dict:
                     "offset_15deg_or_within_3deg":shifted["negative_OR_fraction_within_threshold"],
                     "independent_parent_grain_matching_confirmed":False,
                 }
+            if name=="Bainitic steel":
+                # The archived Fe-GT relationship is not a scientifically
+                # guaranteed optimal OR for every bainite region. Select among
+                # original predeclared alternatives on TRAIN island contacts
+                # only, then freeze the selected relationship on separate
+                # HOLDOUT retained-fcc islands. This tests OR discrimination,
+                # never certifies common prior austenite grain topology.
+                choices={}
+                for label in ("Fe-GT","Fe-Kelly","Fe-KS","Fe-NW","Fe-Pitsch"):
+                    entry=next((e for e in geometry["results"]
+                                if e["name"]==label),None)
+                    if entry and entry["status"]=="geometric candidate":
+                        choices[label]=np.asarray(entry["Q_parent_from_daughter"])
+                if len(choices)<3:
+                    raise ValueError("Archived Fe source-preset candidates not available")
+                selected={}
+                for group,keep in (("all_indexed",None),("quality_gate",good)):
+                    selected[group]=group_disjoint_source_or_selection(
+                        orientations=ebsd.orientations,phase_ids=ebsd.phase_id,
+                        xy=np.column_stack((ebsd.x,ebsd.y)),
+                        parent_groups=islands.ravel(),
+                        parent_phase_id=parent_id,daughter_phase_id=daughter_id,
+                        neighbor_distance=step,source_or_candidates=choices,
+                        parent_proper=gp,daughter_proper=gm,
+                        quality_mask=keep,train_fraction=.6,seed=20261030,
+                        max_pairs_per_split=2300,acceptance_deg=3.,
+                    )
+                trial["original_fe_preset_group_disjoint_selection"]=selected
             report["tested"][name]={
                 "source_map":member,"frozen_original_2021_transformation":kind,
                 "n_source_pixels":len(ebsd.phase_id),
