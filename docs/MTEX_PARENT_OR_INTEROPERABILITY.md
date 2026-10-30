@@ -155,3 +155,73 @@ It is not version-controlled in the public research repository.
   audit of the reduced 18R CIF and a beta parent measurement or calibrated
   single-crystal axes; distinguish β₁ and alternative crystal-frame
   choices by actual diffraction and phase structure, not only residuals.
+
+
+## NiTi literature regression and independent parent anchoring (30 October 2026)
+
+To avoid testing only an arbitrary rotation, `niti_literature_or.py`
+derives **three published ideal NiTi B2→B19′ ORs**, A, AQ and C, from
+their *crystallographic plane and direction parallelisms*. The source is
+Cayron (2020), Crystals **10**, 562, DOI 10.3390/cryst10070562.
+The default AQ natural relationship is
+
+- (010) B19′ // (110) B2
+- [101] B19′ // [−1 1 1] B2
+
+The NiTi parent cell is cubic B2 a=3.015 Å. The NiTi B19′ archived
+monoclinic (unique-b) cell is a=2.889, b=4.120, c=4.622 Å and
+beta=96.8°. A **direct direction** [uvw] maps to Cartesian using B*uvw;
+a **reciprocal plane normal** (hkl) maps using inv(B.T)*hkl. The code
+rejects non-coplanar direction/plane pairs instead of rotating a plane
+index as if it were a direct lattice vector.
+
+A *distinct* 2026 correspondence-theory benchmark uses
+B2 a0=3.010 Å and B19′ a=2.898, b=4.108, c=4.646 Å,
+beta=97.78° with exact direct correspondence
+
+    C_M<-A = [[0,0,1],[1/2,1/2,0],[-1/2,1/2,0]]
+
+This C is **not** the NiTi AQ orientation rotation Q.
+The legacy Cry/Gen layer must report 12 correspondence variants and
+seven intercorrespondence operator classes for that case. Independent
+principal stretches of F=B_M*C/a0 are approximately
+0.930026279, 0.965048059 and 1.119484928. These metrics are
+not the 2020 ideal AQ study's exact lattice input; keep them separate.
+
+`niti_benchmark_runner.py` independently synthesizes 12 complete
+B19′ variants from the **published 2020 AQ OR**, applies a fixed
+deterministic small SO(3) measurement perturbation, infers a B2 parent
+from the martensite orientations without supplying its hidden
+orientation, and compares the inferred beta against TWO orthogonal/
+non-collinear independently generated reference axes. It tests
+published alternative OR C and a deliberately wrong absolute
+parent orientation as negative controls. **All these orientations
+and parent axes are synthetic**; the source paper's actual raw EBSD
+pixels were not obtained. The test is mathematically genuine but not
+an independent NiTi experimental replication.
+
+### Real Cu–Al–Ni single-crystal anchor requirement
+
+The AR panel accepts either a retained/reverted β orientation
+(g_beta_crystal→Oxford_sample, proper 3×3) or TWO independently
+measured nonparallel β crystallographic directions, formatted:
+
+    {"parent_uvw":[[1,0,0],[0,1,1]],
+     "sample_xyz":[[...],[...]]}
+
+The two specimen vectors must be actual calibrated measurements in
+the **identical sample frame as the 18R EBSD Euler maps**. The
+`parent_orientation_from_two_directions` solver checks pair angular
+consistency, rejects parallel directions, calculates proper SO(3), and
+compares the anchored orientation against the fitted candidate modulo
+the 24 proper cubic symmetry operations. If both full measured beta
+orientation and two directions are given, contradictions above 3°
+are refused. Self-reported evidence is still marked unverified.
+
+For real Sites 6, 7 and 8 there is **no independently measured β axis
+or retained β indexed phase in the uploaded H5OINA data**, and neither
+the exact reduced 18R atomic setting nor its physical basis mapping
+has been demonstrated. Therefore the numerical cross-site success
+does not upgrade to physically established β1 parent OR or absolute
+orientation. Oxford header zero specimen Euler and scan rotation 180°
+are instrument metadata, not a parent lattice measurement.
