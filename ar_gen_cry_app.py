@@ -849,7 +849,8 @@ elif step == STEPS[2]:
                             binary, summary = reconstruct_conditional_parent_h5oina(
                                 ar["filename"],st.session_state["ar_bytes"],
                                 inputs["gA"],inputs["Q"],tuple(sym_p),tuple(sym_m),
-                                max_mad_deg=float(mad_max),
+                                expected_daughter_lattice=mc.lattice(),
+                                 max_mad_deg=float(mad_max),
                                 max_fit_deg=float(accept_angle),
                                 min_variant_patch_pixels=int(min_patch),
                             )
