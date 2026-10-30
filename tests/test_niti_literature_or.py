@@ -128,3 +128,29 @@ def test_coplanarity_and_lattice_setting_fail_closed():
         ))
     with pytest.raises(ValueError,match="one of"):
         niti_published_or("Kajiwara")
+
+
+def test_published_niti_2026_correspondence_12_variants_7_operator_classes():
+    # Independent CT benchmark from Cayron (2026) and archive calculations.
+    # C is a direct-coordinate correspondence, NOT the AQ orientation matrix.
+    from cualni_cryst.legacy_suite_bridge import Phase
+    from cualni_cryst.ar_gen_cry_pipeline import cry_stage,gen_stage
+    parent=Phase("NiTi B2","m-3m",3.010,3.010,3.010)
+    product=Phase("NiTi B19-prime","2/m",
+                  2.898,4.108,4.646,90,97.78,90)
+    cry=cry_stage(parent,product,(1,0,0),(0,1,0))
+    C="0 0 1\\n1/2 1/2 0\\n-1/2 1/2 0"
+    gen=gen_stage(cry,C)
+    assert gen["variants"]==12
+    assert gen["operator_classes"]==7
+    # Independently evaluate stretch eigenvalues from physical direct metrics.
+    B=product.lattice().structure_matrix()
+    F=B@np.array([[0.,0.,1.],[.5,.5,0.],[-.5,.5,0.]])/3.010
+    stretches=np.linalg.svd(F)[1]
+    assert np.sort(stretches)==pytest.approx(
+        [0.930026279,0.965048059,1.119484928],rel=2e-8
+    )
+    # Correspondence and orientation are different physical matrices.
+    AQ=niti_published_or("AQ")
+    assert not np.allclose(np.asarray(AQ["Q_parent_from_daughter"]),
+                           np.asarray([[0,0,1],[.5,.5,0],[-.5,.5,0]]))
