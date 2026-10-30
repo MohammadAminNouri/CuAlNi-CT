@@ -59,6 +59,10 @@ def clear_from_cry() -> None:
         st.session_state.pop(key, None)
 
 
+def clear_parent_fit() -> None:
+    st.session_state.pop("ar_fit_result", None)
+
+
 def clear_from_ar() -> None:
     for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
         st.session_state.pop(key, None)
@@ -400,12 +404,12 @@ elif step == STEPS[2]:
             )
             conventional_cif = st.file_uploader(
                 "Conventional 18R reference CIF (optional)", type=["cif"],
-                key="ar_conventional_cif",
+                key="ar_conventional_cif", on_change=clear_parent_fit,
             )
             basis_text = st.text_area(
                 "P: columns of indexed basis in conventional direct coordinates",
                 "1 0 0\\n0 1 0\\n0 0 1", height=100,
-                key="ar_direct_basis",
+                key="ar_direct_basis", on_change=clear_parent_fit,
             )
             basis_audit = None
             if conventional_cif is not None:
@@ -437,11 +441,11 @@ elif step == STEPS[2]:
             known_parent_json = st.text_area(
                 "Measured beta orientation g(parent crystal → same specimen frame), JSON 3×3",
                 placeholder="[[1,0,0],[0,1,0],[0,0,1]]",
-                key="ar_parent_anchor",
+                key="ar_parent_anchor", on_change=clear_parent_fit,
             )
             specimen_frame_ok = st.checkbox(
                 "I cross-checked the Oxford Euler/specimen frame against an independent direction",
-                key="ar_frame_externally_checked",
+                key="ar_frame_externally_checked", on_change=clear_parent_fit,
             )
 
         with st.expander("Optional experimental parent fit", expanded=False):
@@ -454,7 +458,7 @@ elif step == STEPS[2]:
             )
             in_conventional = st.checkbox(
                 "Supplied OR matrices refer to the CONVENTIONAL 18R basis",
-                key="ar_or_uses_conventional_basis",
+                key="ar_or_uses_conventional_basis", on_change=clear_parent_fit,
             )
             n = st.slider("Maximum sampled points", 2, 48, 12)
             verified = st.checkbox("I independently verified the OR, phase identity and coordinate frames.")
