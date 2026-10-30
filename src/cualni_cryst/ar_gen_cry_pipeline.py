@@ -168,7 +168,7 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
         )
         anchored = {
             "parent_orientation_matrix": known.tolist(),
-            "evidence_status": "user-supplied, not independently independently verified by software",
+            "evidence_status": "user-supplied, not independently verified by software",
             "candidate_vs_measured_parent_deg": anchor_residual,
             "agrees_with_anchor_within_3deg": anchor_residual <= 3.0,
         }
@@ -181,6 +181,8 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
     )
     # A user checkbox is an external evidence claim, not experimental
     # certification. The software independently verifies geometry and SO3 only.
+    if anchor_residual is not None and anchor_residual > 3.0:
+        gate["blocking_requirements"].append("supplied anchor is inconsistent with fitted parent orientation")
     return {
         "stage": "AR parent fit",
         "experimental_or_user_supplied": True,
