@@ -214,3 +214,31 @@ def test_niti_actual_ar_entrypoint_blind_parent_fit_and_independent_anchors():
     assert compare_parent_to_anchor(
         np.asarray(fitted["parent_crystal_to_sample_rotation"]),gA,pops,
     )<0.01
+
+
+def test_niti_specimen_frame_covariance_and_one_sided_frame_error():
+    p,m,pops,mops,Q,gA=setup_niti()
+    daughter=forward_predict_daughter(gA,Q,pops,mops)["daughter_crystal_to_sample"]
+    H=Rotation.from_euler("xyz",[33,-14,20],degrees=True).as_matrix()
+    rotated_daughter=H@daughter
+    calibrated=forward_inverse_roundtrip(
+        H@gA,Q,pops,mops,observed_daughter_g=rotated_daughter,
+        accepted_deg=0.1,
+    )
+    assert calibrated["weighted_fraction_within_threshold"]==pytest.approx(1)
+    assert calibrated["median_forward_residual_deg"]<1e-4
+    mismatched=forward_inverse_roundtrip(
+        gA,Q,pops,mops,observed_daughter_g=rotated_daughter,
+        accepted_deg=1,
+    )
+    assert mismatched["weighted_fraction_within_threshold"]<0.5
+    pairs=np.asarray([[daughter[i],daughter[i+1]] for i in range(5)])
+    original=frozen_or_boundary_audit(pairs,Q,pops,mops)
+    rotated=frozen_or_boundary_audit(H@pairs,Q,pops,mops)
+    assert rotated["operator_misfit_deg"]==pytest.approx(
+        original["operator_misfit_deg"],abs=1e-4,
+    )
+    # Global specimen rotations preserve daughter/daughter disorientation.
+    assert rotated["mtex_style_probability"]==pytest.approx(
+        original["mtex_style_probability"],abs=1e-6,
+    )
