@@ -196,7 +196,7 @@ def test_collinear_or_inconsistent_parent_anchor_is_rejected():
         "parent_uvw":[[1,0,0],[1,0,0]],
         "sample_xyz":[[1,0,0],[0,1,0]],
     })
-    with pytest.raises(ValueError,match="direction"):
+    with pytest.raises(ValueError,match="Direction anchor"):
         ar_parent_fit("test.h5oina",fixture_h5oina(),cry,1,
                       json.dumps([np.eye(3).tolist()]),max_points=3,
                       parent_direction_pairs_json=bad)
