@@ -104,7 +104,8 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
                   verified_or_json: str, *, max_points: int = 12,
                   parent_anchor_orientation_json: str | None = None,
                   indexed_18r_basis_verified: bool = False,
-                  specimen_frame_verified: bool = False) -> dict:
+                  specimen_frame_verified: bool = False,
+                  specimen_frame_correction_json: str | None = None) -> dict:
     """Exploratory fit ONLY after explicit experimental OR data are supplied."""
     audit = ar_stage(filename, data)
     if not cry or cry.get("stage") != "Cry":
@@ -121,8 +122,22 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
     # Validation of SO(3), symmetry and the actual parent fit is performed by
     # VariantOR and reconstruct_parent in the existing scientific backend.
     suffix = Path(filename).suffix.lower()
+    frame_correction = None
+    if specimen_frame_correction_json and specimen_frame_correction_json.strip():
+        if suffix != ".h5oina":
+            raise ValueError("Explicit specimen corrections are supported for Oxford H5OINA only")
+        try:
+            frame_correction = require_so3(
+                np.asarray(json.loads(specimen_frame_correction_json), float),
+                tolerance=2e-8, name="sample frame correction",
+            )
+        except (ValueError, TypeError) as exc:
+            raise ValueError("Sample frame correction must be a proper 3x3 SO3 matrix") from exc
     if suffix == ".h5oina":
-        ebsd, _ = load_h5oina_sample(filename, data, maximum_sample=12000)
+        ebsd, _ = load_h5oina_sample(
+            filename, data, maximum_sample=12000,
+            sample_frame_correction=frame_correction,
+        )
         geometry = [item for item in audit["phase_geometry"]
                     if item["phase_id"] == int(product_phase_id)]
         if len(geometry) != 1:
@@ -187,6 +202,9 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
         "stage": "AR parent fit",
         "experimental_or_user_supplied": True,
         "parent_anchor_comparison": anchored,
+        "explicit_frame_correction_matrix": (
+            None if frame_correction is None else frame_correction.tolist()
+        ),
         "parent_anchor_residual_deg": anchor_residual,
         "evidence_gate": gate,
         "experimental_certification": False,
