@@ -32,6 +32,7 @@ from cualni_cryst.parent_replay_exchange import (
 
 from cualni_cryst.parent_or_evidence import (
     audit_direct_basis, rebase_orientation_relationship,
+    parent_fit_in_raw_oxford_frame,
 )
 from cualni_cryst.ar_gen_cry_examples import (
     EXAMPLES, NI_TI_REFERENCE_PAIRS, provenance, parse_cif_phase,
@@ -656,7 +657,7 @@ elif step == STEPS[2]:
                         json.loads(parent_text) if parent_text.strip() else
                         embedded.get("candidate_beta_parent_crystal_to_OxfordCS1_matrix")
                         or embedded.get("parent_crystal_to_sample_matrix")
-                        or (fit or {}).get("parent_crystal_to_sample_rotation")
+                        or (parent_fit_in_raw_oxford_frame(fit).tolist() if fit else None)
                     )
                     if Q_input is None or gA_input is None:
                         raise ValueError(
