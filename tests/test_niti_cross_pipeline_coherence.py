@@ -242,3 +242,60 @@ def test_niti_specimen_frame_covariance_and_one_sided_frame_error():
     assert rotated["mtex_style_probability"]==pytest.approx(
         original["mtex_style_probability"],abs=1e-6,
     )
+
+
+def test_niti_2026_stretch_ball_james_cofactor_and_ptmc_same_metrics():
+    """Cross-theory physical input contract; B Mode fractions independently
+    reproduced in the 2026 NiTi calculation dossier (NOT measured EBSD).
+    The 2026 metrics are distinct from the 2020 AQ OR benchmark.
+    """
+    from cualni_cryst.stretch import positive_definite_sqrt, principal_stretches
+    from cualni_cryst.ball_james import (
+        mallard_law_twins, analytical_rank_one_connections,
+        single_variant_austenite_habit_solutions,
+    )
+    from cualni_cryst.cofactor import evaluate_cofactor_conditions
+    from cualni_cryst.ptmc import ptmc_volume_fractions, middle_singular_value
+
+    a0=3.010
+    parent=Lattice.cubic(a0)
+    product=Lattice.monoclinic_unique_b(2.898,4.108,4.646,97.78)
+    C=np.asarray([[0.,0.,1.],[0.5,0.5,0.],[-0.5,0.5,0.]])
+    F=product.structure_matrix() @ C @ np.linalg.inv(parent.structure_matrix())
+    U=positive_definite_sqrt(F.T@F)
+    lambdas,_=principal_stretches(U)
+    assert lambdas==pytest.approx(
+        [0.930026279,0.965048059,1.119484928],rel=2e-8,
+    )
+    # Neither theoretical single-variant A/M habit compatibility nor
+    # the mandatory CC1 condition holds for this published lattice.
+    assert single_variant_austenite_habit_solutions(U)==[]
+    axis=np.asarray([0.,1.,-1.])
+    axis/=np.linalg.norm(axis)
+    Q180=2*np.outer(axis,axis)-np.eye(3)
+    # Use SAME correspondence-derived stretch in both twin wells.
+    Uj=Q180@U@Q180
+    solutions=mallard_law_twins(Uj,U,axis,tol=1e-8)
+    type_I=next(sol for sol in solutions if sol.kind=="I")
+    assert type_I.residual<1e-8
+    assert np.linalg.norm(
+        type_I.rotation@Uj-U-np.outer(type_I.a,type_I.n),"fro",
+    )<1e-8
+    conditions=evaluate_cofactor_conditions(U,type_I.a,type_I.n)
+    assert conditions.cc1_residual==pytest.approx(
+        0.965048059-1,abs=2e-8,
+    )
+    assert conditions.cc1_satisfied is False
+    assert conditions.satisfied is False
+
+    roots=ptmc_volume_fractions(U,type_I.a,type_I.n,tol=1e-9)
+    assert len(roots)==2
+    assert roots==pytest.approx([0.2990244403,0.7009755597],abs=2e-7)
+    for f in roots:
+        laminate=U+f*np.outer(type_I.a,type_I.n)
+        assert abs(middle_singular_value(laminate)-1)<1e-9
+        rank_one=analytical_rank_one_connections(
+            laminate,np.eye(3),tol=1e-8,
+        )
+        assert len(rank_one)>=1
+        assert max(sol.residual for sol in rank_one)<1e-6
