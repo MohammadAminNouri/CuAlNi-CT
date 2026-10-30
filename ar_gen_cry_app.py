@@ -1101,10 +1101,21 @@ elif step == STEPS[2]:
                                         metrics["kam_deg"],-1).tolist(),
                     },allow_nan=False)
                     st.session_state["arpge_spatial_export_ctf"]=None
+                    st.session_state["arpge_spatial_export_hex_ang"]=None
                     if spatial["n_parent_domains"]>0:
                         try:
                             st.session_state["arpge_spatial_export_ctf"]=(
                                 export_parent_ebsd_text(
+                                    ebsd,spatial["pixel_parent_id"],
+                                    spatial["parent_crystal_to_sample"],
+                                    parent_lattice=parent_phase.lattice(),
+                                )
+                            )
+                        except ValueError:
+                            pass
+                        try:
+                            st.session_state["arpge_spatial_export_hex_ang"]=(
+                                export_hex_parent_ang(
                                     ebsd,spatial["pixel_parent_id"],
                                     spatial["parent_crystal_to_sample"],
                                     parent_lattice=parent_phase.lattice(),
@@ -1130,6 +1141,13 @@ elif step == STEPS[2]:
                         "Download research CTF parent orientation map",
                         st.session_state["arpge_spatial_export_ctf"],
                         file_name="arpge_parent_candidate_RESEARCH_ONLY.ctf",
+                        mime="text/plain",
+                    )
+                if st.session_state.get("arpge_spatial_export_hex_ang"):
+                    st.download_button(
+                        "Download staggered HexGrid ANG parent candidate",
+                        st.session_state["arpge_spatial_export_hex_ang"],
+                        file_name="arpge_parent_hex_candidate_RESEARCH_ONLY.ang",
                         mime="text/plain",
                     )
         with st.expander("Inspect original 2021 ARPGE / GenOVa archive safely"):
