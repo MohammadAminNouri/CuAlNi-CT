@@ -247,3 +247,24 @@ def audit_anchor_status(
         "blocking_requirements": blockers,
         "note": "User-declared external evidence is not authenticated; daughter misorientations alone never certify a unique physical OR.",
     }
+
+
+def parent_fit_in_raw_oxford_frame(fit: dict) -> np.ndarray:
+    """Undo an explicitly calibrated specimen-frame change for H5OINA replay.
+
+    The AR fitting code transforms raw Oxford g to corrected g' = H @ g.
+    Forward/round-trip replay deliberately uses raw indexed g, so a parent
+    inferred in the corrected frame must first be converted H.T @ g_parent'.
+    This does not infer H or certify the parent orientation.
+    """
+    g_corrected = require_so3(
+        np.asarray(fit["parent_crystal_to_sample_rotation"], float),
+        tolerance=2e-8, name="AR fitted parent",
+    )
+    correction = fit.get("explicit_frame_correction_matrix")
+    if correction is None:
+        return g_corrected
+    H = require_so3(np.asarray(correction, float),
+                    tolerance=2e-8, name="AR specimen-frame correction")
+    return require_so3(H.T @ g_corrected, tolerance=2e-8,
+                       name="parent in raw Oxford CS1")
