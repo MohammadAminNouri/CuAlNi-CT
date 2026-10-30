@@ -16,6 +16,7 @@ R: daughter crystal Cartesian -> parent crystal Cartesian.
 """
 
 from dataclasses import dataclass
+from fractions import Fraction
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -26,38 +27,51 @@ from .ebsd_analysis import minimum_disorientation
 
 @dataclass(frozen=True)
 class BasisAudit:
-    integer_matrix_old_from_new: tuple[tuple[int, int, int], ...]
-    absolute_volume_factor: int
+    integer_matrix_old_from_new: tuple[tuple[float, float, float], ...]
+    absolute_volume_factor: int | None
+    volume_ratio_new_over_old: float
+    integral_basis: bool
     metric_relative_residual: float
     crystal_frame_new_to_old: np.ndarray
     status: str
 
 
-def _integer_basis(P: object) -> np.ndarray:
-    raw = np.asarray(P)
-    if raw.shape != (3, 3):
-        raise ValueError("Basis P must be a 3 x 3 integer matrix")
+def _rational_basis(P: object) -> tuple[np.ndarray, bool]:
+    """Use exact small fractions, without silently rounding a proposed basis.
+
+    Rational transformations may describe an EBSD pseudocell, but they do not
+    prove lattice periodicity or atomic correspondence.
+    """
     try:
-        values = np.asarray(raw, dtype=float)
-    except (ValueError, TypeError) as exc:
-        raise ValueError("Basis P must contain finite integers") from exc
-    if not np.isfinite(values).all() or np.any(np.abs(values) > 100):
-        raise ValueError("Basis P must contain finite small integers")
-    if not np.array_equal(values, np.rint(values)):
-        raise ValueError("Basis P must be integral, not rounded")
-    P = np.rint(values).astype(int)
-    determinant = round(float(np.linalg.det(P)))
-    if determinant <= 0:
+        rows = np.asarray(P, dtype=object)
+        if rows.shape != (3, 3):
+            raise ValueError("Basis P must be 3 x 3")
+        fractions = []
+        for raw in rows.reshape(-1):
+            val = Fraction(str(raw)).limit_denominator(12)
+            numeric = float(raw)
+            if (not np.isfinite(numeric) or abs(float(val)-numeric) > 1e-9
+                    or abs(numeric) > 100):
+                raise ValueError("Basis entries must be small exact rational numbers")
+            fractions.append(val)
+        values = np.array([float(v) for v in fractions]).reshape(3,3)
+    except (ValueError, TypeError, OverflowError, ZeroDivisionError) as exc:
+        raise ValueError("Invalid small-rational basis matrix P") from exc
+    if float(np.linalg.det(values)) <= 1e-10:
         raise ValueError("P must be nonsingular and right-handed (det P > 0)")
-    return P
+    integral = all(v.denominator == 1 for v in fractions)
+    return values, integral
 
 
 def audit_direct_basis(
     old_lattice: Lattice, new_lattice: Lattice, P: object,
     *, relative_tolerance: float = 5.0e-4,
 ) -> BasisAudit:
-    """Require P.T G_old P = G_new; never guess the conventional/reduced map."""
-    P = _integer_basis(P)
+    """Require metric-compatible P; never infer atomic correspondence.
+
+    A relaxed tolerance is for a literature metric screen ONLY.
+    """
+    P, integral = _rational_basis(P)
     G_old = old_lattice.metric()
     G_new = new_lattice.metric()
     predicted = P.T @ G_old @ P
@@ -71,15 +85,26 @@ def audit_direct_basis(
     # Each cell uses its own Cartesian orthonormal axes as built by Lattice.
     # This rotation takes a vector in the NEW Cartesian frame to the OLD one.
     B_old, B_new = old_lattice.structure_matrix(), new_lattice.structure_matrix()
-    T = B_old @ P @ np.linalg.inv(B_new)
-    T = require_so3(T, tolerance=max(2e-8, 5 * err),
-                    name="crystallographic frame conversion")
+    T_raw = B_old @ P @ np.linalg.inv(B_new)
+    # Different measured and literature cells may have small metric strain.
+    # Keep that error in the audit, and use only the polar rotation to express
+    # a CONDITIONAL frame comparison. No physical mapping is inferred.
+    U, _, Vt = np.linalg.svd(T_raw)
+    T = require_so3(U @ Vt, tolerance=2e-8,
+                    name="projected crystallographic frame")
+    volume_ratio = float(np.linalg.det(P))
     return BasisAudit(
-        integer_matrix_old_from_new=tuple(tuple(int(v) for v in row) for row in P),
-        absolute_volume_factor=round(float(np.linalg.det(P))),
+        integer_matrix_old_from_new=tuple(tuple(float(v) for v in row) for row in P),
+        absolute_volume_factor=(round(volume_ratio) if integral else None),
+        volume_ratio_new_over_old=volume_ratio,
+        integral_basis=integral,
         metric_relative_residual=err,
         crystal_frame_new_to_old=T,
-        status="explicit basis is metric-compatible; physical atom correspondence not checked",
+        status=(
+            "rational subcell candidate; atomic translations and physical OR unverified"
+            if not integral or err > 5e-4 else
+            "metric-compatible integral basis; atomic correspondence not checked"
+        ),
     )
 
 
