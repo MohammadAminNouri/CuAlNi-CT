@@ -66,11 +66,10 @@ def decode_transition(raw:bytes)->dict:
     if len(value)!=11 or any(not isinstance(x,str) for x in value[:3]):
         raise ValueError("Expected an 11-field ARPGE transition")
     name,parent,product=value[:3]
-    # The source uses fields 3/4 for one parent/product plane pair,
-    # 7/8 for an in-plane parent/product direction pair. Optional
-    # second plane/direction constraints occupy fields 5/6, 9/10.
-    pairs=[(_vector3(value[i],"parent hkl/uvw"),
-            _vector3(value[i+1],"daughter hkl/uvw"))
+    # CRITICAL legacy order: fields 3/4 and 7/8 are DAUGHTER/PARENT,
+    # despite the phase-name order being parent then daughter!\n    # NiTi_AQ proves this: (010)_B19prime//(110)_B2 and\n    # [101]_B19prime//[-1 1 1]_B2. Burgers confirms (0001)_hcp//(110)_bcc.
+    pairs=[(_vector3(value[i],"daughter hkl/uvw"),
+            _vector3(value[i+1],"parent hkl/uvw"))
            for i in (3,5,7,9)]
     if sum(a is not None and b is not None for a,b in pairs)<2:
         raise ValueError("At least two complete plane/direction pairs required")
@@ -78,14 +77,15 @@ def decode_transition(raw:bytes)->dict:
         raise ValueError("Incomplete parent/product matching index pairs")
     return {
         "name":name,"parent":parent,"product":product,
-        "primary_parent_plane_hkl":pairs[0][0],
-        "primary_product_plane_hkl":pairs[0][1],
-        "secondary_parent_plane_hkl":pairs[1][0],
-        "secondary_product_plane_hkl":pairs[1][1],
-        "primary_parent_direction_uvw":pairs[2][0],
-        "primary_product_direction_uvw":pairs[2][1],
-        "secondary_parent_direction_uvw":pairs[3][0],
-        "secondary_product_direction_uvw":pairs[3][1],
+        "primary_parent_plane_hkl":pairs[0][1],
+        "primary_product_plane_hkl":pairs[0][0],
+        "secondary_parent_plane_hkl":pairs[1][1],
+        "secondary_product_plane_hkl":pairs[1][0],
+        "primary_parent_direction_uvw":pairs[2][1],
+        "primary_product_direction_uvw":pairs[2][0],
+        "secondary_parent_direction_uvw":pairs[3][1],
+        "secondary_product_direction_uvw":pairs[3][0],
+        "source_index_order":"daughter_then_parent",
         "source":"2021 user archive, static protocol-0 primitives; not validated OR",
     }
 
