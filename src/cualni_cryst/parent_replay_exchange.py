@@ -126,6 +126,8 @@ def forward_inverse_roundtrip(
     return {
         "schema": "cualni.parent-forward-inverse/1.0",
         "scientific_status": "conditional fitted OR, no physical parent or diffraction certification",
+        "physical_or_certified": False,
+        "absolute_parent_frame_certified": False,
         "n_observations": int(len(observed)),
         "n_predicted_variants": predicted["n_variants"],
         "n_proper_child_symmetries": int(n_sym),
@@ -210,11 +212,28 @@ def export_replay_zip(
     observed_daughter_g: object | None = None,
     weights: object | None = None,
     accepted_deg: float = 3.0,
+    indexed_daughter_cif: bytes | None = None,
+    parent_cif: bytes | None = None,
 ) -> bytes:
     """Portable ZIP: OR, predictions, replay report, and actual MTEX script.
 
     No proprietary EBSD bytes; the user copies the source file locally.
     """
+    # Pass original CIF files through unchanged; do not fabricate structures.
+    def checked_cif(raw: bytes | None, label: str) -> bytes | None:
+        if raw is None:
+            return None
+        if not isinstance(raw, bytes) or len(raw) > 2 * 1024 * 1024:
+            raise ValueError(f"{label} CIF must be bytes <= 2 MiB")
+        try:
+            content = raw.decode("utf-8")
+        except UnicodeError as exc:
+            raise ValueError(f"{label} CIF is not UTF-8") from exc
+        if "data_" not in content or "_cell_length_a" not in content:
+            raise ValueError(f"{label} CIF lacks a crystal-cell declaration")
+        return raw
+    child_cif = checked_cif(indexed_daughter_cif, "Indexed daughter")
+    beta_cif = checked_cif(parent_cif, "Measured parent")
     source = Path(h5oina_filename).name
     if not source.lower().endswith(".h5oina"):
         raise ValueError("Only H5OINA source names accepted in the MTEX replay kit")
@@ -237,6 +256,9 @@ def export_replay_zip(
         "h5oina_filename": source,
         "h5oina_sha256": h5oina_sha256,
         "raw_ebsd_embedded": False,
+        "indexed_daughter_cif_supplied": child_cif is not None,
+        "parent_cif_supplied": beta_cif is not None,
+        "cif_atomic_validation": "externally required; source CIFs copied unchanged",
         "parent_crystal_to_sample_matrix": predicted["parent_crystal_to_sample"].tolist(),
         "parent_crystal_to_sample_quaternion_xyzw": Rotation.from_matrix(
             predicted["parent_crystal_to_sample"]).as_quat().tolist(),
@@ -256,6 +278,10 @@ def export_replay_zip(
         z.writestr("conditional_beta_orientation_xyzw_bunge.csv", _matrix_csv(
             "parent",predicted["parent_crystal_to_sample"][None]))
         z.writestr("run_external_mtex_replay.m", _matlab_replay_script())
+        if child_cif is not None:
+            z.writestr("USER_SUPPLIED_indexed_18R_structure.cif", child_cif)
+        if beta_cif is not None:
+            z.writestr("USER_SUPPLIED_beta_parent_structure.cif", beta_cif)
         z.writestr("README.txt",
             "Standalone reproducibility kit: numerical candidate, not physical OR proof.\n"
             "Copy your ORIGINAL H5OINA alongside this kit; its bytes are not included.\n"
