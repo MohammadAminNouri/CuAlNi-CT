@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from math import erfc
+
 import numpy as np
 import pytest
 from scipy.spatial.transform import Rotation
@@ -33,7 +35,7 @@ def test_full_symmetry_operator_and_mtex_style_gaussian_weights():
     assert res["daughter_symmetry_operations"]==2
     assert res["median_operator_misfit_deg"]<1e-4
     assert np.allclose(res["mtex_style_probability"],
-                       [0.9522096477271853]*2,atol=1e-4)
+                       [0.9999987857662636]*2,atol=1e-7)
     assert res["fraction_under_3deg"]==1
 
 
@@ -53,3 +55,36 @@ def test_reject_improper_or_and_nonrotations():
     with pytest.raises(ValueError):
         frozen_or_boundary_audit(np.stack([[np.eye(3),np.eye(3)]]),
                                  np.diag([1,1,-1]),parent,[np.eye(3)])
+
+
+def test_mtex_exact_probability_reference_at_transition_and_tails():
+    # Independent special-function reference to MTEX calcVariantGraph.m:
+    # 1 - 0.5*(1 + erf(2*(misfit-threshold)/tolerance)).
+    # Identity groups remove variant/symmetry ambiguity for this test.
+    angles = [0.0, 1.0, 2.5, 4.0, 6.0]
+    pairs = np.asarray([
+        [np.eye(3), Rotation.from_euler('z', angle, degrees=True).as_matrix()]
+        for angle in angles
+    ])
+    out = frozen_or_boundary_audit(
+        pairs, np.eye(3), (np.eye(3),), (np.eye(3),),
+        threshold_deg=2.5, transition_width_deg=1.5,
+    )
+    assert np.allclose(out['operator_misfit_deg'], angles, atol=1e-6)
+    reference = [0.5*erfc(2*(angle-2.5)/1.5) for angle in angles]
+    assert np.allclose(out['mtex_style_probability'], reference, atol=1e-12)
+    assert out['mtex_style_probability'][2] == pytest.approx(0.5)
+    assert out['mtex_style_probability'][3] == pytest.approx(0.0023388674905236327)
+    assert 'not MTEX graph' in out['mtex_probability_scope']
+
+
+@pytest.mark.parametrize('threshold,width', [
+    (float('nan'), 1.5), (2.5, float('nan')),
+    (float('inf'), 1.5), (2.5, float('inf')),
+])
+def test_mtex_probability_requires_finite_parameters(threshold, width):
+    pair = np.asarray([[np.eye(3), np.eye(3)]])
+    with pytest.raises(ValueError, match='threshold/tolerance'):
+        frozen_or_boundary_audit(pair, np.eye(3), (np.eye(3),),
+                                 (np.eye(3),), threshold_deg=threshold,
+                                 transition_width_deg=width)
