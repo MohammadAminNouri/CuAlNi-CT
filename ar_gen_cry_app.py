@@ -20,7 +20,7 @@ if str(ROOT / "src") not in sys.path:
 import numpy as np
 import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
+import plotly.graph_objects as plotly_go
 
 from cualni_cryst.legacy_suite_bridge import Phase, inspect_ebsd
 from cualni_cryst.ebsd_map import EBSDPhase
@@ -301,17 +301,17 @@ if step == STEPS[0]:
             try:
                 coordinates=cell_and_reciprocal_3d(selected.lattice(),np.eye(3))
                 vertices=coordinates["vertices_sample_angstrom"]
-                fig=go.Figure()
+                fig=plotly_go.Figure()
                 for edge in coordinates["edges_12"]:
                     segment=vertices[edge]
-                    fig.add_trace(go.Scatter3d(
+                    fig.add_trace(plotly_go.Scatter3d(
                         x=segment[:,0],y=segment[:,1],z=segment[:,2],
                         mode="lines",line=dict(width=4,color="#3282b8"),
                         showlegend=False,
                     ))
                 vectors=coordinates["reciprocal_axes_scaled_for_plot"]
                 for label,vec in zip(("a*","b*","c*"),vectors):
-                    fig.add_trace(go.Scatter3d(
+                    fig.add_trace(plotly_go.Scatter3d(
                         x=[0.,vec[0]],y=[0.,vec[1]],z=[0.,vec[2]],
                         mode="lines+text",text=["",label],
                         line=dict(width=6),name=label,
