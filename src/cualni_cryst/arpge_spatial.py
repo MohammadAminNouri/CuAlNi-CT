@@ -71,7 +71,7 @@ def segment_daughter_grains(ebsd, product_phase_id: int,
                             product_symmetry: tuple[np.ndarray,...],
                             *, tolerance_deg: float=3.,
                             minimum_pixels: int=5, edge_radius_factor: float=1.12,
-                            max_pixels: int=650000, max_edges: int=3600000) -> dict:
+                            max_pixels: int=850000, max_edges: int=3600000) -> dict:
     """Adjacent indexed pixels only; symmetry-aware union-find segmentation.
 
     The inferred neighbour distance is an auditable *geometric heuristic*.
@@ -350,3 +350,47 @@ def reconstruct_spatial_parents(
         "status":"independent bounded spatial hypothesis; no legacy parity or physical OR certification",
         "physical_or_certified":False,
     }
+
+
+def load_h5oina_spatial_grid(filename:str, payload:bytes,
+                            *, max_pixels:int=850000):
+    """Load every indexed Oxford H5OINA pixel, not a sparse AR sample.
+
+    Up to 850k pixels permits the original 1024x704 Oxford Site8 grid.
+    Fails closed on wrong Euler units, missing metadata, or nonfinite
+    indexed input; does not silently rotate Oxford CS1 to sample CS0.
+    """
+    from io import BytesIO
+    import h5py
+    from .ebsd_h5oina import load_h5oina_sample
+    from .ebsd_map import EBSDMap,OrientationConvention
+    _,report=load_h5oina_sample(filename,payload,maximum_sample=256)
+    with h5py.File(BytesIO(payload),"r") as h:
+        root=h["1/EBSD/Data"]
+        phase=np.asarray(root["Phase"],int)
+        n=len(phase)
+        if n>max_pixels:raise ValueError("Full Oxford map exceeds bounded spatial limit")
+        raw_euler=np.asarray(root["Euler"],float)
+        x=np.asarray(root["X"],float)
+        y=np.asarray(root["Y"],float)
+        mad=np.asarray(root["Mean Angular Deviation"],float)
+        if (raw_euler.shape!=(n,3) or x.shape!=(n,) or y.shape!=(n,)
+                or mad.shape!=(n,) or
+                str(root["Euler"].attrs.get("Unit"))!="rad"
+                or str(root["Mean Angular Deviation"].attrs.get("Unit"))!="rad"):
+            raise ValueError("Oxford full-map schema or radians units mismatch")
+        good=phase>0
+        if not np.isfinite(raw_euler[good]).all():
+            raise ValueError("Nonfinite indexed Oxford orientations")
+        # Nonindexed Euler placeholders are ignored and replaced by identity.
+        raw_euler[~good]=0
+        ebsd=EBSDMap.from_eulers(
+            raw_euler,phase,x,y,z=np.zeros(n),
+            quality={"MAD_deg":np.rad2deg(mad)},
+            convention=OrientationConvention.bunge_crystal_to_sample_radians(
+                label="Oxford CS1 raw crystal->sample; NO inferred scan/tilt correction"),
+            indexed=good,
+            metadata={"source_format":"h5oina", "phase_geometry":report["phase_geometry"],
+                      "specimen_frame_calibrated":False},
+        )
+    return ebsd,report
