@@ -19,6 +19,7 @@ from .ebsd_reconstruction import VariantOR, reconstruct_parent
 from .group_theory import correspondence_groupoid
 from .lattice import Lattice
 from .point_groups import point_group_operations, metric_preservation_residual
+from .parent_variant_audit import daughter_variant_assignment
 
 
 @dataclass(frozen=True)
@@ -171,6 +172,19 @@ def reconstruct_ebsd_parent(
         maximum_seed_candidates=64,
         maximum_iterations=20,
     )
+    # A single reference OR represents an entire parent-symmetry-generated
+    # transformation family. Report assignments for the COMPLETE family,
+    # not just the one matrix entered by the user. Extra OR matrices may
+    # instead describe independently measured families, so do not collapse
+    # them to an arbitrary single reference.
+    family = (
+        daughter_variant_assignment(
+            ebsd.orientations[indices], result.parent_orientation, matrices[0],
+            tuple(p_sym), tuple(m_sym),
+            acceptance_deg=tolerance_deg,
+        )
+        if len(matrices) == 1 else None
+    )
     return {
         "sampled_points": len(indices),
         "product_points_total": int(np.count_nonzero(
@@ -183,6 +197,7 @@ def reconstruct_ebsd_parent(
         "assigned_variant_labels": [
             x.variant_index for x in result.variant_assignments
         ],
+        "full_parent_generated_variant_assignment": family,
         "status": "Exploratory single-parent fit to sampled pixels; "
                   "NOT a spatial parent-grain reconstruction, indexed OR "
                   "identification, or independently validated crystallographic result.",
