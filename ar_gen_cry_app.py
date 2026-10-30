@@ -20,6 +20,7 @@ if str(ROOT / "src") not in sys.path:
 import numpy as np
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 from cualni_cryst.legacy_suite_bridge import Phase, inspect_ebsd
 from cualni_cryst.ebsd_map import EBSDPhase
@@ -34,6 +35,13 @@ from cualni_cryst.arpge_analytics import (
 )
 from cualni_cryst.arpge_archive import (
     inspect_arpge_archive, audit_legacy_orientation_presets,
+)
+from cualni_cryst.arpge_diffraction3d import (
+    cell_and_reciprocal_3d, simulate_kinematic_diffraction,
+)
+from cualni_cryst.arpge_hex_ang import export_hex_parent_ang
+from cualni_cryst.arpge_trd_exact import (
+    legacy_llc_from_twin_chains, exact_sigma3_chain,
 )
 from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
 from cualni_cryst.niti_benchmark_runner import evaluate_niti_benchmarks
@@ -277,6 +285,97 @@ if step == STEPS[0]:
                 "parent": cry["parent"], "product": cry["product"],
                 "input_source": cry.get("input_source", {}),
             })
+        with st.expander("Verified 3D direct/reciprocal cell and explicit-site diffraction",
+                         expanded=False):
+            st.caption(
+                "3D lines and reciprocal vectors derive from the declared lattice. "
+                "Electron reflections use a single-scattering Ewald construction. "
+                "No atomic basis or scattering factor is inferred from EBSD."
+            )
+            crystal_choice=st.radio(
+                "3D crystal",("Parent","Product"),horizontal=True,
+                key="arpge_3d_crystal",
+            )
+            selected=Phase(**cry["parent_phase"] if crystal_choice=="Parent"
+                           else cry["product_phase"])
+            try:
+                coordinates=cell_and_reciprocal_3d(selected.lattice(),np.eye(3))
+                vertices=coordinates["vertices_sample_angstrom"]
+                fig=go.Figure()
+                for edge in coordinates["edges_12"]:
+                    segment=vertices[edge]
+                    fig.add_trace(go.Scatter3d(
+                        x=segment[:,0],y=segment[:,1],z=segment[:,2],
+                        mode="lines",line=dict(width=4,color="#3282b8"),
+                        showlegend=False,
+                    ))
+                vectors=coordinates["reciprocal_axes_scaled_for_plot"]
+                for label,vec in zip(("a*","b*","c*"),vectors):
+                    fig.add_trace(go.Scatter3d(
+                        x=[0.,vec[0]],y=[0.,vec[1]],z=[0.,vec[2]],
+                        mode="lines+text",text=["",label],
+                        line=dict(width=6),name=label,
+                    ))
+                fig.update_layout(
+                    title="Metric-verified 3D crystal cell and reciprocal directions",
+                    scene=dict(aspectmode="data",xaxis_title="x (Å)",
+                               yaxis_title="y (Å)",zaxis_title="z (Å)"),
+                    margin=dict(l=0,r=0,b=0,t=48),
+                )
+                st.plotly_chart(fig,use_container_width=True)
+                st.caption(
+                    "Reciprocal vectors are scaled for viewing; units and source "
+                    "are reported separately. Atomic structure is not drawn."
+                )
+                st.metric("Direct↔reciprocal duality residual",
+                          f"{coordinates['original_direct_reciprocal_duality']:.2e}")
+            except (ValueError,ArithmeticError,AssertionError) as exc:
+                st.error(f"3D geometry rejected: {exc}")
+            st.markdown("**Kinematic electron diffraction · explicit fractional atomic sites**")
+            site_json=st.text_area(
+                "Atomic sites JSON (fractional coordinates, relative scattering amplitude)",
+                placeholder='[{"fractional":[0,0,0],"amplitude":1},'
+                            '{"fractional":[0.5,0.5,0.5],"amplitude":1}]',
+                key="arpge_diffraction_sites",
+            )
+            vcol,icol=st.columns(2)
+            acceleration=vcol.number_input("Electron energy (kV)",
+                                           min_value=1.,max_value=1000.,
+                                           value=200.,step=10.)
+            maxh=icol.number_input("Maximum |h|,|k|,|l|",
+                                  min_value=1,max_value=10,value=4,step=1)
+            if st.button("Calculate explicitly specified kinematic diffraction"):
+                try:
+                    if not site_json.strip():
+                        raise ValueError("Explicit atom coordinates/amplitudes are required")
+                    sites=json.loads(site_json)
+                    result=simulate_kinematic_diffraction(
+                        selected.lattice(),np.eye(3),sites,
+                        voltage_kv=float(acceleration),
+                        maximum_index=int(maxh),
+                    )
+                    frame=pd.DataFrame({
+                        "h":result["hkl"][:,0],"k":result["hkl"][:,1],
+                        "l":result["hkl"][:,2],
+                        "x_mm":result["detector_xy_mm"][:,0],
+                        "y_mm":result["detector_xy_mm"][:,1],
+                        "relative_I":result["relative_intensity"],
+                    })
+                    st.dataframe(frame,use_container_width=True)
+                    st.caption(
+                        "Kinematic intensities use user-supplied amplitudes. "
+                        "No dynamical scattering, foil thickness or independent "
+                        "atomic-site verification was performed."
+                    )
+                    st.download_button(
+                        "Download kinematic reflection table CSV",
+                        frame.to_csv(index=False),
+                        file_name="explicit_structure_kinematic_UNVERIFIED.csv",
+                        mime="text/csv",
+                    )
+                except (ValueError,ArithmeticError,AssertionError,TypeError,
+                        KeyError,IndexError) as exc:
+                    st.error(f"Diffraction rejected: {exc}")
         st.button(
             "Continue to Gen", on_click=go, args=(STEPS[1],),
             type="primary", use_container_width=True,
