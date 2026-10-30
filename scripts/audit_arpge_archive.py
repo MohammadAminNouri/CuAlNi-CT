@@ -22,11 +22,13 @@ sys.path.insert(0,str(ROOT/"src"))
 from cualni_cryst.arpge_archive import (
     inspect_arpge_archive,audit_legacy_orientation_presets,
 )
+from cualni_cryst.arpge_genova_or import audit_archived_or_groupoids
 
 
 def run(zip_path:Path,output:Path)->dict:
     inventory=inspect_arpge_archive(str(zip_path))
     geometry=audit_legacy_orientation_presets(inventory)
+    groupoid=audit_archived_or_groupoids(inventory,geometry)
     digest=hashlib.sha256()
     with zip_path.open("rb") as stream:
         for chunk in iter(lambda:stream.read(1024*1024),b""):
@@ -36,6 +38,7 @@ def run(zip_path:Path,output:Path)->dict:
         "archive_sha256":digest.hexdigest(),
         "source_inventory":inventory,
         "transition_geometry":geometry,
+        "numerical_genova_or_groupoids":groupoid,
         "original_python2_code_executed":False,
         "original_numpy_pickle_executed":False,
         "physical_or_validated":False,
@@ -57,6 +60,7 @@ def main():
     print("Decoded crystal metrics:",inv["crystal_metric_count"])
     print("Rejected source records:",len(inv["rejected_records"]))
     print("Geometry statuses:",report["transition_geometry"]["status_counts"])
+    print("OR groupoid statuses:",report["numerical_genova_or_groupoids"]["status_counts"])
     print("SHA-256:",report["archive_sha256"])
     print("Results:",a.output)
     if inv["rejected_records"]:
