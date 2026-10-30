@@ -73,3 +73,85 @@ contained in the user's local cross-tool reproducibility package.
 
 **Status**: MATLAB/MTEX parity not executed; code-level unit tests and
 independent Python grain-table replay are distinct scientific checks.
+
+
+## Interoperability release: three independent numerical stages
+
+The separate AR · Gen · Cry Streamlit AR panel now offers three distinct
+numerical stages, each accepting a manually supplied/frozen **Q** and beta
+orientation. No hidden fitting is performed in these stages.
+
+1. **Parent ⇄ daughter**: `parent_replay_exchange.py` enumerates the
+   inequivalent cubic-generated 18R variants and both proper C2 indexer
+   representatives, tests each measured daughter orientation, inverts the
+   selected variant, and asserts that forward/inverse SO(3) angular residuals
+   agree. Negatively controls wrong input rotations. The session may import
+   `frozen_site8_OR_manifest.json` from the user's local kit. No private
+   fitted Q is committed to GitHub.
+2. **Full-grid conditional parent**:
+   `parent_fullmap_h5oina.py` reads every indexed Oxford Euler pixel,
+   applies bounded/fixed Q and parent orientation in chunks, filters by
+   MAD/residual, and saves HDF5 with parent quaternions, residuals, variant
+   IDs, quality mask and connected **variant-patch** support. Patch support
+   is not a physically segmented MTEX grain and is not Markov clustering.
+   A raw H5OINA source is required and no automatic specimen rotation is
+   applied.
+3. **Independent boundary table replay**:
+   `parent_grain_table_replay.py` reads portable grain-quaternion and
+   adjacency CSVs, rejects duplicate/self/missing edges and invalid
+   rotations, recomputes the theoretical OR intervariant operators,
+   misorientation residuals, and MTEX-style Gaussian edge probabilities.
+   This is not MTEX `calcVariantGraph` / MCL. The grain segmentation is
+   assumed to have been carried out independently.
+
+### Portable ZIP / MATLAB / AZtec Crystal
+
+`parent_replay_exchange.export_replay_zip` writes a reproducibility
+contract, both OR directions, candidate beta and predicted daughter
+orientation/quaternion/Bunge-angle CSVs, numerical diagnostics, and a
+**generated but not executed** MATLAB/MTEX script. The script uses
+`EBSD.load`, `calcGrains`, `parentGrainReconstructor`,
+`calcVariantGraph`, `clusterVariantGraph`, `calcParentFromVote`,
+`mergeSimilar`, and `calcParentEBSD`; it saves a **separate** alternative
+from `calcParent2Child` without overwriting the frozen OR.
+
+The raw H5OINA measurement is never embedded in the exchange ZIP; the
+user must place it alongside the MATLAB launcher. Optional original beta
+and indexed 18R CIFs are passed through **unchanged** into the ZIP.
+AZtec Crystal requires the correct lattice/atomic phase structure and
+its own import procedures. A 3×3 OR or an orientation-quaternion CSV is
+not an AZtec phase CIF, and the program does not claim a verified
+native AZtec importer.
+
+### Independent actual-scan replay, confidential outside GitHub
+
+The user-supplied Site 6, 7 and 8 grain CSVs have been processed using
+the *frozen* Site 8 Q (not refitted on Sites 6/7), all 24 proper beta
+rotations and both proper monoclinic C2 representatives. Forward median
+angular residuals are 0.9568°, 1.1915° and 0.6604°. Grain-area fractions
+within 3° are 100%, 99.66% and 99.68%; both identity-Q and a specified
+15°-perturbed-Q control give 0% within 5° for the same fixed candidate
+parent. Inverse-to-parent residuals agree with the forward residuals
+to <1e-10 degrees as required by SO(3) algebra. This is a convention
+sanity check and out-of-sample *site* transfer, not a unique-OR proof:
+all three scans share the same **idealized 18R indexed phase** and there
+is no independently measured retained/reverted beta parent.
+
+The private replay kit contains the full-precision Q, candidate parent,
+CSV hashes, independent executable checker, and source scan hash manifest.
+It is not version-controlled in the public research repository.
+
+### Scientific acceptance ladder
+
+- **Numerical (supported):** SO(3) operators, inverse correctness,
+  proper crystallographic symmetries, source phase/lattice agreement,
+  explicit specimen-frame provenance, frozen cross-site operator tests,
+  residual and ambiguity masks.
+- **External MTEX (prepared but not executed here):** import in a
+  separately installed MATLAB/MTEX environment, compare segmentation,
+  variant-graph nodes, Markov clusters, parent votes, recovered
+  parent-EBSD fit and phase relabeling.
+- **Physical (still unverified):** independent indexing/pseudosymmetry
+  audit of the reduced 18R CIF and a beta parent measurement or calibrated
+  single-crystal axes; distinguish β₁ and alternative crystal-frame
+  choices by actual diffraction and phase structure, not only residuals.
