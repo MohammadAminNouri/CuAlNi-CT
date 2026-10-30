@@ -12,6 +12,7 @@ import h5py
 import numpy as np
 
 from .ebsd_map import EBSDMap, OrientationConvention
+from .orientation_kernel import require_so3
 
 MAX_H5OINA_BYTES = 120 * 1024 * 1024
 
@@ -26,8 +27,17 @@ def _one(handle, key):
     return obj.item() if hasattr(obj, "item") else obj
 
 
-def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 12000):
-    """Return (sampled EBSDMap, full-scan summary) with explicit raw frames."""
+def load_h5oina_sample(
+    filename: str, payload: bytes, *, maximum_sample: int = 12000,
+    sample_frame_correction: np.ndarray | None = None,
+):
+    """Return sampled EBSDMap and scan/frame audit.
+
+    The Oxford scan angle describes relative tilt axes; it is not itself an
+    arbitrary active z or y rotation to apply to crystal->sample orientations.
+    An independent specimen calibration may supply a proper 3x3 correction.
+    We never silently infer or apply it.
+    """
     if Path(filename).suffix.lower() != ".h5oina":
         raise ValueError("Input must have the .h5oina suffix")
     if not isinstance(payload, bytes) or len(payload) < 100:
@@ -36,6 +46,11 @@ def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 1
         raise ValueError("H5OINA exceeds the 120 MiB upload limit")
     if not 2 <= maximum_sample <= 25000:
         raise ValueError("maximum_sample must be within 2..25000")
+    if sample_frame_correction is not None:
+        sample_frame_correction = require_so3(
+            np.asarray(sample_frame_correction, float),
+            tolerance=2e-8, name="explicit specimen-frame correction",
+        )
     try:
         handle = h5py.File(BytesIO(payload), "r")
     except (OSError, ValueError) as exc:
@@ -61,6 +76,24 @@ def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 1
                     raise ValueError(f"Unexpected {key} shape: {d[key].shape}")
             if str(d["Euler"].attrs.get("Unit")) != "rad":
                 raise ValueError("H5OINA Euler must explicitly have Unit=rad")
+            scan_angle = float(_one(handle, f"{base}/Header/Scanning Rotation Angle"))
+            surface_euler = np.asarray(h["Specimen Orientation Euler"]).reshape(-1).astype(float)
+            if surface_euler.shape != (3,) or not np.isfinite(surface_euler).all():
+                raise ValueError("Invalid specimen-surface orientation metadata")
+            tilt = float(_one(handle, f"{base}/Header/Tilt Angle"))
+            tilt_axis = float(_one(handle, f"{base}/Header/Tilt Axis"))
+            if not np.isfinite(scan_angle) or not np.isfinite(tilt) or not np.isfinite(tilt_axis):
+                raise ValueError("Invalid Oxford scan/tilt frame metadata")
+            frame_metadata = {
+                "scan_rotation_angle_rad": scan_angle,
+                "scan_rotation_angle_deg": float(np.rad2deg(scan_angle)),
+                "specimen_surface_euler_rad": surface_euler.tolist(),
+                "specimen_surface_euler_deg": np.rad2deg(surface_euler).tolist(),
+                "specimen_tilt_rad": tilt,
+                "specimen_tilt_deg": float(np.rad2deg(tilt)),
+                "tilt_axis_rad": tilt_axis,
+                "frame_note": "Oxford scan rotation is the angle between specimen and scanning tilt axes; do not equate it to an unverified active specimen rotation.",
+            }
             phase = np.asarray(d["Phase"], dtype=int)
             if np.any(phase < 0):
                 raise ValueError("Invalid negative phase ID")
@@ -106,14 +139,23 @@ def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 1
                 euler, phase[selection], x, y,
                 indexed=np.ones(count, dtype=bool),
                 quality={"MAD_rad": mad[selection]},
-                convention=OrientationConvention.bunge_crystal_to_sample_radians(
-                    label="Oxford H5OINA Bunge ZXZ radians: crystal to sample-surface"
+                convention=OrientationConvention(
+                    scipy_sequence="ZXZ",
+                    angle_unit=OrientationConvention.bunge_crystal_to_sample_radians().angle_unit,
+                    sample_correction=tuple(tuple(float(v) for v in row)
+                        for row in (
+                            sample_frame_correction if sample_frame_correction is not None
+                            else np.eye(3)
+                        )),
+                    label=("Oxford CS1 raw Bunge ZXZ radians" if sample_frame_correction is None
+                           else "Oxford Bunge ZXZ radians with EXPLICIT user-calibrated sample correction"),
                 ),
                 metadata={
                     "source_format": "h5oina",
                     "full_pixel_count": int(n),
                     "sampled_pixel_count": int(count),
-                    "reference_frame_normalization_applied": False,
+                    "reference_frame_normalization_applied": sample_frame_correction is not None,
+                    **frame_metadata,
                     "spatial_full_resolution": False,
                 },
             )
@@ -126,8 +168,13 @@ def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 1
                 "mean_angular_deviation_median_deg": float(np.median(np.rad2deg(mad[indexed]))),
                 "selected_orientations": int(count),
                 "orientation_convention": "Oxford Bunge ZXZ radians, crystal to sample-surface",
-                "frame_corrected": False,
-                "warning": "No experimental parent OR is inferred; sampled points are not full-map segmentation",
+                "frame_corrected": sample_frame_correction is not None,
+                "sample_frame_correction_matrix": (
+                    None if sample_frame_correction is None
+                    else sample_frame_correction.tolist()
+                ),
+                **frame_metadata,
+                "warning": "No experimental parent OR or specimen frame is inferred; sampled points are not full-map segmentation",
             }
         except (KeyError, TypeError, IndexError) as exc:
             raise ValueError(f"Incomplete Oxford H5OINA EBSD schema: {exc}") from exc
