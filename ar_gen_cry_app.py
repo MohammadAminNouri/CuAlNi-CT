@@ -77,7 +77,7 @@ def go(step: str) -> None:
 
 
 def clear_from_cry() -> None:
-    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "parent_interop_inputs", "parent_full_h5", "parent_full_report", "parent_boundary_replay"):
+    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "parent_interop_inputs", "parent_full_h5", "parent_full_report", "parent_boundary_replay", "arpge_spatial_summary", "arpge_spatial_export", "arpge_spatial_export_ctf"):
         st.session_state.pop(key, None)
 
 
@@ -89,6 +89,9 @@ def clear_parent_fit() -> None:
     st.session_state.pop("parent_full_h5", None)
     st.session_state.pop("parent_full_report", None)
     st.session_state.pop("parent_boundary_replay", None)
+    for key in ("arpge_spatial_summary","arpge_spatial_export",
+                "arpge_spatial_export_ctf"):
+        st.session_state.pop(key,None)
 
 
 def clear_boundary_replay() -> None:
@@ -96,7 +99,7 @@ def clear_boundary_replay() -> None:
 
 
 def clear_from_ar() -> None:
-    for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip"):
+    for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "arpge_spatial_summary", "arpge_spatial_export", "arpge_spatial_export_ctf"):
         st.session_state.pop(key, None)
 
 
