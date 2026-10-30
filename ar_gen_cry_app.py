@@ -20,6 +20,9 @@ import pandas as pd
 import streamlit as st
 
 from cualni_cryst.legacy_suite_bridge import Phase
+from cualni_cryst.parent_or_evidence import (
+    audit_direct_basis, rebase_orientation_relationship,
+)
 from cualni_cryst.ar_gen_cry_examples import (
     EXAMPLES, NI_TI_REFERENCE_PAIRS, provenance, parse_cif_phase,
     correspondence_from_pairs, invert_correspondence,
@@ -389,6 +392,58 @@ elif step == STEPS[2]:
                     f"Indexed phase {phase_record['phase_id']}: {phase_record['name']} "
                     f"({phase_record['space_group']})"
                 )
+        with st.expander("18R basis and parent evidence", expanded=False):
+            st.caption(
+                "A conventional 18R reference OR must be rebased to the precise "
+                "indexed 18R cell before use. The CIF and explicit integer "
+                "change-of-basis P are needed; they are not inferred from EBSD."
+            )
+            conventional_cif = st.file_uploader(
+                "Conventional 18R reference CIF (optional)", type=["cif"],
+                key="ar_conventional_cif",
+            )
+            basis_text = st.text_area(
+                "P: columns of indexed basis in conventional direct coordinates",
+                "1 0 0\\n0 1 0\\n0 0 1", height=100,
+                key="ar_direct_basis",
+            )
+            basis_audit = None
+            if conventional_cif is not None:
+                try:
+                    old_18r = parse_cif_phase(
+                        conventional_cif.getvalue(),
+                        Path(conventional_cif.name).stem, "2/m"
+                    )
+                    values = [
+                        [float(t) for t in line.replace(",", " ").split()]
+                        for line in basis_text.strip().splitlines()
+                        if line.strip()
+                    ]
+                    new_18r = Phase(**cry["product_phase"])
+                    basis_audit = audit_direct_basis(
+                        old_18r.lattice(), new_18r.lattice(), values
+                    )
+                    st.success(
+                        f"Basis metric compatible. Relative residual "
+                        f"{basis_audit.metric_relative_residual:.2e}."
+                    )
+                    st.caption("This proves metric compatibility, not atomic correspondence.")
+                except (ValueError, TypeError, ArithmeticError) as exc:
+                    st.error(f"Basis rejected: {exc}")
+            st.caption(
+                "A known retained/reverted beta orientation (or two noncollinear "
+                "indexed beta directions) is needed to anchor an absolute parent."
+            )
+            known_parent_json = st.text_area(
+                "Measured beta orientation g(parent crystal → same specimen frame), JSON 3×3",
+                placeholder="[[1,0,0],[0,1,0],[0,0,1]]",
+                key="ar_parent_anchor",
+            )
+            specimen_frame_ok = st.checkbox(
+                "I cross-checked the Oxford Euler/specimen frame against an independent direction",
+                key="ar_frame_externally_checked",
+            )
+
         with st.expander("Optional experimental parent fit", expanded=False):
             st.caption("Exploratory single-parent fit, not a complete segmented parent-grain map.")
             chosen = st.number_input("Indexed product phase ID", min_value=1,
@@ -397,6 +452,10 @@ elif step == STEPS[2]:
                 "Verified R(parent ← product), JSON list of 3×3 Cartesian rotations",
                 placeholder='[[[1,0,0],[0,1,0],[0,0,1]]]', value=""
             )
+            in_conventional = st.checkbox(
+                "Supplied OR matrices refer to the CONVENTIONAL 18R basis",
+                key="ar_or_uses_conventional_basis",
+            )
             n = st.slider("Maximum sampled points", 2, 48, 12)
             verified = st.checkbox("I independently verified the OR, phase identity and coordinate frames.")
             if st.button("Fit parent", disabled=not verified, type="primary"):
@@ -404,9 +463,31 @@ elif step == STEPS[2]:
                     st.error("Selected upload has changed. Inspect it again.")
                 else:
                     try:
+                        or_for_indexed = supplied_or
+                        if in_conventional:
+                            if basis_audit is None:
+                                raise ValueError(
+                                    "A verified conventional CIF and P are required "
+                                    "to transform the OR to the indexed 18R basis."
+                                )
+                            refs = np.asarray(json.loads(supplied_or), float)
+                            if refs.ndim != 3 or refs.shape[1:] != (3, 3):
+                                raise ValueError("OR must contain one or more 3×3 rotations")
+                            parent_lattice = Phase(**cry["parent_phase"]).lattice()
+                            identity = audit_direct_basis(
+                                parent_lattice, parent_lattice, np.eye(3, dtype=int)
+                            )
+                            remapped = [
+                                rebase_orientation_relationship(R, identity, basis_audit).tolist()
+                                for R in refs
+                            ]
+                            or_for_indexed = json.dumps(remapped)
                         result = ar_parent_fit(
                             ar["filename"], st.session_state["ar_bytes"], cry,
-                            int(chosen), supplied_or, max_points=n
+                            int(chosen), or_for_indexed, max_points=n,
+                            parent_anchor_orientation_json=known_parent_json,
+                            indexed_18r_basis_verified=basis_audit is not None,
+                            specimen_frame_verified=specimen_frame_ok,
                         )
                     except (ValueError, TypeError, ArithmeticError, AssertionError) as exc:
                         st.error(f"Parent fit rejected: {exc}")
