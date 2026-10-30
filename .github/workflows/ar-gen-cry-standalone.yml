@@ -31,6 +31,7 @@ on:
       - tests/test_parent_grain_table_replay.py
       - tests/test_niti_literature_or.py
       - tests/test_niti_benchmark_runner.py
+      - tests/test_niti_cross_pipeline_coherence.py
       - tests/test_parent_or_evidence.py
       - tests/test_ar_gen_cry_examples.py
       - tests/test_ar_gen_cry_app.py
@@ -66,6 +67,7 @@ on:
       - tests/test_parent_grain_table_replay.py
       - tests/test_niti_literature_or.py
       - tests/test_niti_benchmark_runner.py
+      - tests/test_niti_cross_pipeline_coherence.py
       - tests/test_parent_or_evidence.py
       - tests/test_ar_gen_cry_examples.py
       - tests/test_ar_gen_cry_app.py
@@ -126,6 +128,7 @@ jobs:
             tests/test_parent_grain_table_replay.py \
             tests/test_niti_literature_or.py \
             tests/test_niti_benchmark_runner.py \
+            tests/test_niti_cross_pipeline_coherence.py \
             tests/test_ar_gen_cry_examples.py \
             tests/test_ar_gen_cry_app.py \
             tests/test_legacy_suite_bridge.py
