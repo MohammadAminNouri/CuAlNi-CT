@@ -59,6 +59,21 @@ def daughter_variant_assignment(
         raise ValueError("measured product orientations must be (N,3,3)")
     if not 0 < len(array) <= 100000:
         raise ValueError("Provide 1-100000 measured product orientations")
+    if (not np.isfinite(acceptance_deg) or not 0 < acceptance_deg <= 30
+            or not np.isfinite(minimum_margin_deg)
+            or not 0 <= minimum_margin_deg <= 30):
+        raise ValueError("Acceptance and ambiguity thresholds must be finite and within supported bounds")
+    # SciPy Rotation.from_matrix() projects invalid matrices to SO(3);
+    # reject corrupt EBSD orientations before quaternion conversion.
+    if not np.isfinite(array).all():
+        raise ValueError("Indexed product orientations must be finite proper rotations")
+    orthogonality = np.linalg.norm(
+        array @ np.swapaxes(array, -1, -2) - np.eye(3), axis=(1, 2),
+    )
+    determinants = np.linalg.det(array)
+    if (np.max(orthogonality) > 2e-7
+            or np.max(np.abs(determinants - 1.0)) > 2e-7):
+        raise ValueError("Indexed product orientations are not proper SO(3) rotations")
     variants = np.asarray(phases)
     product_ops = np.asarray(product_symmetry)
     predicted = np.einsum("ij,vjk->vik", g, variants)
