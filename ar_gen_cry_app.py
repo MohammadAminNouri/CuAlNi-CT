@@ -474,6 +474,16 @@ elif step == STEPS[2]:
                 placeholder="[[1,0,0],[0,1,0],[0,0,1]]",
                 key="ar_parent_anchor", on_change=clear_parent_fit,
             )
+            two_parent_dirs_json = st.text_area(
+                "Alternative: two independent measured beta directions (optional JSON)",
+                placeholder='{"parent_uvw":[[1,0,0],[0,1,0]],"sample_xyz":[[...],[...]]}',
+                key="ar_two_parent_directions", on_change=clear_parent_fit,
+            )
+            st.caption(
+                "These two nonparallel beta directions must be measured independently "
+                "in the same sample frame as the indexed H5OINA Euler orientations. "
+                "The Oxford tilt metadata alone is not a beta-parent measurement."
+            )
             st.caption(
                 "Oxford's scanning-rotation angle is not automatically applied as a "
                 "laboratory rotation. Use an independently calibrated frame matrix "
@@ -532,6 +542,7 @@ elif step == STEPS[2]:
                             ar["filename"], st.session_state["ar_bytes"], cry,
                             int(chosen), or_for_indexed, max_points=n,
                             parent_anchor_orientation_json=known_parent_json,
+                            parent_direction_pairs_json=two_parent_dirs_json,
                             indexed_18r_basis_verified=(basis_audit is not None
                                 and comparison_mode == "Strict indexing match"),
                             specimen_frame_verified=specimen_frame_ok,
