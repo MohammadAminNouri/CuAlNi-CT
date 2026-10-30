@@ -28,7 +28,7 @@ cualni-two = "cualni_cryst.two_phase:main"
 cualni-project = "cualni_cryst.project_io:main"
 
 [project.optional-dependencies]
-app = ["streamlit>=1.40,<2", "plotly>=5.24,<7", "gemmi>=0.7,<1", "spglib>=2.5,<3", "orix>=0.15,<0.17"]
+app = ["streamlit>=1.40,<2", "plotly>=5.24,<7", "gemmi>=0.7,<1", "spglib>=2.5,<3", "orix>=0.15,<0.17", "h5py>=3.11,<4"]
 dev = ["pytest>=8,<10", "ruff>=0.6,<1", "hypothesis>=6.100,<7"]
 
 [tool.setuptools.packages.find]
