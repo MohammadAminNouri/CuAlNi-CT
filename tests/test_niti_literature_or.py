@@ -139,7 +139,7 @@ def test_published_niti_2026_correspondence_12_variants_7_operator_classes():
     product=Phase("NiTi B19-prime","2/m",
                   2.898,4.108,4.646,90,97.78,90)
     cry=cry_stage(parent,product,(1,0,0),(0,1,0))
-    C="0 0 1\\n1/2 1/2 0\\n-1/2 1/2 0"
+    C="0 0 1\n1/2 1/2 0\n-1/2 1/2 0"
     gen=gen_stage(cry,C)
     assert gen["variants"]==12
     assert gen["operator_classes"]==7
