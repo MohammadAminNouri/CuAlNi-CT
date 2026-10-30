@@ -18,6 +18,9 @@ from .ebsd_h5oina import load_h5oina_sample
 from .legacy_suite_bridge import (
     Phase, crystal_geometry, inspect_ebsd, reconstruct_ebsd_parent, variant_groupoid,
 )
+from .parent_or_evidence import compare_parent_to_anchor, audit_anchor_status
+from .ebsd_map import EBSDPhase
+from .orientation_kernel import require_so3
 
 MAX_EBSD_BYTES = 8 * 1024 * 1024
 
@@ -98,7 +101,10 @@ def ar_stage(filename: str, data: bytes) -> dict:
 
 
 def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
-                  verified_or_json: str, *, max_points: int = 12) -> dict:
+                  verified_or_json: str, *, max_points: int = 12,
+                  parent_anchor_orientation_json: str | None = None,
+                  indexed_18r_basis_verified: bool = False,
+                  specimen_frame_verified: bool = False) -> dict:
     """Exploratory fit ONLY after explicit experimental OR data are supplied."""
     audit = ar_stage(filename, data)
     if not cry or cry.get("stage") != "Cry":
@@ -145,7 +151,45 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
                 ebsd, Phase(**cry["parent_phase"]), Phase(**cry["product_phase"]),
                 product_phase_id, array, maximum_points=max_points,
             )
-    return {"stage": "AR parent fit", "experimental_or_user_supplied": True, **fit}
+    anchored = None
+    anchor_residual = None
+    if parent_anchor_orientation_json and parent_anchor_orientation_json.strip():
+        try:
+            known = np.asarray(json.loads(parent_anchor_orientation_json), float)
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("Measured parent orientation must be a JSON 3x3 matrix") from exc
+        known = require_so3(known, tolerance=2e-8, name="measured beta parent orientation")
+        pa = Phase(**cry["parent_phase"])
+        sym = EBSDPhase.from_point_group(
+            1, pa.name, pa.lattice(), pa.point_group
+        ).proper_symmetry_cartesian
+        anchor_residual = compare_parent_to_anchor(
+            np.asarray(fit["parent_crystal_to_sample_rotation"], float), known, sym
+        )
+        anchored = {
+            "parent_orientation_matrix": known.tolist(),
+            "evidence_status": "user-supplied, not independently independently verified by software",
+            "candidate_vs_measured_parent_deg": anchor_residual,
+            "agrees_with_anchor_within_3deg": anchor_residual <= 3.0,
+        }
+    gate = audit_anchor_status(
+        measured_parent_orientation=anchored is not None,
+        independent_direction_count=0,
+        indexed_parent_phase_present=False,
+        verified_change_of_basis=indexed_18r_basis_verified,
+        scan_frame_verified=specimen_frame_verified,
+    )
+    # A user checkbox is an external evidence claim, not experimental
+    # certification. The software independently verifies geometry and SO3 only.
+    return {
+        "stage": "AR parent fit",
+        "experimental_or_user_supplied": True,
+        "parent_anchor_comparison": anchored,
+        "parent_anchor_residual_deg": anchor_residual,
+        "evidence_gate": gate,
+        "experimental_certification": False,
+        **fit,
+    }
 
 
 def report_json(cry: dict | None, gen: dict | None,
