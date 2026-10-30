@@ -132,10 +132,16 @@ def segment_daughter_grains(ebsd, product_phase_id: int,
     # closest to the first pixel, then a normalized quaternion chordal average.
     sym_q=[Rotation.from_matrix(require_so3(np.asarray(s,float),
            tolerance=2e-8,name="daughter symmetry")).as_quat() for s in product_symmetry]
+    # Sort a single time: repeated full-map searches are O(pixels * grains)
+    # and become unusable for a 720,896-pixel Oxford map.
+    kept_pixels=np.flatnonzero(grain_ids>=0)
+    ordered=kept_pixels[np.argsort(grain_ids[kept_pixels],kind="stable")]
+    group_sizes=np.bincount(grain_ids[kept_pixels],minlength=len(candidates))
+    offsets=np.r_[0,np.cumsum(group_sizes)]
     means=[]
     counts=[]
     for g in range(len(candidates)):
-        ix=np.flatnonzero(grain_ids==g)
+        ix=ordered[offsets[g]:offsets[g+1]]
         qs=quats[ix]
         ref=qs[0]
         copies=np.stack([_qmul(qs,s) for s in sym_q],axis=1)
@@ -247,21 +253,32 @@ def reconstruct_spatial_parents(
                 if angle<=nucleation_tolerance_deg:
                     matched.append((other,angle,which))
             if len(matched)<nucleus_size-1: continue
+            # Evaluate expensive crystallographic variant fits only ONCE
+            # per seed/reference candidate, not for each graph subset.
+            covered=(seed,)+tuple(x[0] for x in matched)
+            bulk=daughter_variant_assignment(
+                orientations[np.asarray(covered)],ref,Q,
+                tuple(parent_ops),tuple(child_ops),
+                acceptance_deg=nucleation_tolerance_deg,
+                minimum_margin_deg=ambiguity_margin_deg,
+            )
+            id_by_grain={g:i for i,g in enumerate(covered)}
+            all_variants=np.asarray(bulk["variant_index_1based"],int)
+            all_accepted=np.asarray(bulk["accepted"],bool)
+            all_residuals=np.asarray(bulk["residual_deg"],float)
             for subset in combinations(matched,nucleus_size-1):
                 member=(seed,)+tuple(x[0] for x in subset)
-                subset_orientations=orientations[np.asarray(member)]
-                variant_report=daughter_variant_assignment(
-                    subset_orientations,ref,Q,tuple(parent_ops),tuple(child_ops),
-                    acceptance_deg=nucleation_tolerance_deg,
-                    minimum_margin_deg=ambiguity_margin_deg,
-                )
-                distinct=len(set(variant_report["variant_index_1based"]))
-                if (not all(variant_report["accepted"])
-                        or distinct<min_variant_diversity):
+                lookup=np.asarray([id_by_grain[g] for g in member],int)
+                variants=all_variants[lookup]
+                if (not np.all(all_accepted[lookup])
+                        or len(set(variants.tolist()))<min_variant_diversity):
                     continue
-                residuals=np.asarray(variant_report["residual_deg"])
+                residuals=all_residuals[lookup]
                 score=float(np.sum(residuals**2))
-                scored.append((score,member,cidx,ref,variant_report))
+                scored.append((score,member,cidx,ref,{
+                    "variant_index_1based":variants.tolist(),
+                    "residual_deg":residuals.tolist(),
+                }))
         if not scored:continue
         scored.sort(key=lambda x:(round(x[0],12),x[1],x[2]))
         best=scored[0]
