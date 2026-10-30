@@ -7,9 +7,11 @@ on:
     paths:
       - ar_gen_cry_app.py
       - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/ebsd_h5oina.py
       - src/cualni_cryst/ar_gen_cry_examples.py
       - src/cualni_cryst/legacy_suite_bridge.py
       - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_h5oina_cualni.py
       - tests/test_ar_gen_cry_examples.py
       - tests/test_ar_gen_cry_app.py
       - tests/test_legacy_suite_bridge.py
@@ -20,9 +22,11 @@ on:
     paths:
       - ar_gen_cry_app.py
       - src/cualni_cryst/ar_gen_cry_pipeline.py
+      - src/cualni_cryst/ebsd_h5oina.py
       - src/cualni_cryst/ar_gen_cry_examples.py
       - src/cualni_cryst/legacy_suite_bridge.py
       - tests/test_ar_gen_cry_pipeline.py
+      - tests/test_h5oina_cualni.py
       - tests/test_ar_gen_cry_examples.py
       - tests/test_ar_gen_cry_app.py
       - tests/test_legacy_suite_bridge.py
@@ -65,12 +69,13 @@ jobs:
           python -m pip check
       - name: Compile new standalone code only
         run: |
-          python -m py_compile ar_gen_cry_app.py src/cualni_cryst/ar_gen_cry_pipeline.py src/cualni_cryst/ar_gen_cry_examples.py
+          python -m py_compile ar_gen_cry_app.py src/cualni_cryst/ar_gen_cry_pipeline.py src/cualni_cryst/ar_gen_cry_examples.py src/cualni_cryst/ebsd_h5oina.py
           python -m py_compile src/cualni_cryst/legacy_suite_bridge.py
       - name: Cry/Gen/AR hard tests and Streamlit AppTest
         run: |
           python -m pytest -q --tb=short --maxfail=1 \
             tests/test_ar_gen_cry_pipeline.py \
+            tests/test_h5oina_cualni.py \
             tests/test_ar_gen_cry_examples.py \
             tests/test_ar_gen_cry_app.py \
             tests/test_legacy_suite_bridge.py
