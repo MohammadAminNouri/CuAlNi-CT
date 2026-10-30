@@ -443,6 +443,16 @@ elif step == STEPS[2]:
                 placeholder="[[1,0,0],[0,1,0],[0,0,1]]",
                 key="ar_parent_anchor", on_change=clear_parent_fit,
             )
+            st.caption(
+                "Oxford's scanning-rotation angle is not automatically applied as a "
+                "laboratory rotation. Use an independently calibrated frame matrix "
+                "only if raw CS1 must be transformed to your reference specimen frame."
+            )
+            frame_correction_json = st.text_area(
+                "Explicit specimen-frame rotation, JSON 3×3 (optional)",
+                placeholder="[[1,0,0],[0,1,0],[0,0,1]]",
+                key="ar_frame_correction", on_change=clear_parent_fit,
+            )
             specimen_frame_ok = st.checkbox(
                 "I cross-checked the Oxford Euler/specimen frame against an independent direction",
                 key="ar_frame_externally_checked", on_change=clear_parent_fit,
@@ -492,6 +502,7 @@ elif step == STEPS[2]:
                             parent_anchor_orientation_json=known_parent_json,
                             indexed_18r_basis_verified=basis_audit is not None,
                             specimen_frame_verified=specimen_frame_ok,
+                            specimen_frame_correction_json=frame_correction_json,
                         )
                     except (ValueError, TypeError, ArithmeticError, AssertionError) as exc:
                         st.error(f"Parent fit rejected: {exc}")
