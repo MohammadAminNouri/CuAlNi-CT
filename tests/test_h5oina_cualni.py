@@ -165,3 +165,38 @@ def test_parent_fit_invalid_explicit_frame_fails():
             json.dumps([np.eye(3).tolist()]), max_points=3,
             specimen_frame_correction_json=json.dumps([[1,0,0],[0,1,0],[0,0,-1]]),
         )
+
+
+def test_two_calibrated_parent_directions_anchor_synthetic_oxford_fit():
+    import json
+    pa=Phase("Synthetic beta","m-3m",5.8,5.8,5.8)
+    ma=Phase("Synthetic reduced","2/m",10.0,5.0,4.0,90,108,90)
+    cry=cry_stage(pa,ma,(1,0,0),(1,0,0))
+    anchor = json.dumps({
+        "parent_uvw":[[1,0,0],[0,1,0]],
+        "sample_xyz":[[1,0,0],[0,1,0]],
+    })
+    fit=ar_parent_fit(
+        "test.h5oina",fixture_h5oina(),cry,1,
+        json.dumps([np.eye(3).tolist()]),
+        max_points=3,parent_direction_pairs_json=anchor,
+    )
+    assert fit["parent_direction_pair_anchor"] is not None
+    assert fit["evidence_gate"]["independent_absolute_anchor_available"] is True
+    assert fit["experimental_certification"] is False
+    assert fit["parent_anchor_residual_deg"]<1e-4
+
+
+def test_collinear_or_inconsistent_parent_anchor_is_rejected():
+    import json
+    pa=Phase("Synthetic beta","m-3m",5.8,5.8,5.8)
+    ma=Phase("Synthetic reduced","2/m",10.0,5.0,4.0,90,108,90)
+    cry=cry_stage(pa,ma,(1,0,0),(1,0,0))
+    bad=json.dumps({
+        "parent_uvw":[[1,0,0],[1,0,0]],
+        "sample_xyz":[[1,0,0],[0,1,0]],
+    })
+    with pytest.raises(ValueError,match="direction"):
+        ar_parent_fit("test.h5oina",fixture_h5oina(),cry,1,
+                      json.dumps([np.eye(3).tolist()]),max_points=3,
+                      parent_direction_pairs_json=bad)
