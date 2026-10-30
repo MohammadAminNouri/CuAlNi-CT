@@ -118,6 +118,7 @@ def load_h5oina_sample(filename: str, payload: bytes, *, maximum_sample: int = 1
                 },
             )
             return sampled, {
+                "source_format": "h5oina",
                 "points": int(n), "indexed_points": int(indexed.sum()),
                 "indexed_pct": 100.0 * float(indexed.mean()),
                 "phase_counts": {str(int(k)): int(v) for k, v in zip(ids, counts)},
