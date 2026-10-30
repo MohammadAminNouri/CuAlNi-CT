@@ -23,6 +23,7 @@ import streamlit as st
 from cualni_cryst.legacy_suite_bridge import Phase
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.ebsd_h5oina import load_h5oina_sample
+from cualni_cryst.parent_fullmap_h5oina import reconstruct_conditional_parent_h5oina
 from cualni_cryst.parent_replay_exchange import (
     forward_inverse_roundtrip, export_replay_zip,
 )
@@ -62,7 +63,7 @@ def go(step: str) -> None:
 
 
 def clear_from_cry() -> None:
-    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip"):
+    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip", "parent_interop_inputs", "parent_full_h5", "parent_full_report"):
         st.session_state.pop(key, None)
 
 
@@ -70,6 +71,9 @@ def clear_parent_fit() -> None:
     st.session_state.pop("ar_fit_result", None)
     st.session_state.pop("parent_interop_report", None)
     st.session_state.pop("parent_interop_zip", None)
+    st.session_state.pop("parent_interop_inputs", None)
+    st.session_state.pop("parent_full_h5", None)
+    st.session_state.pop("parent_full_report", None)
 
 
 def clear_from_ar() -> None:
@@ -666,6 +670,7 @@ elif step == STEPS[2]:
                             if parent_cif_file is not None else None
                         ),
                     )
+                    st.session_state["parent_interop_inputs"] = {"Q": Q_input, "gA": gA_input}
                     st.session_state["parent_interop_report"] = diagnostic
                     st.session_state["parent_interop_zip"] = kit
                 except (ValueError, TypeError, ArithmeticError,
@@ -701,6 +706,64 @@ elif step == STEPS[2]:
                     "structure/CIF and correct sample frame; orientation CSVs "
                     "are reference outputs, not an AZtec-native phase file."
                 )
+                with st.expander("Native full-resolution parent HDF5", expanded=False):
+                    st.caption(
+                        "Fixed-Q, fixed-parent per-pixel mapping with MAD and "
+                        "connected-variant support filters. NOT MTEX's "
+                        "calcVariantGraph or a verified beta-grain reconstruction."
+                    )
+                    mad_max = st.slider(
+                        "Maximum MAD (degrees)", 0.5, 3.0, 1.5, 0.25,
+                        key="parent_full_mad",
+                    )
+                    min_patch = st.number_input(
+                        "Minimum connected variant-patch area (pixels)",
+                        min_value=1,max_value=10000,value=50,step=10,
+                        key="parent_full_min_patch",
+                    )
+                    if st.button("Build full-resolution conditional parent map",
+                                 type="primary"):
+                        try:
+                            inputs = st.session_state["parent_interop_inputs"]
+                            pc = Phase(**cry["parent_phase"])
+                            mc = Phase(**cry["product_phase"])
+                            sym_p = EBSDPhase.from_point_group(
+                                1,pc.name,pc.lattice(),pc.point_group,
+                            ).proper_symmetry_cartesian
+                            sym_m = EBSDPhase.from_point_group(
+                                1,mc.name,mc.lattice(),mc.point_group,
+                            ).proper_symmetry_cartesian
+                            binary, summary = reconstruct_conditional_parent_h5oina(
+                                ar["filename"],st.session_state["ar_bytes"],
+                                inputs["gA"],inputs["Q"],tuple(sym_p),tuple(sym_m),
+                                max_mad_deg=float(mad_max),
+                                max_fit_deg=float(accept_angle),
+                                min_variant_patch_pixels=int(min_patch),
+                            )
+                            st.session_state["parent_full_h5"] = binary
+                            st.session_state["parent_full_report"] = summary
+                        except (ValueError,TypeError,ArithmeticError,
+                                AssertionError,KeyError,OverflowError) as exc:
+                            st.error(f"Full-resolution export rejected: {exc}")
+                        else:
+                            st.success("Numerical parent map generated; not physically certified.")
+                    if st.session_state.get("parent_full_report"):
+                        full_report=st.session_state["parent_full_report"]
+                        a1,a2=st.columns(2)
+                        a1.metric("Within OR tolerance",
+                                  full_report["n_fitted_within_deg"])
+                        a2.metric("Variant-patch supported",
+                                  full_report["n_variant_patch_supported"])
+                        st.caption("Rejected pixels have NaN parent orientations.")
+                        st.download_button(
+                            "Download conditional parent HDF5",
+                            data=st.session_state["parent_full_h5"],
+                            file_name="cualni_parent_conditional_UNVERIFIED.h5",
+                            mime="application/x-hdf5",use_container_width=True,
+                        )
+                        with st.expander("Full-grid evidence audit"):
+                            st.json(full_report)
+
     if not ar:
         st.caption("No EBSD yet. The report can still document Cry and Gen.")
     st.button("Continue to Report", on_click=go, args=(STEPS[3],),
