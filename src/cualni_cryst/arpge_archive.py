@@ -72,8 +72,8 @@ def decode_transition(raw:bytes)->dict:
     pairs=[(_vector3(value[i],"parent hkl/uvw"),
             _vector3(value[i+1],"daughter hkl/uvw"))
            for i in (3,5,7,9)]
-    if not pairs[0][0] or not pairs[0][1] or not pairs[2][0] or not pairs[2][1]:
-        raise ValueError("Missing primary plane/direction relationship")
+    if sum(a is not None and b is not None for a,b in pairs)<2:
+        raise ValueError("At least two complete plane/direction pairs required")
     if any((a is None)!=(b is None) for a,b in pairs):
         raise ValueError("Incomplete parent/product matching index pairs")
     return {
@@ -101,7 +101,7 @@ def decode_cryst_metrics_without_unpickling(raw:bytes)->dict:
               "FLOAT","FLOAT","FLOAT","STRING","PUT","STRING","PUT","STRING"]
     # Some legacy cell metrics use I (integer) rather than F.
     names=[a.name for a,_,_ in entries]
-    if names[1:3]!=["STRING","PUT"] or names[8:10]!=["STRING","PUT"]:
+    if names[1:3]!=["STRING","PUT"] or names[9:11]!=["STRING","PUT"]:
         raise ValueError("Unexpected crystal prefix")
     if any(names[i] not in ("FLOAT","INT") for i in range(3,9)):
         raise ValueError("Missing primitive six-parameter crystal cell")
