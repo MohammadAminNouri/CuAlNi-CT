@@ -9,7 +9,6 @@ This checks rotation bookkeeping, not whether Q is a physical Cu-Al-Ni OR.
 
 from io import BytesIO, StringIO
 import csv
-import hashlib
 import json
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -185,7 +184,7 @@ fprintf('MTEX finished. Inspect phase setting, frame, votes, and fit. NOT physic
 """
 
 
-def _matrix_csv(name: str, matrices: np.ndarray) -> str:
+def _matrix_csv(matrices: np.ndarray) -> str:
     stream = StringIO()
     writer = csv.writer(stream)
     writer.writerow(["id", "qx", "qy", "qz", "qw", "phi1_deg", "Phi_deg", "phi2_deg"])
@@ -274,9 +273,9 @@ def export_replay_zip(
         z.writestr("or_contract.json", json.dumps(contract,indent=2,allow_nan=False)+"\n")
         z.writestr("forward_inverse_results.json", json.dumps(report,indent=2,allow_nan=False)+"\n")
         z.writestr("predicted_18r_variants_xyzw_bunge.csv", _matrix_csv(
-            "variants",predicted["daughter_crystal_to_sample"]))
+            predicted["daughter_crystal_to_sample"]))
         z.writestr("conditional_beta_orientation_xyzw_bunge.csv", _matrix_csv(
-            "parent",predicted["parent_crystal_to_sample"][None]))
+            predicted["parent_crystal_to_sample"][None]))
         z.writestr("run_external_mtex_replay.m", _matlab_replay_script())
         if child_cif is not None:
             z.writestr("USER_SUPPLIED_indexed_18R_structure.cif", child_cif)
