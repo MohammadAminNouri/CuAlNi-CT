@@ -322,8 +322,8 @@ elif step == STEPS[1]:
 elif step == STEPS[2]:
     st.markdown(":teal[**03 / AR**]")
     st.subheader("EBSD inspection")
-    st.write("Upload Oxford CTF or EDAX ANG orientations to inspect phase counts. "
-             "An experimental parent fit is optional and requires a verified orientation relationship.")
+    st.write("Inspect Oxford H5OINA / CTF or EDAX ANG EBSD orientations. "
+             "Parent fitting requires an independently verified orientation relationship.")
     if not cry:
         st.warning("Run Cry first to establish the parent and product crystal models.")
         st.button("Go to Cry", on_click=go, args=(STEPS[0],))
@@ -340,8 +340,8 @@ elif step == STEPS[2]:
         uploaded = _SyntheticEBSD()
     else:
         uploaded = st.file_uploader(
-            "EBSD file (.ctf or .ang), up to 8 MiB",
-            type=["ctf", "ang"], key="ar_upload", on_change=clear_from_ar,
+            "EBSD file (.h5oina up to 120 MiB, or .ctf/.ang up to 8 MiB)",
+            type=["h5oina", "ctf", "ang"], key="ar_upload", on_change=clear_from_ar,
         )
     if uploaded is not None:
         current_sha = hashlib.sha256(uploaded.getvalue()).hexdigest()
@@ -378,6 +378,17 @@ elif step == STEPS[2]:
         i.metric("Indexed", ar["indexed_points"])
         with st.expander("Phase counts and import details"):
             st.json(ar)
+        if ar.get("source_format") == "h5oina":
+            st.info(
+                "Oxford H5OINA is read directly in radians. For speed, the parent "
+                "pilot operates on a deterministic indexed-point sample, not the full "
+                "pixel grid. The sample reference frame is not corrected automatically."
+            )
+            for phase_record in ar.get("phase_geometry", []):
+                st.caption(
+                    f"Indexed phase {phase_record['phase_id']}: {phase_record['name']} "
+                    f"({phase_record['space_group']})"
+                )
         with st.expander("Optional experimental parent fit", expanded=False):
             st.caption("Exploratory single-parent fit, not a complete segmented parent-grain map.")
             chosen = st.number_input("Indexed product phase ID", min_value=1,
