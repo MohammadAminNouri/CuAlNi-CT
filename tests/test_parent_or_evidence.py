@@ -12,7 +12,7 @@ from cualni_cryst.parent_or_evidence import (
     audit_direct_basis, rebase_orientation_relationship,
     lattice_direction_to_cart, direction_anchor_residual,
     parent_orientation_from_two_directions, compare_parent_to_anchor,
-    audit_anchor_status,
+    audit_anchor_status, parent_fit_in_raw_oxford_frame,
 )
 
 
@@ -166,3 +166,23 @@ def test_two_axis_anchor_rejects_invalid_angular_tolerance(tolerance):
             beta,(1,0,0),(0,1,0),(1,0,0),(0,1,0),
             max_pair_angular_mismatch_deg=tolerance,
         )
+
+
+def test_corrected_parent_fit_is_returned_to_raw_oxford_sample_frame():
+    raw=Rotation.from_euler('xyz',[14,-18,31],degrees=True).as_matrix()
+    H=Rotation.from_euler('y',180,degrees=True).as_matrix()
+    recovered=parent_fit_in_raw_oxford_frame({
+        "parent_crystal_to_sample_rotation":(H @ raw).tolist(),
+        "explicit_frame_correction_matrix":H.tolist(),
+    })
+    assert np.allclose(recovered,raw,atol=1e-12)
+    unchanged=parent_fit_in_raw_oxford_frame({
+        "parent_crystal_to_sample_rotation":raw.tolist(),
+        "explicit_frame_correction_matrix":None,
+    })
+    assert np.allclose(unchanged,raw,atol=1e-12)
+    with pytest.raises(ValueError):
+        parent_fit_in_raw_oxford_frame({
+            "parent_crystal_to_sample_rotation":raw.tolist(),
+            "explicit_frame_correction_matrix":np.diag([1,1,-1]).tolist(),
+        })
