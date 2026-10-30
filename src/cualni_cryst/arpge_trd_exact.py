@@ -102,7 +102,11 @@ def exact_sigma3_chain(axes:object)->dict:
     if not np.array_equal(numerator.T@numerator,
                           denominator**2*np.eye(3,dtype=np.int64)):
         raise AssertionError("Exact Sigma3 chain composition violates SO(3)")
-    if abs(round(np.linalg.det(numerator))-denominator**3)>0:
+    m=[[int(x) for x in row] for row in numerator]
+    determinant=(m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+                 -m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+                 +m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]))
+    if determinant!=denominator**3:
         raise AssertionError("Improper exact Sigma3 product")
     return {"sigma_index":int(denominator),
             "numerator":numerator.astype(int).tolist(),
@@ -184,6 +188,7 @@ def sigma3_tree_csl_and_llc(
     group=np.full(n_grains,-1,int)
     numerator=[None]*n_grains
     denominators=np.ones(n_grains,dtype=np.int64)
+    depths=np.zeros(n_grains,dtype=int)
     loop_conflicts=0
     domain_sizes=[]
     for root in range(n_grains):
@@ -194,12 +199,15 @@ def sigma3_tree_csl_and_llc(
         while q:
             i=q.popleft();size+=1
             for j,T in adj[i]:
+                if depths[i]>=12:
+                    raise ValueError("Exact Sigma3 spanning tree exceeds 12-step bounded integer precision")
                 M=numerator[i]@T
                 d=int(denominators[i])*3
                 while d>1 and np.all(M%3==0):
                     M//=3;d//=3
                 if group[j]<0:
                     group[j]=dom;numerator[j]=M;denominators[j]=d
+                    depths[j]=depths[i]+1
                     q.append(j)
                 else:
                     # Compare exact rational products, not noisy fitted Euler angles.
