@@ -20,6 +20,7 @@ from .group_theory import correspondence_groupoid
 from .lattice import Lattice
 from .point_groups import point_group_operations, metric_preservation_residual
 from .parent_variant_audit import daughter_variant_assignment
+from .parent_consensus_complete import reconstruct_parent_full_variant_consensus
 
 
 @dataclass(frozen=True)
@@ -155,6 +156,36 @@ def reconstruct_ebsd_parent(
         raise ValueError("At least two indexed product-phase points are required")
     if len(indices) > maximum_points:
         indices = indices[np.linspace(0, len(indices)-1, maximum_points, dtype=int)]
+    # A single reference OR generates a COMPLETE parent-symmetry variant
+    # family; it must enter the parent vote itself, not merely the final report.
+    # The vectorized bounded solver avoids the prohibitive loop cost of
+    # reconstruct_parent with 24 cubic variants and 2 daughter representatives.
+    p_sym = EBSDPhase.from_point_group(
+        1, parent.name, parent.lattice(), parent.point_group,
+    ).proper_symmetry_cartesian
+    m_sym = EBSDPhase.from_point_group(
+        2, product.name, product.lattice(), product.point_group,
+    ).proper_symmetry_cartesian
+    if len(matrices) == 1:
+        result = reconstruct_parent_full_variant_consensus(
+            ebsd.orientations[indices], matrices[0],
+            tuple(p_sym), tuple(m_sym),
+            tolerance_deg=tolerance_deg,
+            max_seeds=384, max_iterations=15,
+        )
+        return {
+            "sampled_points": len(indices),
+            "product_points_total": int(np.count_nonzero(
+                ebsd.indexed & (ebsd.phase_id == int(phase_id))
+            )),
+            **result,
+            "status": (
+                "Symmetry-complete exploratory single-parent fit on sampled indexed "
+                "points. No full-map segmentation, independent physical OR or "
+                "absolute beta orientation has been verified."
+            ),
+        }
+
     variants = [
         VariantOR(i + 1, matrix, label=f"Experimental OR variant {i+1}")
         for i, matrix in enumerate(matrices)
