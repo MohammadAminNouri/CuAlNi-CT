@@ -201,9 +201,10 @@ def audit_anchor_status(
     if not indexed_parent_phase_present and not has_absolute:
         blockers.append("no indexed retained/reverted parent phase")
     return {
-        "physical_parent_or_certified": not blockers,
+        "physical_parent_or_certified": False,
+        "declared_prerequisites_present": not blockers,
         "numerical_candidate_allowed": True,
         "independent_absolute_anchor_available": has_absolute,
         "blocking_requirements": blockers,
-        "note": "Fitted daughter misorientations alone never certify a unique physical OR.",
+        "note": "User-declared external evidence is not authenticated; daughter misorientations alone never certify a unique physical OR.",
     }
