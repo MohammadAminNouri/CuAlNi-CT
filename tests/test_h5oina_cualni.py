@@ -21,6 +21,10 @@ def fixture_h5oina(*, wrong_unit: bool = False, wrong_shape: bool = False) -> by
         root = h.create_group("1/EBSD")
         data = root.create_group("Data")
         head = root.create_group("Header")
+        head.create_dataset("Scanning Rotation Angle", data=[np.pi])
+        head.create_dataset("Specimen Orientation Euler", data=[[0.0, 0.0, 0.0]])
+        head.create_dataset("Tilt Angle", data=[np.deg2rad(70)])
+        head.create_dataset("Tilt Axis", data=[0.0])
         head.create_dataset("X Cells", data=[4])
         head.create_dataset("Y Cells", data=[2])
         pixels = np.array([1, 1, 0, 1, 1, 0, 1, 1], np.uint8)
@@ -48,6 +52,9 @@ def test_h5oina_strict_phase_metrics_and_sampled_orientations():
     raw = fixture_h5oina()
     sampled, report = load_h5oina_sample("test.h5oina", raw)
     assert report["points"] == 8 and report["indexed_points"] == 6
+    assert report["scan_rotation_angle_deg"] == pytest.approx(180, abs=1e-5)
+    assert report["specimen_surface_euler_deg"] == pytest.approx([0, 0, 0])
+    assert report["frame_corrected"] is False
     assert report["phase_counts"] == {"0": 2, "1": 6}
     assert report["phase_geometry"][0]["abc_angstrom"] == pytest.approx([10.0, 5.0, 4.0])
     assert report["phase_geometry"][0]["angles_deg"] == pytest.approx([90, 108.0, 90])
@@ -93,3 +100,33 @@ def test_h5oina_no_unique_parent_or_from_one_daughter_phase():
     _, audit = load_h5oina_sample("test.h5oina", fixture_h5oina())
     assert "No experimental parent OR" in audit["warning"]
     assert len(audit["phase_geometry"]) == 1
+
+
+def test_independently_calibrated_frame_rotation_is_explicit_not_inferred():
+    from scipy.spatial.transform import Rotation
+    raw = fixture_h5oina()
+    ebsd_raw, report_raw = load_h5oina_sample("test.h5oina", raw)
+    frame = Rotation.from_euler("y", 180, degrees=True).as_matrix()
+    ebsd_corrected, report_corrected = load_h5oina_sample(
+        "test.h5oina", raw, sample_frame_correction=frame
+    )
+    assert report_raw["frame_corrected"] is False
+    assert report_corrected["frame_corrected"] is True
+    assert np.allclose(ebsd_corrected.orientations,
+                       np.einsum("ij,njk->nik", frame, ebsd_raw.orientations))
+    assert "EXPLICIT" in ebsd_corrected.metadata["orientation_convention"] or (
+        "EXPLICIT" in ebsd_corrected.metadata.get("orientation_convention", "")
+    )
+    assert np.allclose(np.einsum(
+        "nij,nkj->nik", ebsd_raw.orientations, ebsd_raw.orientations
+    ), np.einsum(
+        "nij,nkj->nik", ebsd_corrected.orientations, ebsd_corrected.orientations
+    ))
+
+
+def test_improper_frame_rotation_fails_closed():
+    with pytest.raises(ValueError):
+        load_h5oina_sample(
+            "test.h5oina", fixture_h5oina(),
+            sample_frame_correction=np.diag([1.0, 1.0, -1.0])
+        )
