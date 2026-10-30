@@ -11,6 +11,7 @@ import json
 from fractions import Fraction
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT / "src") not in sys.path:
@@ -20,10 +21,20 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from cualni_cryst.legacy_suite_bridge import Phase
+from cualni_cryst.legacy_suite_bridge import Phase, inspect_ebsd
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.ebsd_h5oina import load_h5oina_sample
 from cualni_cryst.parent_fullmap_h5oina import reconstruct_conditional_parent_h5oina
+from cualni_cryst.arpge_spatial import (
+    segment_daughter_grains, reconstruct_spatial_parents, load_h5oina_spatial_grid,
+)
+from cualni_cryst.arpge_analytics import (
+    kam_gos, cubic_sigma3_domains, stereographic_poles,
+    habit_plane_trace, export_parent_ebsd_text,
+)
+from cualni_cryst.arpge_archive import (
+    inspect_arpge_archive, audit_legacy_orientation_presets,
+)
 from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
 from cualni_cryst.niti_benchmark_runner import evaluate_niti_benchmarks
 from cualni_cryst.parent_replay_exchange import (
@@ -878,6 +889,190 @@ elif step == STEPS[2]:
                         )
                         with st.expander("Full-grid evidence audit"):
                             st.json(full_report)
+
+    if ar:
+        with st.expander("ARPGE-style spatial reconstruction · experimental beta unverified",
+                         expanded=False):
+            st.warning(
+                "Independent Python implementation: daughter-grain segmentation, "
+                "bounded triplet/quadruplet candidate nuclei, competing parent growth. "
+                "Not original ARPGE GUI parity. A calibrated physical OR and parent "
+                "phase are still required for scientific certification."
+            )
+            spatial_phase=st.number_input(
+                "Indexed daughter phase ID for spatial graph",min_value=1,
+                value=1,step=1,key="arpge_spatial_phase",
+            )
+            spatial_q=st.text_area(
+                "Reference OR Q: daughter crystal → parent crystal (proper Cartesian 3×3 JSON)",
+                placeholder="[[...],[...],[...]]",key="arpge_spatial_q",
+            )
+            c1,c2,c3=st.columns(3)
+            angular=c1.number_input("Daughter segmentation tolerance (°)",
+                                    min_value=0.2,max_value=10.,value=3.,step=0.2)
+            critical=c2.number_input("Parent nucleation tolerance (°)",
+                                     min_value=0.2,max_value=10.,value=2.,step=0.2)
+            growth=c3.number_input("Parent growth tolerance (°)",
+                                   min_value=0.2,max_value=10.,value=3.,step=0.2)
+            minsize=st.number_input("Minimum daughter region pixels",
+                                    min_value=2,max_value=10000,value=30,step=5)
+            nucleus=st.radio("Nucleation kernel",("Three daughter regions",
+                                                  "Four daughter regions"),
+                             horizontal=True)
+            if st.button("Run bounded multi-parent spatial reconstruction"):
+                try:
+                    if not spatial_q.strip():
+                        raise ValueError("Supply measured/independently established Cartesian Q")
+                    Q=np.asarray(json.loads(spatial_q),float)
+                    parent_phase=Phase(**cry["parent_phase"])
+                    daughter_phase=Phase(**cry["product_phase"])
+                    sym_p=tuple(EBSDPhase.from_point_group(
+                        1,parent_phase.name,parent_phase.lattice(),
+                        parent_phase.point_group,
+                    ).proper_symmetry_cartesian)
+                    sym_m=tuple(EBSDPhase.from_point_group(
+                        2,daughter_phase.name,daughter_phase.lattice(),
+                        daughter_phase.point_group,
+                    ).proper_symmetry_cartesian)
+                    if ar["source_format"]=="h5oina":
+                        ebsd,source=load_h5oina_spatial_grid(
+                            ar["filename"],st.session_state["ar_bytes"],
+                        )
+                        records=[r for r in source["phase_geometry"]
+                                 if int(r["phase_id"])==int(spatial_phase)]
+                        if len(records)!=1:
+                            raise ValueError("Selected indexed phase not found in Oxford metadata")
+                        observed=np.asarray(records[0]["abc_angstrom"]+
+                                            records[0]["angles_deg"],float)
+                        expected=np.asarray([
+                            daughter_phase.a,daughter_phase.b,daughter_phase.c,
+                            daughter_phase.alpha,daughter_phase.beta,
+                            daughter_phase.gamma,
+                        ])
+                        if (not np.allclose(observed[:3],expected[:3],atol=.02,rtol=0)
+                            or not np.allclose(observed[3:],expected[3:],
+                                               atol=.2,rtol=0)):
+                            raise ValueError("Cry daughter cell does not match indexed Oxford phase")
+                    else:
+                        with TemporaryDirectory() as temp:
+                            file=Path(temp)/("source"+Path(ar["filename"]).suffix.lower())
+                            file.write_bytes(st.session_state["ar_bytes"])
+                            ebsd,_=inspect_ebsd(file)
+                    seg=segment_daughter_grains(
+                        ebsd,int(spatial_phase),sym_m,tolerance_deg=float(angular),
+                        minimum_pixels=int(minsize),
+                    )
+                    spatial=reconstruct_spatial_parents(
+                        seg,Q,sym_p,sym_m,
+                        nucleation_tolerance_deg=float(critical),
+                        growth_tolerance_deg=float(growth),
+                        nucleus_size=3 if nucleus.startswith("Three") else 4,
+                    )
+                    metrics=kam_gos(ebsd,seg,sym_m)
+                    compact={
+                        "source_filename":ar["filename"],
+                        "source_sha256":st.session_state["ar_sha256"],
+                        "n_daughter_grains":seg["n_grains"],
+                        "daughter_boundary_edges":seg["grain_boundary_edges"],
+                        "n_candidate_parent_domains":spatial["n_parent_domains"],
+                        "n_unassigned_daughter_grains":spatial["n_unassigned_daughter_grains"],
+                        "n_skipped_ambiguous_nuclei":spatial["n_ambiguous_nuclei_skipped"],
+                        "n_skipped_combinatorial_seeds":spatial["n_seeds_skipped_combinatorial_limit"],
+                        "reconstructed_parent_rotations":
+                            spatial["parent_crystal_to_sample"].tolist(),
+                        "physical_or_certified":False,
+                        "original_arpge_parity":False,
+                        "coordinate_frame":"raw source EBSD orientation frame, uncorrected",
+                    }
+                    st.session_state["arpge_spatial_summary"]=compact
+                    st.session_state["arpge_spatial_export"]=json.dumps({
+                        "summary":compact,
+                        "grain_parent_id":spatial["daughter_parent_id"].tolist(),
+                        "grain_variant_1based":spatial["daughter_variant_id_1based"].tolist(),
+                        "grain_parent_residual_deg":np.where(
+                            np.isfinite(spatial["daughter_parent_residual_deg"]),
+                            spatial["daughter_parent_residual_deg"],-1,
+                        ).tolist(),
+                        "grain_ambiguous":spatial["daughter_variant_ambiguous"].tolist(),
+                        "pixel_parent_id":spatial["pixel_parent_id"].tolist(),
+                        "kam_deg":np.where(np.isfinite(metrics["kam_deg"]),
+                                        metrics["kam_deg"],-1).tolist(),
+                    },allow_nan=False)
+                    st.session_state["arpge_spatial_export_ctf"]=None
+                    if spatial["n_parent_domains"]>0:
+                        try:
+                            st.session_state["arpge_spatial_export_ctf"]=(
+                                export_parent_ebsd_text(
+                                    ebsd,spatial["pixel_parent_id"],
+                                    spatial["parent_crystal_to_sample"],
+                                    parent_lattice=parent_phase.lattice(),
+                                )
+                            )
+                        except ValueError:
+                            pass
+                except (ValueError,TypeError,KeyError,IndexError,
+                        AssertionError,OverflowError) as exc:
+                    st.error(f"Spatial reconstruction rejected: {exc}")
+                else:
+                    st.success("Computed bounded spatial candidate domains. Not physical validation.")
+            if st.session_state.get("arpge_spatial_summary"):
+                st.json(st.session_state["arpge_spatial_summary"])
+                st.download_button(
+                    "Download spatial parent/grain/pixel audit (JSON)",
+                    st.session_state["arpge_spatial_export"],
+                    file_name="arpge_independent_spatial_UNVERIFIED.json",
+                    mime="application/json",
+                )
+                if st.session_state.get("arpge_spatial_export_ctf"):
+                    st.download_button(
+                        "Download research CTF parent orientation map",
+                        st.session_state["arpge_spatial_export_ctf"],
+                        file_name="arpge_parent_candidate_RESEARCH_ONLY.ctf",
+                        mime="text/plain",
+                    )
+        with st.expander("Inspect original 2021 ARPGE / GenOVa archive safely"):
+            st.caption(
+                "Parse the 57 .trans records and 61 .cryst metric prefixes "
+                "without unpickling or executing Python 2. Historical structures "
+                "and atomic sites remain unvalidated."
+            )
+            old_zip=st.file_uploader(
+                "Original ARPGE ZIP · no extraction or code execution",
+                type=["zip"],key="arpge_source_zip",
+            )
+            if st.button("Audit archived phase and transformation geometry",
+                         disabled=old_zip is None):
+                try:
+                    if old_zip.size>100*1024*1024:
+                        raise ValueError("Archived ZIP exceeds 100 MiB limit")
+                    with TemporaryDirectory() as tmp:
+                        file=Path(tmp)/"source.zip"
+                        file.write_bytes(old_zip.getvalue())
+                        archive=inspect_arpge_archive(str(file))
+                    comparison=audit_legacy_orientation_presets(archive)
+                    st.session_state["arpge_source_audit"]=json.dumps({
+                        "inventory":archive,"geometry":comparison,
+                    },allow_nan=False)
+                except (ValueError,TypeError,KeyError,IndexError,
+                        OverflowError) as exc:
+                    st.error(f"Archive rejected: {exc}")
+                else:
+                    st.success(
+                        "Safe original source-data inventory completed; "
+                        "not a claim of GenOVa runtime or OR parity."
+                    )
+            if st.session_state.get("arpge_source_audit"):
+                audit=json.loads(st.session_state["arpge_source_audit"])
+                a1,a2=st.columns(2)
+                a1.metric("Decoded transitions",audit["inventory"]["transition_count"])
+                a2.metric("Decoded phase metrics",audit["inventory"]["crystal_metric_count"])
+                st.json(audit["geometry"]["status_counts"])
+                st.download_button(
+                    "Download source geometry audit JSON",
+                    st.session_state["arpge_source_audit"],
+                    file_name="arpge_2021_safe_source_audit.json",
+                    mime="application/json",
+                )
 
     if not ar:
         st.caption("No EBSD yet. The report can still document Cry and Gen.")
