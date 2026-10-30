@@ -34,8 +34,10 @@ correspondence and is not automatically a named Kajiwara–Nishiyama OR.
    operation. Report median/p90 residual and coverage on spatially held-out
    grains; a good median alone does not establish the physical OR.
 4. For a graph probability audit, map residual omega to
-   `Phi((threshold-omega)/tolerance)` using threshold=2.5°, tolerance=1.5°.
-   This reproduces MTEX-style **edge weights**, not the MTEX
+   `0.5*erfc(2*(omega-threshold)/tolerance)` with threshold=2.5°,
+   tolerance=1.5°. This is the actual `calcVariantGraph.m` transition,
+   where `tolerance` is a width parameter (not Gaussian σ). This
+   reproduces an *unweighted pair-level probability*, not the MTEX
    `calcVariantGraph` variant-node structure or MCL cluster solver.
 5. In actual MTEX/MATLAB, run `calcVariantGraph`,
    `clusterVariantGraph`, `calcParentFromVote`,
@@ -225,3 +227,11 @@ has been demonstrated. Therefore the numerical cross-site success
 does not upgrade to physically established β1 parent OR or absolute
 orientation. Oxford header zero specimen Euler and scan rotation 180°
 are instrument metadata, not a parent lattice measurement.
+
+### 30 October 2026: source-matched MTEX boundary probability correction
+
+The original Python interoperability audit used `scipy.special.ndtr((threshold-misfit)/tolerance)`. That is **not** the probability in MTEX's MATLAB `calcVariantGraph.m` (develop branch checked October 2026), which uses `1 - 0.5*(1 + erf(2*(misfit-threshold)/tolerance))`. The correct Python equivalent is `0.5 * erfc(2*(misfit-threshold)/tolerance)`.
+
+For threshold=2.5° and tolerance=1.5°, the fixed source-based reference probabilities are approximately **0.9999987858** at misfit 0°, **0.5** at 2.5° and **0.0023388675** at 4°. Regression tests explicitly assert all three and the full curve. Previous Python probability exports must be recalculated. Angular operator residuals and previously reported residual histograms are unchanged by this probability-only fix. This is **not** a claim of MTEX numerical parity: pair segmentation, boundary weights, graph nodes and Markov clustering still require MATLAB/MTEX execution.
+
+Reference: https://github.com/mtex-toolbox/mtex/blob/develop/EBSDAnalysis/%40parentGrainReconstructor/calcVariantGraph.m
