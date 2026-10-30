@@ -21,6 +21,12 @@ import pandas as pd
 import streamlit as st
 
 from cualni_cryst.legacy_suite_bridge import Phase
+from cualni_cryst.ebsd_map import EBSDPhase
+from cualni_cryst.ebsd_h5oina import load_h5oina_sample
+from cualni_cryst.parent_replay_exchange import (
+    forward_inverse_roundtrip, export_replay_zip,
+)
+
 from cualni_cryst.parent_or_evidence import (
     audit_direct_basis, rebase_orientation_relationship,
 )
@@ -56,16 +62,18 @@ def go(step: str) -> None:
 
 
 def clear_from_cry() -> None:
-    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
+    for key in ("cry_result", "gen_result", "ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip"):
         st.session_state.pop(key, None)
 
 
 def clear_parent_fit() -> None:
     st.session_state.pop("ar_fit_result", None)
+    st.session_state.pop("parent_interop_report", None)
+    st.session_state.pop("parent_interop_zip", None)
 
 
 def clear_from_ar() -> None:
-    for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256"):
+    for key in ("ar_result", "ar_fit_result", "ar_bytes", "ar_sha256", "parent_interop_report", "parent_interop_zip"):
         st.session_state.pop(key, None)
 
 
@@ -528,6 +536,153 @@ elif step == STEPS[2]:
         if fit:
             with st.expander("Exploratory parent orientation and residuals", expanded=True):
                 st.json(fit)
+        with st.expander("Parent ↔ 18R / MTEX & cross-tool replay", expanded=False):
+            st.caption(
+                "Forward parent → every proper 18R variant → inverse parent. "
+                "Numeric tests only; the fitted OR is not evidence of a physical "
+                "Cu–Al–Ni OR or the actual parent crystal."
+            )
+            st.caption(
+                "Import the frozen Site 8 JSON manifest from your local "
+                "reproducibility kit, or provide a proper parent←18R Cartesian "
+                "OR and candidate β orientation as 3×3 JSON matrices. "
+                "The app does not invent or silently modify these rotations."
+            )
+            manifest_file = st.file_uploader(
+                "Fitted OR manifest (optional JSON, not an EBSD map)",
+                type=["json"], key="parent_interop_manifest",
+                on_change=clear_parent_fit,
+            )
+            or_text = st.text_area(
+                "Q: 18R daughter crystal → cubic β parent crystal, 3×3 JSON",
+                placeholder="[[...], [...], [...]]",
+                key="parent_interop_q", on_change=clear_parent_fit,
+            )
+            parent_text = st.text_area(
+                "Candidate β crystal → raw Oxford sample CS1, 3×3 JSON",
+                placeholder="[[...], [...], [...]]",
+                key="parent_interop_parent", on_change=clear_parent_fit,
+            )
+            accept_angle = st.slider(
+                "Round-trip acceptance angle (degrees)", 1.0, 10.0, 3.0, 0.5,
+                key="parent_interop_tolerance", on_change=clear_parent_fit,
+            )
+            n_sample = st.slider(
+                "Measured daughter orientations sampled", 16, 256, 128, 16,
+                key="parent_interop_sample_size", on_change=clear_parent_fit,
+            )
+            if ar.get("source_format") != "h5oina":
+                st.info("A native H5OINA file is required for this release of the measured-orientation replay.")
+            if st.button("Test parent ↔ daughter and build MTEX kit",
+                         disabled=(ar.get("source_format") != "h5oina"),
+                         type="primary"):
+                try:
+                    embedded = (
+                        json.loads(manifest_file.getvalue())
+                        if manifest_file is not None else {}
+                    )
+                    Q_input = (
+                        json.loads(or_text) if or_text.strip() else
+                        embedded.get("rotation_matrix_Q_parent_from_daughter")
+                        or embedded.get("or", {}).get("Q_parent_from_daughter")
+                    )
+                    gA_input = (
+                        json.loads(parent_text) if parent_text.strip() else
+                        embedded.get("candidate_beta_parent_crystal_to_OxfordCS1_matrix")
+                        or embedded.get("parent_crystal_to_sample_matrix")
+                        or (fit or {}).get("parent_crystal_to_sample_rotation")
+                    )
+                    if Q_input is None or gA_input is None:
+                        raise ValueError(
+                            "Supply both Q and a candidate parent orientation. "
+                            "One fitted OR alone cannot fix the absolute parent."
+                        )
+                    if not st.session_state.get("ar_bytes"):
+                        raise ValueError("Reinspect the current H5OINA upload")
+                    sampled, original_audit = load_h5oina_sample(
+                        ar["filename"], st.session_state["ar_bytes"],
+                        maximum_sample=int(n_sample),
+                    )
+                    product_phase = Phase(**cry["product_phase"])
+                    parent_phase = Phase(**cry["parent_phase"])
+                    parent_ops = EBSDPhase.from_point_group(
+                        1, parent_phase.name, parent_phase.lattice(),
+                        parent_phase.point_group,
+                    ).proper_symmetry_cartesian
+                    daughter_ops = EBSDPhase.from_point_group(
+                        1, product_phase.name, product_phase.lattice(),
+                        product_phase.point_group,
+                    ).proper_symmetry_cartesian
+                    if (not original_audit.get("phase_geometry") or
+                        len(original_audit["phase_geometry"]) != 1):
+                        raise ValueError(
+                            "The measured map needs one indexed daughter phase"
+                        )
+                    observed_cell = original_audit["phase_geometry"][0]
+                    expected_cell = np.array([
+                        product_phase.a, product_phase.b, product_phase.c,
+                        product_phase.alpha, product_phase.beta, product_phase.gamma,
+                    ])
+                    indexed_cell = np.array(
+                        observed_cell["abc_angstrom"] + observed_cell["angles_deg"]
+                    )
+                    if not (
+                        np.allclose(expected_cell[:3], indexed_cell[:3], rtol=0, atol=0.02)
+                        and np.allclose(expected_cell[3:], indexed_cell[3:], rtol=0, atol=0.2)
+                    ):
+                        raise ValueError(
+                            "Cry product cell does not match Oxford indexed 18R. "
+                            "Choose the exact reduced C2/m cell first."
+                        )
+                    diagnostic = forward_inverse_roundtrip(
+                        gA_input, Q_input, tuple(parent_ops), tuple(daughter_ops),
+                        observed_daughter_g=sampled.orientations,
+                        accepted_deg=float(accept_angle),
+                    )
+                    kit = export_replay_zip(
+                        gA_input, Q_input, tuple(parent_ops), tuple(daughter_ops),
+                        h5oina_filename=ar["filename"],
+                        h5oina_sha256=st.session_state["ar_sha256"],
+                        parent_cell=cry["parent_phase"],
+                        daughter_cell=cry["product_phase"],
+                        observed_daughter_g=sampled.orientations,
+                        accepted_deg=float(accept_angle),
+                    )
+                    st.session_state["parent_interop_report"] = diagnostic
+                    st.session_state["parent_interop_zip"] = kit
+                except (ValueError, TypeError, ArithmeticError,
+                        AssertionError, UnicodeDecodeError, KeyError) as exc:
+                    st.error(f"Round-trip rejected: {exc}")
+                else:
+                    st.success(
+                        "Forward/inverse checks computed. External MTEX package "
+                        "prepared; MATLAB execution and physical OR remain unverified."
+                    )
+            if st.session_state.get("parent_interop_report"):
+                diagnostic = st.session_state["parent_interop_report"]
+                k1, k2, k3 = st.columns(3)
+                k1.metric("Daughter variants", diagnostic["n_predicted_variants"])
+                k2.metric("Median fit", f'{diagnostic["median_forward_residual_deg"]:.2f}°')
+                k3.metric("Within threshold",
+                          f'{diagnostic["weighted_fraction_within_threshold"]:.1%}')
+                st.caption(
+                    "Measured point sampling is deterministic; no full MTEX grain graph "
+                    "or MCL run is claimed. The inverse residual equals the forward "
+                    "residual by rotation algebra, not independent confirmation."
+                )
+                with st.expander("Residuals, variant IDs and frame convention"):
+                    st.json(diagnostic)
+                st.download_button(
+                    "Download MTEX, parent and 18R replay kit",
+                    data=st.session_state["parent_interop_zip"],
+                    file_name="cualni_parent_18r_cross_tool_replay.zip",
+                    mime="application/zip", use_container_width=True,
+                )
+                st.caption(
+                    "AZtec/Crystal requires an independently validated crystal "
+                    "structure/CIF and correct sample frame; orientation CSVs "
+                    "are reference outputs, not an AZtec-native phase file."
+                )
     if not ar:
         st.caption("No EBSD yet. The report can still document Cry and Gen.")
     st.button("Continue to Report", on_click=go, args=(STEPS[3],),
