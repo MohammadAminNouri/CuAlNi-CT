@@ -65,7 +65,8 @@ def test_roundtrip_weighted_area_fraction_and_no_generated_parent_certification(
                                        observed_daughter_g=daughters[:3],
                                        weights=[1,50,100])
     assert report["weighted_fraction_within_threshold"] == pytest.approx(1)
-    assert "not" in report["scientific_status"].lower()
+    assert report["physical_or_certified"] is False
+    assert report["absolute_parent_frame_certified"] is False
 
 
 def test_portable_zip_is_self_describing_and_mtex_direction_is_transpose():
@@ -117,3 +118,20 @@ def test_symmetry_equivalent_parent_relabeling_keeps_daughter_fit():
     report=forward_inverse_roundtrip(rotated_parent,Q,beta,mart,
                                      observed_daughter_g=target)
     assert report["median_forward_residual_deg"] <= 1e-4
+
+
+def test_original_cif_content_passed_through_without_structural_fabrication():
+    gA,Q,beta,mart=example()
+    cif=b"data_original_18r\\n_cell_length_a 10.0\\n_cell_length_b 5.0\\n"
+    blob=export_replay_zip(
+        gA,Q,beta,mart,h5oina_filename="scan.h5oina",
+        indexed_daughter_cif=cif,
+    )
+    with ZipFile(BytesIO(blob)) as z:
+        assert z.read("USER_SUPPLIED_indexed_18R_structure.cif") == cif
+        contract=json.loads(z.read("or_contract.json"))
+        assert contract["indexed_daughter_cif_supplied"] is True
+        assert contract["parent_cif_supplied"] is False
+    with pytest.raises(ValueError,match="CIF"):
+        export_replay_zip(gA,Q,beta,mart,h5oina_filename="scan.h5oina",
+                          indexed_daughter_cif=b"not cif")
