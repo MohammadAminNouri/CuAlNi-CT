@@ -32,10 +32,10 @@ def fixture_h5oina(*, wrong_unit: bool = False, wrong_shape: bool = False) -> by
         data.create_dataset("Y", data=np.repeat([0, 1], 4).astype("f4"))
         data.create_dataset("Mean Angular Deviation", data=np.full(8, 0.01, "f4"))
         ph = head.create_group("Phases/1")
-        ph.create_dataset("Phase Name", data=[b"18R synthetic monoclinic"])
-        ld = ph.create_dataset("Lattice Dimensions", data=[[13.8017, 5.2856, 4.3987]])
+        ph.create_dataset("Phase Name", data=[b"Synthetic monoclinic test phase"])
+        ld = ph.create_dataset("Lattice Dimensions", data=[[10.0, 5.0, 4.0]])
         ld.attrs["Unit"] = "angstrom"
-        la = ph.create_dataset("Lattice Angles", data=[np.deg2rad([90, 113.6, 90])])
+        la = ph.create_dataset("Lattice Angles", data=[np.deg2rad([90, 108.0, 90])])
         la.attrs["Unit"] = "rad"
         g = ph.create_dataset("Laue Group", data=[2])
         g.attrs["Symbol"] = "2/m"
@@ -49,8 +49,8 @@ def test_h5oina_strict_phase_metrics_and_sampled_orientations():
     sampled, report = load_h5oina_sample("test.h5oina", raw)
     assert report["points"] == 8 and report["indexed_points"] == 6
     assert report["phase_counts"] == {"0": 2, "1": 6}
-    assert report["phase_geometry"][0]["abc_angstrom"] == pytest.approx([13.8017, 5.2856, 4.3987])
-    assert report["phase_geometry"][0]["angles_deg"] == pytest.approx([90, 113.6, 90])
+    assert report["phase_geometry"][0]["abc_angstrom"] == pytest.approx([10.0, 5.0, 4.0])
+    assert report["phase_geometry"][0]["angles_deg"] == pytest.approx([90, 108.0, 90])
     assert report["selected_orientations"] == 6
     assert sampled.n_points == 6
     assert not sampled.metadata["reference_frame_normalization_applied"]
