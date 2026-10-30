@@ -43,6 +43,7 @@ from cualni_cryst.arpge_hex_ang import export_hex_parent_ang
 from cualni_cryst.arpge_trd_exact import (
     legacy_llc_from_twin_chains, exact_sigma3_chain,
 )
+from cualni_cryst.arpge_genova_or import audit_archived_or_groupoids
 from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
 from cualni_cryst.niti_benchmark_runner import evaluate_niti_benchmarks
 from cualni_cryst.parent_replay_exchange import (
@@ -1170,8 +1171,10 @@ elif step == STEPS[2]:
                         file.write_bytes(old_zip.getvalue())
                         archive=inspect_arpge_archive(str(file))
                     comparison=audit_legacy_orientation_presets(archive)
+                    groupoid=audit_archived_or_groupoids(archive,comparison)
                     st.session_state["arpge_source_audit"]=json.dumps({
                         "inventory":archive,"geometry":comparison,
+                        "genova_numerical_groupoid":groupoid,
                     },allow_nan=False)
                 except (ValueError,TypeError,KeyError,IndexError,
                         OverflowError) as exc:
@@ -1186,7 +1189,10 @@ elif step == STEPS[2]:
                 a1,a2=st.columns(2)
                 a1.metric("Decoded transitions",audit["inventory"]["transition_count"])
                 a2.metric("Decoded phase metrics",audit["inventory"]["crystal_metric_count"])
-                st.json(audit["geometry"]["status_counts"])
+                st.json({
+                    "OR geometry":audit["geometry"]["status_counts"],
+                    "GenOVa groupoid":audit["genova_numerical_groupoid"]["status_counts"],
+                })
                 st.download_button(
                     "Download source geometry audit JSON",
                     st.session_state["arpge_source_audit"],
