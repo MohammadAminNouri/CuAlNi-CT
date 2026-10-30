@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 from cualni_cryst.experimental_parent_validation import (
     complete_or_family,cross_phase_contact_pairs,
     frozen_or_contact_residuals,frozen_or_boundary_audit,
+    group_disjoint_source_or_selection,
 )
 from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.lattice import Lattice
@@ -113,3 +114,32 @@ def test_frozen_cualni_18r_morning_or_frames_and_complete_symmetry():
     residual=frozen_or_contact_residuals(parents,daughters,Q,G,M)
     assert max(residual)<2e-5
     assert len(complete_or_family(Q,G,M)[0])==len(G)*len(M)
+
+
+def test_island_group_disjoint_preset_selection_never_uses_holdout_for_or_choice():
+    xy,phase,ori,Q,G,M=model(n=60)
+    groups=np.r_[np.arange(1,61),np.zeros(60,int)]
+    cand={
+        "wrong_transpose":Q.T,
+        "source_AQ":Q,
+        "wrong_shift":Q@Rotation.from_euler("x",15,degrees=True).as_matrix(),
+    }
+    first=group_disjoint_source_or_selection(
+        orientations=ori,phase_ids=phase,xy=xy,parent_groups=groups,
+        parent_phase_id=1,daughter_phase_id=2,neighbor_distance=.25,
+        source_or_candidates=cand,parent_proper=G,daughter_proper=M,
+        acceptance_deg=2.,seed=20261030,
+    )
+    assert first["chosen_archived_or_by_training_only"]=="source_AQ"
+    assert first["parent_island_labels_disjoint"]
+    assert first["candidate_OR_refit_on_holdout"] is False
+    assert first["heldout_fraction_within_threshold"]==pytest.approx(1)
+    assert first["wrong_15deg_heldout_fraction_within_threshold"]<.2
+    assert first["experimental_parent_reconstruction_certified"] is False
+    bad=groups.copy();bad[:]=1
+    with pytest.raises(ValueError,match="Insufficient"):
+        group_disjoint_source_or_selection(
+            orientations=ori,phase_ids=phase,xy=xy,parent_groups=bad,
+            parent_phase_id=1,daughter_phase_id=2,neighbor_distance=.25,
+            source_or_candidates=cand,parent_proper=G,daughter_proper=M,
+        )
