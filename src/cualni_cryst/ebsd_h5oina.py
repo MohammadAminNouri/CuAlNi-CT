@@ -152,6 +152,10 @@ def load_h5oina_sample(
                 ),
                 metadata={
                     "source_format": "h5oina",
+                    "orientation_convention": (
+                        "Oxford CS1 raw Bunge ZXZ radians" if sample_frame_correction is None
+                        else "Oxford Bunge ZXZ radians with EXPLICIT user-calibrated sample correction"
+                    ),
                     "full_pixel_count": int(n),
                     "sampled_pixel_count": int(count),
                     "reference_frame_normalization_applied": sample_frame_correction is not None,
