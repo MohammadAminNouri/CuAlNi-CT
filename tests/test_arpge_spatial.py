@@ -60,9 +60,14 @@ def test_three_and_four_grain_nucleation_are_bounded_and_competitive():
         nucleus_size=3,ambiguity_margin_deg=.1)
     assert tri["n_parent_domains"]==2
     assert tri["n_unassigned_daughter_grains"]==0
-    assert len(set(tri["daughter_parent_id"][:3]))==1
-    assert len(set(tri["daughter_parent_id"][3:]))==1
-    assert tri["daughter_parent_id"][0]!=tri["daughter_parent_id"][5]
+    # Union-find root IDs do not imply left-to-right spatial grain ordering.
+    # Verify parent labels on ACTUAL pixel coordinates, never array indices.
+    x=np.asarray(ebsd.x)
+    left=set(tri["pixel_parent_id"][x<6].tolist())
+    right=set(tri["pixel_parent_id"][x>=6].tolist())
+    assert len(left)==1 and len(right)==1
+    assert left!=right
+    assert -1 not in left and -1 not in right
     assert tri["physical_or_certified"] is False
     # Our simple stripe graph has no nodes with three neighbours.
     quad=reconstruct_spatial_parents(seg,Q,p,m,nucleus_size=4,
