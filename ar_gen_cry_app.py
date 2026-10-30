@@ -8,6 +8,7 @@ application modules, no accidental legacy pages, and no executable old GUI.
 
 import hashlib
 import json
+from fractions import Fraction
 from pathlib import Path
 import sys
 
@@ -411,6 +412,12 @@ elif step == STEPS[2]:
                 "1 0 0\\n0 1 0\\n0 0 1", height=100,
                 key="ar_direct_basis", on_change=clear_parent_fit,
             )
+            comparison_mode = st.radio(
+                "Lattice-metric comparison",
+                ("Strict indexing match", "Approximate literature screen"),
+                horizontal=True, key="ar_basis_comparison_mode",
+                on_change=clear_parent_fit,
+            )
             basis_audit = None
             if conventional_cif is not None:
                 try:
@@ -419,19 +426,25 @@ elif step == STEPS[2]:
                         Path(conventional_cif.name).stem, "2/m"
                     )
                     values = [
-                        [float(t) for t in line.replace(",", " ").split()]
+                        [float(Fraction(t)) for t in line.replace(",", " ").split()]
                         for line in basis_text.strip().splitlines()
                         if line.strip()
                     ]
                     new_18r = Phase(**cry["product_phase"])
+                    tolerance = 5e-4 if comparison_mode == "Strict indexing match" else 3e-2
                     basis_audit = audit_direct_basis(
-                        old_18r.lattice(), new_18r.lattice(), values
+                        old_18r.lattice(), new_18r.lattice(), values,
+                        relative_tolerance=tolerance,
                     )
                     st.success(
                         f"Basis metric compatible. Relative residual "
                         f"{basis_audit.metric_relative_residual:.2e}."
                     )
-                    st.caption("This proves metric compatibility, not atomic correspondence.")
+                    st.caption(
+                        "A metric-only screen. Fractional basis coefficients may "
+                        "describe a pseudocell; without atomic correspondence this "
+                        "does NOT validate physical 18R translations or an OR."
+                    )
                 except (ValueError, TypeError, ArithmeticError) as exc:
                     st.error(f"Basis rejected: {exc}")
             st.caption(
@@ -479,10 +492,11 @@ elif step == STEPS[2]:
                     try:
                         or_for_indexed = supplied_or
                         if in_conventional:
-                            if basis_audit is None:
+                            if basis_audit is None or comparison_mode != "Strict indexing match":
                                 raise ValueError(
-                                    "A verified conventional CIF and P are required "
-                                    "to transform the OR to the indexed 18R basis."
+                                    "OR conversion requires strict crystallographic metric "
+                                    "agreement. A 3% literature pseudocell screen is NOT "
+                                    "sufficient to establish a physical OR."
                                 )
                             refs = np.asarray(json.loads(supplied_or), float)
                             if refs.ndim != 3 or refs.shape[1:] != (3, 3):
@@ -500,7 +514,8 @@ elif step == STEPS[2]:
                             ar["filename"], st.session_state["ar_bytes"], cry,
                             int(chosen), or_for_indexed, max_points=n,
                             parent_anchor_orientation_json=known_parent_json,
-                            indexed_18r_basis_verified=basis_audit is not None,
+                            indexed_18r_basis_verified=(basis_audit is not None
+                                and comparison_mode == "Strict indexing match"),
                             specimen_frame_verified=specimen_frame_ok,
                             specimen_frame_correction_json=frame_correction_json,
                         )
