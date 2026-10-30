@@ -51,7 +51,7 @@ def test_direct_pole_and_reciprocal_habit_trace_correct():
     poles=stereographic_poles(
         np.asarray([I]),np.asarray([[0.,0.,1.],[1.,0.,0.]]),
     )
-    assert poles["stereographic_xy"][0]==pytest.approx([[0,0],[1,0]])
+    assert np.allclose(poles["stereographic_xy"][0],[[0,0],[1,0]],atol=1e-12)
     test=habit_plane_trace([1,0,0],Lattice.cubic(3.015),I)
     assert abs(np.dot(test["sample_trace_direction"],[0.,1.,0.]))==pytest.approx(1)
     assert not test["degenerate_parallel_surface"]
