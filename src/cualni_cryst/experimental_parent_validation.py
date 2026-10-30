@@ -174,3 +174,110 @@ def frozen_or_boundary_audit(
             raise ValueError("Group labels must be defined for all source pixels")
         out["contact_parent_group_ids"]=groups[edges[:,0]].tolist()
     return out
+
+
+def group_disjoint_source_or_selection(
+    *, orientations:object, phase_ids:object, xy:object, parent_groups:object,
+    parent_phase_id:int, daughter_phase_id:int, neighbor_distance:float,
+    source_or_candidates:dict[str,object], parent_proper:object,
+    daughter_proper:object, quality_mask:object|None=None,
+    train_fraction:float=.6, seed:int=20261030,
+    max_pairs_per_split:int=2500, acceptance_deg:float=3.,
+)->dict:
+    """Train on one set of retained-parent islands, freeze the named OR,
+    then score disjoint *parent island IDs* without retuning.
+
+    Group IDs are spatial connected components of the ORIGINAL retained
+    parent phase (island, not certified previous parent grain). Both train
+    and test include measured parent orientations. No parent orientation
+    from a test island enters the choice of which archived OR is used.
+    For source-transfer 18R with no retained beta, use the separate frozen
+    cross-scan daughter replay instead; this API must reject such data.
+    """
+    x=np.asarray(orientations,float)
+    phase=np.asarray(phase_ids,int)
+    groups=np.asarray(parent_groups,int)
+    if (x.ndim!=3 or x.shape[1:]!=(3,3)
+        or phase.shape!=(len(x),) or groups.shape!=(len(x),)
+        or not 0<train_fraction<1 or not 10<=max_pairs_per_split<=30000):
+        raise ValueError("Invalid parent-island group cross-validation contract")
+    if not isinstance(source_or_candidates,dict) or not 2<=len(source_or_candidates)<=24:
+        raise ValueError("Need at least two predeclared source OR candidates")
+    if not 0<acceptance_deg<=15:
+        raise ValueError("Invalid acceptance threshold")
+    for name,Q in source_or_candidates.items():
+        if not isinstance(name,str) or not name:
+            raise ValueError("Source OR candidates must be named")
+        complete_or_family(Q,parent_proper,daughter_proper)
+    edge=cross_phase_contact_pairs(xy,phase,parent_phase_id,
+                                   daughter_phase_id,distance=neighbor_distance)
+    if quality_mask is not None:
+        valid=np.asarray(quality_mask,bool)
+        if valid.shape!=(len(x),):
+            raise ValueError("Quality mask shape differs from original map")
+        edge=edge[valid[edge[:,0]]&valid[edge[:,1]]]
+    # A retained-pixel island is defined independently of Euler/OR values.
+    gp=groups[edge[:,0]]
+    unique=np.unique(gp[gp>0])
+    if len(unique)<4:
+        raise ValueError("Insufficient independent retained-phase islands for group holdout")
+    rng=np.random.default_rng(seed)
+    rng.shuffle(unique)
+    train=set(unique[:max(2,min(len(unique)-2,int(round(train_fraction*len(unique))))].tolist())
+    mask=np.isin(gp,list(train))
+    train_pairs=edge[mask];test_pairs=edge[~mask]
+    if min(len(train_pairs),len(test_pairs))<10:
+        raise ValueError("Train/holdout contact coverage insufficient")
+    def subset(pairs):
+        if len(pairs)>max_pairs_per_split:
+            ix=np.sort(rng.choice(len(pairs),max_pairs_per_split,replace=False))
+            return pairs[ix]
+        return pairs
+    train_pairs=subset(train_pairs);test_pairs=subset(test_pairs)
+    candidates=[]
+    for name,Q in sorted(source_or_candidates.items()):
+        residual=frozen_or_contact_residuals(
+            x[train_pairs[:,0]],x[train_pairs[:,1]],
+            Q,parent_proper,daughter_proper,
+        )
+        candidates.append({
+            "name":name,
+            "training_median_deg":float(np.median(residual)),
+            "training_fraction_within_threshold":
+                float(np.mean(residual<=acceptance_deg)),
+        })
+    chosen=sorted(candidates,key=lambda q:(
+        -q["training_fraction_within_threshold"],
+        q["training_median_deg"],q["name"],
+    ))[0]
+    Q=np.asarray(source_or_candidates[chosen["name"]],float)
+    test=frozen_or_contact_residuals(
+        x[test_pairs[:,0]],x[test_pairs[:,1]],Q,
+        parent_proper,daughter_proper,
+    )
+    negative=frozen_or_contact_residuals(
+        x[test_pairs[:,0]],x[test_pairs[:,1]],
+        Q@Rotation.from_euler("x",15,degrees=True).as_matrix(),
+        parent_proper,daughter_proper,
+    )
+    # Parent island group split is disjoint; other (daughter) specimen regions
+    # may still correlate spatially, so this is NOT a fully independent grain.
+    return {
+        "chosen_archived_or_by_training_only":chosen["name"],
+        "training_preset_comparison":candidates,
+        "n_training_parent_islands":len(train),
+        "n_holdout_parent_islands":len(unique)-len(train),
+        "n_train_contact_pairs":len(train_pairs),
+        "n_holdout_contact_pairs":len(test_pairs),
+        "heldout_median_deg":float(np.median(test)),
+        "heldout_fraction_within_threshold":float(np.mean(test<=acceptance_deg)),
+        "wrong_15deg_heldout_median_deg":float(np.median(negative)),
+        "wrong_15deg_heldout_fraction_within_threshold":
+            float(np.mean(negative<=acceptance_deg)),
+        "parent_island_labels_disjoint":True,
+        "candidate_OR_refit_on_holdout":False,
+        "source_crossphase_metadata_verified":False,
+        "parent_grain_topology_certified":False,
+        "experimental_parent_reconstruction_certified":False,
+        "status":"held-out retained-phase island OR-selection screen, not same prior-parent reconstruction",
+    }
