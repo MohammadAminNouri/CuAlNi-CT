@@ -63,3 +63,83 @@ Literature:
   https://mtex-toolbox.github.io/MaParentGrainReconstruction_py.html
 - IUCr, Orientation relationships and the embedding approach (2023):
   https://journals.iucr.org/j/issues/2023/03/00/ap5046/index.html
+
+
+## Updated instrument-frame audit and parent evidence (30 October 2026)
+
+Oxford's native H5OINA specification defines **Scanning Rotation Angle** as the
+angle between the specimen-tilt axis and the scanning-tilt axis, in radians.
+It is NOT automatically the angle of a laboratory-to-specimen rigid rotation
+about z or y. The reader now reports scanning rotation, tilt angle/axis and
+specimen orientation Euler explicitly. The latter defines CS1 surface→CS0
+primary specimen coordinates. No correction is applied by default.
+
+When a specimen-frame alignment is independently established, the
+`load_h5oina_sample(..., sample_frame_correction=proper_3x3)` option explicitly
+applies it and stores the exact matrix in provenance. A globally applied proper
+rotation must preserve intervariant disorientation angles and cannot, by
+itself, identify the physical β parent.
+
+The file's indexed reference names a **reduced 18R CIF**. Its cell lengths and
+angles are recoverable, but atomic positions and the conventional→reduced
+integer change-of-basis matrix are NOT stored in the EBSD scan.
+
+### What has been implemented
+
+- `parent_or_evidence.audit_direct_basis`: check an **explicit** integer
+  right-handed basis matrix `P` using `G_new = P.T @ G_old @ P`.
+  Report metric error and volume-index ratio; refuse inconsistent inputs.
+  Atomic correspondence must be independently verified.
+- `parent_or_evidence.rebase_orientation_relationship`: transform a
+  parent←daughter Cartesian OR between a conventional and indexed 18R frame
+  using the associated physical basis rotations, rather than relabeling Miller
+  indices without changing the rotation.
+- `parent_or_evidence.parent_orientation_from_two_directions`: obtain a
+  calibrated parent orientation from TWO independent crystal directions and
+  their measured specimen directions, rejecting near-collinear pairs and
+  inconsistent intervector angles.
+- `parent_or_evidence.compare_parent_to_anchor`: measure parent–anchor
+  disorientation modulo proper β cubic symmetry.
+- `parent_variant_audit.parent_generated_variants`: generate all proper
+  parent-derived daughter variants modulo daughter symmetry; under the
+  monoclinic C2 / cubic 432 example the family contains 12 or 24 variants
+  depending on the OR stabilizer.
+- `parent_variant_audit.daughter_variant_assignment`: fast symmetry-aware
+  assignments, residuals and runner-up ambiguity margins.
+- AR Streamlit: optional conventional 18R CIF + explicit integer P, input OR
+  rebasing, and comparison with a supplied experimentally measured parent
+  orientation. A metric-compatible P alone does not prove a physical
+  correspondence.
+- Experimental certification remains **false by default and after any
+  self-reported checkboxes**. External data provenance is not authenticated.
+
+### Actual Site 8 numerical revision
+
+The local revised Site 8 parent output applies independent spatial
+diagnostics to the earlier **unanchored** fit. A conservative quality mask
+requires low indexed MAD, residual ≤3°, connected daughter region ≥50 pixels,
+at least 80% of that region fitting within 3°, and mean region residual ≤2°.
+It accepts 425,791 of 621,983 high-quality indexed pixels (68.46%).
+This is a *more conservative in-sample numerical mask*, not physically
+validated reconstruction. The input source H5OINA is not tracked in Git.
+
+An alternative global 180° y-rotation is exported for comparison as an
+explicitly **hypothetical, unverified** frame convention. Intervariant
+misorientations remain numerically unchanged; no false gain in fit quality
+is claimed.
+
+### Evidence required for a physical reconstruction
+
+Provide the original conventional 18R CIF **and** the reduced indexed CIF
+or an experimentally documented basis mapping; a physically justified
+parent–18R OR; and at least one calibrated parent EBSD orientation from
+retained/reverted austenite, or two nonparallel known parent directions
+measured in the same specimen frame. Confirm specimen calibration and
+pseudo-symmetry before endorsing parent variant labels.
+
+Primary specifications and methods:
+- Oxford H5OINA format, https://github.com/oinanoanalysis/h5oina/blob/master/H5OINAFile.md
+- MTEX Oxford vendor conventions, https://mtex-toolbox.github.io/EBSDVendors
+- MTEX reference-frame warnings, https://mtex-toolbox.github.io/EBSDReferenceFrame
+- MTEX parent-grain reconstruction, https://mtex-toolbox.github.io/GrainGraphBasedReconstruction
+- MTEX orientation-relationship fitting, https://mtex-toolbox.github.io/OrientationRelationshipFit
