@@ -223,7 +223,8 @@ def group_disjoint_source_or_selection(
         raise ValueError("Insufficient independent retained-phase islands for group holdout")
     rng=np.random.default_rng(seed)
     rng.shuffle(unique)
-    train=set(unique[:max(2,min(len(unique)-2,int(round(train_fraction*len(unique))))].tolist())
+    n_training=max(2,min(len(unique)-2,int(round(train_fraction*len(unique)))))
+    train=set(unique[:n_training].tolist())
     mask=np.isin(gp,list(train))
     train_pairs=edge[mask];test_pairs=edge[~mask]
     if min(len(train_pairs),len(test_pairs))<10:
