@@ -33,7 +33,7 @@ def test_safe_transition_decodes_2021_niti_aq_without_pickle_execution():
 
 
 def test_safe_archive_refuses_execution_opcodes():
-    with pytest.raises(ValueError,match="executable|Unsupported"):
+    with pytest.raises(ValueError,match="protocol-0|executable|Unsupported"):
         decode_transition(b"cos\nsystem\n(S'echo dangerous'\ntR.")
     with pytest.raises(ValueError):
         decode_transition(b"\x80\x04cos\nsystem\n.")
