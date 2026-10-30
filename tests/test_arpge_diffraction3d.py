@@ -43,8 +43,8 @@ def test_reciprocal_monoclinic_duality_and_3d_cell_edges():
     geo=cell_and_reciprocal_3d(lattice,g)
     assert geo["edges_12"].shape==(12,2)
     assert geo["vertices_sample_angstrom"].shape==(8,3)
-    assert np.allclose(geo["direct_axes_sample_angstrom"].T.T@
-                       geo["reciprocal_axes_sample_cycles_per_angstrom"],np.eye(3),
+    assert np.allclose(geo["direct_axes_sample_angstrom"]@
+                       geo["reciprocal_axes_sample_cycles_per_angstrom"].T,np.eye(3),
                        atol=1e-11)
 
 
