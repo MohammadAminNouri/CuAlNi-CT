@@ -98,3 +98,13 @@ def test_noncollinear_pair_internal_angle_must_match():
         parent_orientation_from_two_directions(
             cubic, (1, 0, 0), (1, 0, 0), (1, 0, 0), (0, 1, 0)
         )
+
+
+def test_fully_declared_evidence_still_requires_external_scientific_verification():
+    result = audit_anchor_status(
+        measured_parent_orientation=True, independent_direction_count=2,
+        indexed_parent_phase_present=True, verified_change_of_basis=True,
+        scan_frame_verified=True,
+    )
+    assert result["declared_prerequisites_present"]
+    assert result["physical_parent_or_certified"] is False
