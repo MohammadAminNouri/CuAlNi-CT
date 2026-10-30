@@ -34,7 +34,8 @@ def fixture_h5oina(*, wrong_unit: bool = False, wrong_shape: bool = False) -> by
         ds.attrs["Unit"] = "deg" if wrong_unit else "rad"
         data.create_dataset("X", data=np.tile(np.arange(4), 2).astype("f4"))
         data.create_dataset("Y", data=np.repeat([0, 1], 4).astype("f4"))
-        data.create_dataset("Mean Angular Deviation", data=np.full(8, 0.01, "f4"))
+        mad = data.create_dataset("Mean Angular Deviation", data=np.full(8, 0.01, "f4"))
+        mad.attrs["Unit"] = "rad"
         ph = head.create_group("Phases/1")
         ph.create_dataset("Phase Name", data=[b"Synthetic monoclinic test phase"])
         ld = ph.create_dataset("Lattice Dimensions", data=[[10.0, 5.0, 4.0]])
