@@ -111,10 +111,12 @@ def decode_cryst_metrics_without_unpickling(raw:bytes)->dict:
         any(not 0<x<math.pi for x in values[3:])):
         raise ValueError("Invalid crystal phase cell metrics")
     system=entries[9][1] if names[9]=="STRING" else ""
+    centering=entries[11][1] if names[11]=="STRING" else ""
+    point_group=entries[13][1] if len(entries)>13 and names[13]=="STRING" else ""
     # Legacy exact stored system fields may vary; always expose a primitive,
     # explicitly audited metric instead of silently constructing atomic data.
     return {
-        "name":name,"a_angstrom":values[0],"b_angstrom":values[1],
+        "name":name,"crystal_system":system,"centering":centering,"point_group_legacy":point_group,"a_angstrom":values[0],"b_angstrom":values[1],
         "c_angstrom":values[2],
         "alpha_deg":math.degrees(values[3]),
         "beta_deg":math.degrees(values[4]),
@@ -163,4 +165,80 @@ def inspect_arpge_archive(filename:str,*, max_members:int=1200,
         "legacy_source_executed":False,"pickle_unserialized":False,
         "source_original_licence_verified":False,
         "status":"read-only primitive extraction; numerical GenOVa parity NOT claimed",
+    }
+
+
+def audit_legacy_orientation_presets(inventory:dict,
+                                    *, geometric_tolerance_deg:float=2.0)->dict:
+    """Evaluate ALL decoded 2021 presets without assuming their OR is exact.
+
+    A 2021 transformation may contain two planes, two directions, or one
+    plane and one direction. Direct and reciprocal constraints are converted
+    correctly. A proper Kabsch rotation is fitted and residuals reported;
+    inconsistent/ambiguous presets are not silently accepted.
+    """
+    import numpy as np
+    from scipy.spatial.transform import Rotation
+    from .lattice import Lattice
+    from .niti_literature_or import direction_cartesian, plane_normal_cartesian
+    if not np.isfinite(geometric_tolerance_deg) or not 0<geometric_tolerance_deg<=15:
+        raise ValueError("Invalid phase geometry tolerance")
+    phases={c["name"]:c for c in inventory["crystal_metrics"]}
+    out=[]
+    for trans in inventory["transitions"]:
+        name=trans["name"];pa=phases.get(trans["parent"])
+        ma=phases.get(trans["product"])
+        if pa is None or ma is None:
+            out.append({"name":name,"status":"missing original phase definition"})
+            continue
+        def phase(rec):
+            return Lattice(
+                rec["a_angstrom"],rec["b_angstrom"],rec["c_angstrom"],
+                rec["alpha_deg"],rec["beta_deg"],rec["gamma_deg"],
+            )
+        try:
+            A=phase(pa);M=phase(ma)
+            expected=[];observed=[]
+            for label in ("primary","secondary"):
+                hkA=trans[f"{label}_parent_plane_hkl"]
+                hkM=trans[f"{label}_product_plane_hkl"]
+                if hkA is not None:
+                    expected.append(plane_normal_cartesian(A,hkA))
+                    observed.append(plane_normal_cartesian(M,hkM))
+                dA=trans[f"{label}_parent_direction_uvw"]
+                dM=trans[f"{label}_product_direction_uvw"]
+                if dA is not None:
+                    expected.append(direction_cartesian(A,dA))
+                    observed.append(direction_cartesian(M,dM))
+            expected=np.asarray(expected);observed=np.asarray(observed)
+            if len(expected)<2 or len(observed)<2:
+                raise ValueError("Fewer than two geometric constraints")
+            singular=np.linalg.svd(expected.T@observed,compute_uv=False)
+            if singular[1]<=1e-7:
+                raise ValueError("Collinear constraints do not define unique OR")
+            rotation,_=Rotation.align_vectors(expected,observed)
+            Q=rotation.as_matrix()
+            angles=np.rad2deg(np.arccos(np.clip(
+                np.sum(expected*(Q@observed.T).T,axis=1),-1.,1.,
+            )))
+            max_error=float(np.max(angles))
+            out.append({
+                "name":name,"parent":trans["parent"],"daughter":trans["product"],
+                "n_constraints":len(expected),
+                "max_direction_plane_residual_deg":max_error,
+                "Q_parent_from_daughter":Q.tolist(),
+                "proper_rotation":True,
+                "status":("geometric candidate" if max_error<=geometric_tolerance_deg
+                          else "inconsistent archived constraints"),
+                "physical_or_certified":False,
+            })
+        except (ValueError,ArithmeticError,TypeError) as exc:
+            out.append({"name":name,"status":"rejected","reason":str(exc)})
+    from collections import Counter
+    return {
+        "schema":"cualni.arpge2021-57-preset-geometry-audit/0.1",
+        "tested_transitions":len(out),
+        "status_counts":dict(Counter(x["status"] for x in out)),
+        "results":out,
+        "note":"Geometric Q and metadata test only; no original GUI/double-coset parity or diffraction certification",
     }
