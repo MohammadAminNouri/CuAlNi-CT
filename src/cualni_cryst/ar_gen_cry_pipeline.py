@@ -18,7 +18,7 @@ from .ebsd_h5oina import load_h5oina_sample
 from .legacy_suite_bridge import (
     Phase, crystal_geometry, inspect_ebsd, reconstruct_ebsd_parent, variant_groupoid,
 )
-from .parent_or_evidence import compare_parent_to_anchor, audit_anchor_status
+from .parent_or_evidence import compare_parent_to_anchor, audit_anchor_status, parent_orientation_from_two_directions
 from .ebsd_map import EBSDPhase
 from .orientation_kernel import require_so3
 
@@ -105,7 +105,8 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
                   parent_anchor_orientation_json: str | None = None,
                   indexed_18r_basis_verified: bool = False,
                   specimen_frame_verified: bool = False,
-                  specimen_frame_correction_json: str | None = None) -> dict:
+                  specimen_frame_correction_json: str | None = None,
+                  parent_direction_pairs_json: str | None = None) -> dict:
     """Exploratory fit ONLY after explicit experimental OR data are supplied."""
     audit = ar_stage(filename, data)
     if not cry or cry.get("stage") != "Cry":
@@ -168,12 +169,51 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
             )
     anchored = None
     anchor_residual = None
+    independent_direction_count = 0
+    direction_anchor = None
+    if parent_direction_pairs_json and parent_direction_pairs_json.strip():
+        try:
+            directions = json.loads(parent_direction_pairs_json)
+            indexes = np.asarray(directions["parent_uvw"], float)
+            observed = np.asarray(directions["sample_xyz"], float)
+            if indexes.shape != (2, 3) or observed.shape != (2, 3):
+                raise ValueError("Expected two 3-component parent and specimen directions")
+            phase = Phase(**cry["parent_phase"])
+            g_measured = parent_orientation_from_two_directions(
+                phase.lattice(),indexes[0],indexes[1],observed[0],observed[1],
+            )
+            direction_anchor = {
+                "parent_uvw": indexes.tolist(),
+                "sample_xyz": observed.tolist(),
+                "derived_beta_crystal_to_sample": g_measured.tolist(),
+                "status":"two user-supplied independent direction constraints; not authenticated",
+            }
+            independent_direction_count = 2
+        except (ValueError,TypeError,KeyError,IndexError) as exc:
+            raise ValueError(
+                "Direction anchor must be JSON with parent_uvw and sample_xyz "
+                "each 2×3 non-collinear vectors in the same specimen frame"
+            ) from exc
     if parent_anchor_orientation_json and parent_anchor_orientation_json.strip():
         try:
             known = np.asarray(json.loads(parent_anchor_orientation_json), float)
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             raise ValueError("Measured parent orientation must be a JSON 3x3 matrix") from exc
         known = require_so3(known, tolerance=2e-8, name="measured beta parent orientation")
+        if direction_anchor is not None:
+            pa = Phase(**cry["parent_phase"])
+            sym = EBSDPhase.from_point_group(
+                1, pa.name, pa.lattice(), pa.point_group,
+            ).proper_symmetry_cartesian
+            discrepancy = compare_parent_to_anchor(
+                known, np.asarray(direction_anchor["derived_beta_crystal_to_sample"]), sym,
+            )
+            direction_anchor["difference_from_parent_orientation_deg"] = discrepancy
+            if discrepancy > 3.0:
+                raise ValueError(
+                    "Two independent parent-direction pairs disagree with the "
+                    f"entered retained-beta orientation by {discrepancy:.3f}°"
+                )
         pa = Phase(**cry["parent_phase"])
         sym = EBSDPhase.from_point_group(
             1, pa.name, pa.lattice(), pa.point_group
@@ -187,9 +227,24 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
             "candidate_vs_measured_parent_deg": anchor_residual,
             "agrees_with_anchor_within_3deg": anchor_residual <= 3.0,
         }
+    if anchored is None and direction_anchor is not None:
+        known = np.asarray(direction_anchor["derived_beta_crystal_to_sample"], float)
+        pa = Phase(**cry["parent_phase"])
+        sym = EBSDPhase.from_point_group(
+            1, pa.name, pa.lattice(), pa.point_group
+        ).proper_symmetry_cartesian
+        anchor_residual = compare_parent_to_anchor(
+            np.asarray(fit["parent_crystal_to_sample_rotation"], float),known,sym,
+        )
+        anchored = {
+            "parent_orientation_matrix": known.tolist(),
+            "evidence_status": "two user-supplied parent directions; external verification required",
+            "candidate_vs_measured_parent_deg": anchor_residual,
+            "agrees_with_anchor_within_3deg": anchor_residual <= 3.0,
+        }
     gate = audit_anchor_status(
         measured_parent_orientation=anchored is not None,
-        independent_direction_count=0,
+        independent_direction_count=independent_direction_count,
         indexed_parent_phase_present=False,
         verified_change_of_basis=indexed_18r_basis_verified,
         scan_frame_verified=specimen_frame_verified,
@@ -203,6 +258,7 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
         "stage": "AR parent fit",
         "experimental_or_user_supplied": True,
         "parent_anchor_comparison": anchored,
+        "parent_direction_pair_anchor": direction_anchor,
         "explicit_frame_correction_matrix": (
             None if frame_correction is None else frame_correction.tolist()
         ),
