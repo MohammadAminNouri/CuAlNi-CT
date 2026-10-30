@@ -146,7 +146,7 @@ def test_parent_fit_records_both_explicit_frame_and_anchor_evidence():
         indexed_18r_basis_verified=True, specimen_frame_verified=True,
         specimen_frame_correction_json=json.dumps(explicit_frame.tolist()),
     )
-    assert fit["explicit_frame_correction_matrix"] == pytest.approx(explicit_frame.tolist())
+    assert np.allclose(fit["explicit_frame_correction_matrix"], explicit_frame)
     assert fit["parent_anchor_residual_deg"] < 1e-4
     assert fit["evidence_gate"]["declared_prerequisites_present"] is True
     assert fit["experimental_certification"] is False
