@@ -850,7 +850,9 @@ else:
             "Experimental ORs are never generated from C alone.")
     try:
         payload = report_json(cry, gen, ar, fit,
-                              st.session_state.get("parent_interop_report"))
+                              st.session_state.get("parent_interop_report"),
+                              st.session_state.get("parent_boundary_replay"),
+                              st.session_state.get("parent_full_report"))
     except (ValueError, TypeError) as exc:
         st.error(f"Cannot export results: {exc}")
     else:
