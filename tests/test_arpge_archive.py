@@ -25,9 +25,11 @@ def test_safe_transition_decodes_2021_niti_aq_without_pickle_execution():
     record=decode_transition(NI_TI_AQ)
     assert record["name"]=="NiTi_AQ"
     assert record["parent"]=="NiTi_B2"
-    assert record["primary_product_plane_hkl"]==[1,1,0]
-    assert record["primary_parent_direction_uvw"]==[1,0,1]
-    assert record["primary_product_direction_uvw"]==[-1,1,1]
+    assert record["primary_product_plane_hkl"]==[0,1,0]
+    assert record["primary_parent_plane_hkl"]==[1,1,0]
+    assert record["primary_product_direction_uvw"]==[1,0,1]
+    assert record["primary_parent_direction_uvw"]==[-1,1,1]
+    assert record["source_index_order"]=="daughter_then_parent"
 
 
 def test_safe_archive_refuses_execution_opcodes():
@@ -63,3 +65,16 @@ def test_zip_reader_rejects_zip_slip_and_extracts_only_verified_fields(tmp_path:
         z.writestr("../escape.trans",NI_TI_AQ)
     with pytest.raises(ValueError,match="Unsafe archive"):
         inspect_arpge_archive(str(bad))
+
+def test_2021_legacy_burgers_source_index_order_is_hcp_then_bcc():
+    text=(b"(lp0\nS'Burgers'\np1\naS'Ti_beta'\np2\naS'Ti_alpha'\np3\na"
+          b"(lp4\nI0\naI0\naI1\naa(lp5\nI1\naI1\naI0\naa"
+          b"(lp6\na(lp7\na"
+          b"(lp8\nI1\naI0\naI0\naa(lp9\nI1\naI-1\naI1\naa"
+          b"(lp10\na(lp11\na.")
+    record=decode_transition(text)
+    assert record["product"]=="Ti_alpha"
+    assert record["primary_product_plane_hkl"]==[0,0,1]
+    assert record["primary_parent_plane_hkl"]==[1,1,0]
+    assert record["primary_product_direction_uvw"]==[1,0,0]
+    assert record["primary_parent_direction_uvw"]==[1,-1,1]
