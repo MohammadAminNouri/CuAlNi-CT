@@ -8,7 +8,7 @@ import zipfile
 import pytest
 from cualni_cryst.arpge_archive import (
     decode_transition,decode_cryst_metrics_without_unpickling,
-    inspect_arpge_archive,
+    inspect_arpge_archive, audit_legacy_orientation_presets,
 )
 
 # Tiny self-contained source-format specimen, not executable source code.
@@ -78,3 +78,23 @@ def test_2021_legacy_burgers_source_index_order_is_hcp_then_bcc():
     assert record["primary_parent_plane_hkl"]==[1,1,0]
     assert record["primary_product_direction_uvw"]==[1,0,0]
     assert record["primary_parent_direction_uvw"]==[1,-1,1]
+
+def test_archived_niti_aq_or_matches_independent_2020_cartesian_geometry():
+    import numpy as np
+    from cualni_cryst.niti_literature_or import niti_published_or
+    archived=decode_transition(NI_TI_AQ)
+    phases=[
+        {"name":"NiTi_B2","a_angstrom":3.015,"b_angstrom":3.015,
+         "c_angstrom":3.015,"alpha_deg":90,"beta_deg":90,"gamma_deg":90},
+        {"name":"NiTi_B19'","a_angstrom":2.889,"b_angstrom":4.12,
+         "c_angstrom":4.622,"alpha_deg":90,"beta_deg":96.8,"gamma_deg":90},
+    ]
+    evaluated=audit_legacy_orientation_presets({
+        "transitions":[archived],"crystal_metrics":phases,
+    })
+    result=evaluated["results"][0]
+    expected=niti_published_or("AQ")["Q_parent_from_daughter"]
+    assert result["status"]=="geometric candidate"
+    assert result["max_direction_plane_residual_deg"]<1e-5
+    assert np.allclose(result["Q_parent_from_daughter"],expected,atol=1e-10)
+    assert evaluated["tested_transitions"]==1
