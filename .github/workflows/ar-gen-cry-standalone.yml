@@ -13,7 +13,7 @@ on:
       - src/cualni_cryst/parent_or_interop.py
       - src/cualni_cryst/parent_replay_exchange.py
       - src/cualni_cryst/parent_fullmap_h5oina.py
-      - src/cualni_cryst/parent_grain_table_replay.py src/cualni_cryst/niti_literature_or.py
+      - src/cualni_cryst/parent_grain_table_replay.py
       - src/cualni_cryst/niti_literature_or.py
       - src/cualni_cryst/parent_variant_audit.py
       - src/cualni_cryst/parent_or_evidence.py
@@ -106,7 +106,7 @@ jobs:
       - name: Compile new standalone code only
         run: |
           python -m py_compile ar_gen_cry_app.py src/cualni_cryst/ar_gen_cry_pipeline.py src/cualni_cryst/ar_gen_cry_examples.py src/cualni_cryst/ebsd_h5oina.py src/cualni_cryst/parent_or_evidence.py src/cualni_cryst/parent_variant_audit.py
-          python -m py_compile src/cualni_cryst/legacy_suite_bridge.py src/cualni_cryst/parent_or_interop.py src/cualni_cryst/parent_consensus_complete.py src/cualni_cryst/parent_replay_exchange.py src/cualni_cryst/parent_fullmap_h5oina.py src/cualni_cryst/parent_grain_table_replay.py
+          python -m py_compile src/cualni_cryst/legacy_suite_bridge.py src/cualni_cryst/parent_or_interop.py src/cualni_cryst/parent_consensus_complete.py src/cualni_cryst/parent_replay_exchange.py src/cualni_cryst/parent_fullmap_h5oina.py src/cualni_cryst/parent_grain_table_replay.py src/cualni_cryst/niti_literature_or.py
       - name: Cry/Gen/AR hard tests and Streamlit AppTest
         run: |
           python -m pytest -q --tb=short --maxfail=1 \
