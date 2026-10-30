@@ -13,6 +13,7 @@ on:
       - src/cualni_cryst/parent_or_interop.py
       - src/cualni_cryst/parent_replay_exchange.py
       - src/cualni_cryst/parent_fullmap_h5oina.py
+      - src/cualni_cryst/parent_grain_table_replay.py
       - src/cualni_cryst/parent_variant_audit.py
       - src/cualni_cryst/parent_or_evidence.py
       - src/cualni_cryst/ar_gen_cry_examples.py
@@ -25,6 +26,7 @@ on:
       - tests/test_parent_or_interop.py
       - tests/test_parent_replay_exchange.py
       - tests/test_parent_fullmap_h5oina.py
+      - tests/test_parent_grain_table_replay.py
       - tests/test_parent_or_evidence.py
       - tests/test_ar_gen_cry_examples.py
       - tests/test_ar_gen_cry_app.py
@@ -99,6 +101,7 @@ jobs:
             tests/test_parent_or_interop.py \
             tests/test_parent_replay_exchange.py \
             tests/test_parent_fullmap_h5oina.py \
+            tests/test_parent_grain_table_replay.py \
             tests/test_ar_gen_cry_examples.py \
             tests/test_ar_gen_cry_app.py \
             tests/test_legacy_suite_bridge.py
