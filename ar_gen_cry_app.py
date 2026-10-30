@@ -25,6 +25,7 @@ from cualni_cryst.ebsd_map import EBSDPhase
 from cualni_cryst.ebsd_h5oina import load_h5oina_sample
 from cualni_cryst.parent_fullmap_h5oina import reconstruct_conditional_parent_h5oina
 from cualni_cryst.parent_grain_table_replay import replay_grain_boundary_tables
+from cualni_cryst.niti_benchmark_runner import evaluate_niti_benchmarks
 from cualni_cryst.parent_replay_exchange import (
     forward_inverse_roundtrip, export_replay_zip,
 )
@@ -357,6 +358,40 @@ elif step == STEPS[2]:
     if not gen:
         st.info("Gen has not been run. You may inspect EBSD independently; "
                 "the complete chain will remain marked incomplete.")
+    with st.expander("NiTi benchmarks · published OR and correspondence", expanded=False):
+        st.caption(
+            "Cayron 2020: (010)B19′ ∥ (110)B2 and [101]B19′ ∥ "
+            "[−1 1 1]B2 (natural OR AQ). Cayron 2026: separate "
+            "correspondence-theory metrics, variants and principal stretches. "
+            "The simulated daughter orientations and B2 parent axes are "
+            "synthetic; no published experimental EBSD pixels are claimed."
+        )
+        if st.button("Run independent NiTi benchmarks", key="ar_niti_benchmark_run"):
+            try:
+                st.session_state["niti_benchmark_report"] = evaluate_niti_benchmarks()
+            except (ValueError, TypeError, ArithmeticError, AssertionError) as exc:
+                st.error(f"NiTi benchmark failed: {exc}")
+        if st.session_state.get("niti_benchmark_report") is not None:
+            niti = st.session_state["niti_benchmark_report"]
+            a = niti["niti_OR_AQ_2020"]
+            c = niti["niti_CT_2026"]
+            v1,v2,v3=st.columns(3)
+            v1.metric("NiTi OR variants",a["daughter_variants"])
+            v2.metric("Blind B2 parent error",f'{a["blind_parent_consensus_error_modulo_cubic_deg"]:.3f}°')
+            v3.metric("CT operator classes",c["intercorrespondence_operator_classes"])
+            st.caption(
+                "The parent and martensite orientations in this test were generated "
+                "from published geometry. This is a software benchmark, "
+                "not a validation against experimental NiTi or Cu–Al–Ni EBSD."
+            )
+            st.download_button(
+                "Download NiTi numerical benchmark JSON",
+                json.dumps(niti,indent=2,allow_nan=False),
+                file_name="niti_AQ_2020_CT_2026_benchmarks.json",
+                mime="application/json",
+            )
+            with st.expander("NiTi OR, correspondence and validation metrics"):
+                st.json(niti)
     ar_mode = st.radio(
         "EBSD source", ("Upload file", "Synthetic demo"), horizontal=True,
         key="ar_source_mode", on_change=clear_from_ar,
