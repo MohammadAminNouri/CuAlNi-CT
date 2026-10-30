@@ -563,6 +563,16 @@ elif step == STEPS[2]:
                 placeholder="[[...], [...], [...]]",
                 key="parent_interop_parent", on_change=clear_parent_fit,
             )
+            indexed_cif_file = st.file_uploader(
+                "Original indexed 18R CIF for AZtec Crystal (optional)",
+                type=["cif"], key="parent_interop_indexed_cif",
+                on_change=clear_parent_fit,
+            )
+            parent_cif_file = st.file_uploader(
+                "Original measured β parent CIF (optional)",
+                type=["cif"], key="parent_interop_parent_cif",
+                on_change=clear_parent_fit,
+            )
             accept_angle = st.slider(
                 "Round-trip acceptance angle (degrees)", 1.0, 10.0, 3.0, 0.5,
                 key="parent_interop_tolerance", on_change=clear_parent_fit,
@@ -647,6 +657,14 @@ elif step == STEPS[2]:
                         daughter_cell=cry["product_phase"],
                         observed_daughter_g=sampled.orientations,
                         accepted_deg=float(accept_angle),
+                        indexed_daughter_cif=(
+                            indexed_cif_file.getvalue()
+                            if indexed_cif_file is not None else None
+                        ),
+                        parent_cif=(
+                            parent_cif_file.getvalue()
+                            if parent_cif_file is not None else None
+                        ),
                     )
                     st.session_state["parent_interop_report"] = diagnostic
                     st.session_state["parent_interop_zip"] = kit
