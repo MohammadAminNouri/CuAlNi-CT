@@ -198,6 +198,7 @@ def ar_parent_fit(filename: str, data: bytes, cry: dict, product_phase_id: int,
     # certification. The software independently verifies geometry and SO3 only.
     if anchor_residual is not None and anchor_residual > 3.0:
         gate["blocking_requirements"].append("supplied anchor is inconsistent with fitted parent orientation")
+        gate["declared_prerequisites_present"] = False
     return {
         "stage": "AR parent fit",
         "experimental_or_user_supplied": True,
