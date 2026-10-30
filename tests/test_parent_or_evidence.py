@@ -132,3 +132,37 @@ def test_relaxed_literature_metric_screen_does_not_turn_into_proof():
     assert 0 < guess.metric_relative_residual < 0.03
     assert guess.integral_basis is False
     assert "unverified" in guess.status.lower()
+
+def test_noisy_two_axis_anchor_uses_unbiased_least_squares_not_first_axis_only():
+    beta = Lattice.cubic(5.8)
+    d1 = lattice_direction_to_cart(beta,(1,0,0))
+    d2 = lattice_direction_to_cart(beta,(0,1,0))
+    a = Rotation.from_euler('y',1.0,degrees=True).apply(d1)
+    b = Rotation.from_euler('x',-1.0,degrees=True).apply(d2)
+    result = parent_orientation_from_two_directions(
+        beta,(1,0,0),(0,1,0),a,b,
+    )
+    errors = np.rad2deg(np.arccos(np.clip(
+        [np.dot(result @ d1,a),np.dot(result @ d2,b)],-1,1,
+    )))
+    assert 0.005 < errors[0] < 0.02
+    assert 0.005 < errors[1] < 0.02
+    # First-axis-exact triangulation has twice the least-squares error.
+    first = a / np.linalg.norm(a)
+    second = b - np.dot(b,first)*first
+    second /= np.linalg.norm(second)
+    old = np.column_stack((first,second,np.cross(first,second)))
+    old_errors = np.rad2deg(np.arccos(np.clip(
+        [np.dot(old @ d1,a),np.dot(old @ d2,b)],-1,1,
+    )))
+    assert np.sum(errors**2) < 0.75*np.sum(old_errors**2)
+
+
+@pytest.mark.parametrize('tolerance',[float('nan'),float('inf'),-1.0])
+def test_two_axis_anchor_rejects_invalid_angular_tolerance(tolerance):
+    beta=Lattice.cubic(5.8)
+    with pytest.raises(ValueError,match='tolerance'):
+        parent_orientation_from_two_directions(
+            beta,(1,0,0),(0,1,0),(1,0,0),(0,1,0),
+            max_pair_angular_mismatch_deg=tolerance,
+        )
