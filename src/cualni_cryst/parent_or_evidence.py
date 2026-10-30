@@ -172,6 +172,8 @@ def parent_orientation_from_two_directions(
     Refuses incompatible angular separation and parallel directions.
     Measurements remain the user's responsibility.
     """
+    if not np.isfinite(max_pair_angular_mismatch_deg) or not 0 <= max_pair_angular_mismatch_deg <= 20:
+        raise ValueError('Pair angular mismatch tolerance must be finite and within 0..20 degrees')
     d1 = lattice_direction_to_cart(lattice, uvw_1)
     d2 = lattice_direction_to_cart(lattice, uvw_2)
     a = np.asarray(sample_1, float)
@@ -189,12 +191,24 @@ def parent_orientation_from_two_directions(
                 np.degrees(np.arccos(np.clip(new_sep, -1, 1))))
     if delta > max_pair_angular_mismatch_deg:
         raise ValueError(f"Anchor pair internal angle inconsistent by {delta:.4g}°")
-    def orthobasis(x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        second = y - np.dot(y, x) * x
-        second /= np.linalg.norm(second)
-        return np.column_stack((x, second, np.cross(x, second)))
-    estimated = orthobasis(a, b) @ orthobasis(d1, d2).T
-    return require_so3(estimated, tolerance=2e-8, name="two-direction parent anchor")
+    # Wahba least-squares fit: share small calibration/noise errors between both
+    # measured axes rather than forcing the first pair to agree exactly.
+    # Strict pair separation and handedness tests were done above.
+    estimated, _ = Rotation.align_vectors(
+        np.stack((a, b)), np.stack((d1, d2)),
+    )
+    result = require_so3(
+        estimated.as_matrix(), tolerance=2e-8, name="two-direction parent anchor",
+    )
+    fits = np.stack((result @ d1, result @ d2))
+    observed = np.stack((a, b))
+    per_axis = np.rad2deg(np.arccos(np.clip(
+        np.sum(fits * observed, axis=1), -1.0, 1.0,
+    )))
+    # A sound alignment must satisfy BOTH original experimental constraints.
+    if np.max(per_axis) > max_pair_angular_mismatch_deg + 1e-7:
+        raise ValueError("Best-fit parent anchor is inconsistent with measured directions")
+    return result
 
 
 def compare_parent_to_anchor(
