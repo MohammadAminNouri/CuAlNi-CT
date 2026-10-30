@@ -62,3 +62,25 @@ def test_non_so3_reference_or_rejected():
     p, m = symmetries()
     with pytest.raises(ValueError):
         parent_generated_variants(np.diag([1,1,-1]), p, m)
+
+def test_invalid_indexed_orientation_cannot_be_projected_into_valid_niti_variant():
+    from cualni_cryst.niti_literature_or import niti_published_or
+    from cualni_cryst.parent_or_interop import proper_cubic_parent_operations
+    from cualni_cryst.lattice import Lattice
+    from cualni_cryst.ebsd_map import EBSDPhase
+    beta=tuple(proper_cubic_parent_operations())
+    mart=tuple(EBSDPhase.from_point_group(
+        1,"B19-prime",Lattice.monoclinic_unique_b(2.889,4.120,4.622,96.8),
+        "2/m",
+    ).proper_symmetry_cartesian)
+    Q=np.asarray(niti_published_or("AQ")["Q_parent_from_daughter"])
+    for bad in (np.diag([1,1,-1]), np.diag([1.1,1,1]),
+                np.full((3,3),np.nan)):
+        with pytest.raises(ValueError,match="proper|finite"):
+            daughter_variant_assignment(
+                np.asarray([bad]),np.eye(3),Q,beta,mart,
+            )
+    with pytest.raises(ValueError,match="thresholds"):
+        daughter_variant_assignment(
+            np.asarray([Q]),np.eye(3),Q,beta,mart,acceptance_deg=float("nan"),
+        )
